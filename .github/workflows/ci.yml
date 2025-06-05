@@ -110,5 +110,5 @@ jobs:
 
     - name: Security scan with Bandit
       run: |
-        bandit -r py_pglite/ -f json -o bandit-report.json || true
-        bandit -r py_pglite/ 
+        bandit -r py_pglite/ -c .bandit -f json -o bandit-report.json || true
+        bandit -r py_pglite/ -c .bandit 

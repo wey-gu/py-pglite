@@ -3,7 +3,7 @@
 import json
 import logging
 import os
-import subprocess
+import subprocess  # nosec B404 - subprocess needed for npm/node process management
 import sys
 import tempfile
 import time
@@ -174,6 +174,7 @@ startServer();"""
         node_modules = work_dir / "node_modules"
         if self.config.node_modules_check and not node_modules.exists():
             self.logger.info("Installing npm dependencies...")
+            # nosec B603,B607 - npm install with fixed args, safe for testing library
             result = subprocess.run(
                 ["npm", "install"],
                 cwd=work_dir,
@@ -204,6 +205,7 @@ startServer();"""
 
             # Start PGlite process
             self.logger.info("Starting PGlite server...")
+            # nosec B603,B607 - node with fixed script, safe for testing library
             self.process = subprocess.Popen(
                 ["node", "pglite_manager.js"],
                 stdout=subprocess.PIPE,
