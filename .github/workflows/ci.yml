@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
 
@@ -57,10 +58,14 @@ jobs:
         pytest examples/ --cov=py_pglite --cov-report=xml --cov-report=term-missing -v
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         file: ./coverage.xml
-        fail_ci_if_error: true
+        fail_ci_if_error: false
+        verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      continue-on-error: true
 
   test-package:
     runs-on: ubuntu-latest
@@ -111,4 +116,4 @@ jobs:
     - name: Security scan with Bandit
       run: |
         bandit -r py_pglite/ -c .bandit -f json -o bandit-report.json || true
-        bandit -r py_pglite/ -c .bandit 
+        bandit -r py_pglite/ -c .bandit

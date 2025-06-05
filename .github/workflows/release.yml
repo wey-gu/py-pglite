@@ -75,10 +75,9 @@ jobs:
       run: |
         twine check dist/*
 
-    - name: Publish to PyPI
+    - name: Publish package distributions to PyPI
+      password: ${{ secrets.PYPI_API_TOKEN }}
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        print-hash: true
 
   create-github-release:
     runs-on: ubuntu-latest
