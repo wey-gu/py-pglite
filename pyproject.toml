@@ -44,9 +44,12 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
+    "pytest-cov>=6.1.1",
     "sqlmodel>=0.0.24",
     "mypy>=1.16.0",
     "ruff>=0.11.12",
+    "build>=1.2.2.post1",
+    "twine>=6.1.0",
 ]
 sqlmodel = [
     "sqlmodel>=0.0.24",
@@ -97,4 +100,31 @@ select = [
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
-line-ending = "auto" 
+line-ending = "auto"
+
+[tool.coverage.run]
+source = ["py_pglite"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "examples/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov" 

@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        node-version: ["22"]
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install coverage[toml] pytest-cov
+
+    - name: Install type stubs
+      run: |
+        pip install types-psutil
+
+    - name: Lint with Ruff
+      run: |
+        ruff check py_pglite/
+        ruff format --check py_pglite/
+
+    - name: Type check with MyPy
+      run: |
+        mypy py_pglite/
+
+    - name: Test package build
+      run: |
+        pip install build
+        python -m build
+
+    - name: Run tests with coverage
+      run: |
+        pytest examples/ --cov=py_pglite --cov-report=xml --cov-report=term-missing -v
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: true
+
+  test-package:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Test package installation
+      run: |
+        python -m pip install --upgrade pip build
+        python -m build
+        pip install dist/*.whl
+        
+    - name: Test installed package
+      run: |
+        python -c "import py_pglite; print(f'Successfully imported py-pglite {py_pglite.__version__}')"
+        python -c "from py_pglite import PGliteManager, PGliteConfig; print('All imports working')"
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit[toml]
+
+    - name: Security scan with Safety
+      run: |
+        pip freeze | safety check --stdin
+
+    - name: Security scan with Bandit
+      run: |
+        bandit -r py_pglite/ -f json -o bandit-report.json || true
+        bandit -r py_pglite/ 

@@ -1,5 +1,6 @@
 """Core PGlite process management."""
 
+import json
 import logging
 import os
 import subprocess
@@ -13,6 +14,7 @@ import psutil
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
+from . import __version__
 from .config import PGliteConfig
 
 
@@ -64,7 +66,7 @@ class PGliteManager:
         if not package_json.exists():
             package_content = {
                 "name": "py-pglite-env",
-                "version": "1.0.0",
+                "version": __version__,
                 "description": "PGlite test environment for py-pglite",
                 "scripts": {"start": "node pglite_manager.js"},
                 "dependencies": {
@@ -72,8 +74,6 @@ class PGliteManager:
                     "@electric-sql/pglite-socket": "^0.0.8",
                 },
             }
-            import json
-
             with open(package_json, "w") as f:
                 json.dump(package_content, f, indent=2)
 
