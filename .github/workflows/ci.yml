@@ -57,15 +57,14 @@ jobs:
       run: |
         pytest examples/ --cov=py_pglite --cov-report=xml --cov-report=term-missing -v
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
+    - uses: codecov/codecov-action@v5
       with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
+        fail_ci_if_error: true
+        files: ./coverage.xml
+        name: codecov-umbrella
         verbose: true
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      continue-on-error: true
 
   test-package:
     runs-on: ubuntu-latest
