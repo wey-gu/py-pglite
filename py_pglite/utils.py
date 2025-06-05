@@ -39,7 +39,8 @@ def clean_database_data(
 
             # Delete data from all tables
             for table in tables:
-                conn.execute(text(f'DELETE FROM "{table}"'))
+                # Table names from database metadata are safe, but use nosec for clarity
+                conn.execute(text(f'DELETE FROM "{table}"'))  # nosec B608 - table name from metadata
 
             # Re-enable foreign key checks
             conn.execute(text("SET session_replication_role = DEFAULT"))
@@ -70,7 +71,8 @@ def reset_sequences(engine: Engine) -> None:
 
             # Reset each sequence
             for seq in sequences:
-                conn.execute(text(f'ALTER SEQUENCE "{seq}" RESTART WITH 1'))
+                # Sequence names from database metadata are safe
+                conn.execute(text(f'ALTER SEQUENCE "{seq}" RESTART WITH 1'))  # nosec B608 - sequence name from metadata
 
             session.commit()
 
@@ -102,7 +104,8 @@ def get_table_row_counts(engine: Engine) -> dict[str, int]:
 
             # Count rows in each table
             for table in tables:
-                count_result = conn.execute(text(f'SELECT COUNT(*) FROM "{table}"'))
+                # Table names from database metadata are safe, but use nosec for clarity
+                count_result = conn.execute(text(f'SELECT COUNT(*) FROM "{table}"'))  # nosec B608 - table name from metadata
                 row = count_result.fetchone()
                 counts[table] = row[0] if row is not None else 0
 
@@ -140,7 +143,10 @@ def create_test_schema(engine: Engine, schema_name: str = "test_schema") -> None
     """
     with Session(engine) as session:
         with session.connection() as conn:
-            conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"'))
+            # Schema name is passed as parameter, validate it's safe
+            if not schema_name.replace("_", "").replace("-", "").isalnum():
+                raise ValueError(f"Invalid schema name: {schema_name}")
+            conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"'))  # nosec B608 - validated schema name
             session.commit()
 
 
@@ -153,7 +159,10 @@ def drop_test_schema(engine: Engine, schema_name: str = "test_schema") -> None:
     """
     with Session(engine) as session:
         with session.connection() as conn:
-            conn.execute(text(f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE'))
+            # Schema name is passed as parameter, validate it's safe
+            if not schema_name.replace("_", "").replace("-", "").isalnum():
+                raise ValueError(f"Invalid schema name: {schema_name}")
+            conn.execute(text(f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE'))  # nosec B608 - validated schema name
             session.commit()
 
 

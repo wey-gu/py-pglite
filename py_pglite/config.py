@@ -1,8 +1,17 @@
 """Configuration for PGlite testing."""
 
 import logging
-from dataclasses import dataclass
+import os
+import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
+
+
+def _get_secure_socket_path() -> str:
+    """Generate a secure socket path in user's temp directory."""
+    temp_dir = Path(tempfile.gettempdir()) / f"py-pglite-{os.getpid()}"
+    temp_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
+    return str(temp_dir / ".s.PGSQL.5432")
 
 
 @dataclass
@@ -13,7 +22,7 @@ class PGliteConfig:
         timeout: Timeout in seconds for PGlite startup (default: 30)
         cleanup_on_exit: Whether to cleanup socket/process on exit (default: True)
         log_level: Logging level for PGlite operations (default: "INFO")
-        socket_path: Custom socket path (default: "/tmp/.s.PGSQL.5432")
+        socket_path: Custom socket path (default: secure temp directory)
         work_dir: Working directory for PGlite files (default: None, uses temp)
         node_modules_check: Whether to verify node_modules exists (default: True)
         auto_install_deps: Whether to auto-install npm dependencies (default: True)
@@ -22,7 +31,7 @@ class PGliteConfig:
     timeout: int = 30
     cleanup_on_exit: bool = True
     log_level: str = "INFO"
-    socket_path: str = "/tmp/.s.PGSQL.5432"
+    socket_path: str = field(default_factory=_get_secure_socket_path)
     work_dir: Path | None = None
     node_modules_check: bool = True
     auto_install_deps: bool = True

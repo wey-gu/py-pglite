@@ -1,8 +1,9 @@
 """Core PGlite process management."""
 
+import json
 import logging
 import os
-import subprocess
+import subprocess  # nosec B404 - subprocess needed for npm/node process management
 import sys
 import tempfile
 import time
@@ -13,6 +14,7 @@ import psutil
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
+from . import __version__
 from .config import PGliteConfig
 
 
@@ -64,7 +66,7 @@ class PGliteManager:
         if not package_json.exists():
             package_content = {
                 "name": "py-pglite-env",
-                "version": "1.0.0",
+                "version": __version__,
                 "description": "PGlite test environment for py-pglite",
                 "scripts": {"start": "node pglite_manager.js"},
                 "dependencies": {
@@ -72,8 +74,6 @@ class PGliteManager:
                     "@electric-sql/pglite-socket": "^0.0.8",
                 },
             }
-            import json
-
             with open(package_json, "w") as f:
                 json.dump(package_content, f, indent=2)
 
@@ -174,6 +174,7 @@ startServer();"""
         node_modules = work_dir / "node_modules"
         if self.config.node_modules_check and not node_modules.exists():
             self.logger.info("Installing npm dependencies...")
+            # nosec B603,B607 - npm install with fixed args, safe for testing library
             result = subprocess.run(
                 ["npm", "install"],
                 cwd=work_dir,
@@ -204,6 +205,7 @@ startServer();"""
 
             # Start PGlite process
             self.logger.info("Starting PGlite server...")
+            # nosec B603,B607 - node with fixed script, safe for testing library
             self.process = subprocess.Popen(
                 ["node", "pglite_manager.js"],
                 stdout=subprocess.PIPE,

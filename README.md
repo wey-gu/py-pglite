@@ -1,5 +1,10 @@
 # py-pglite
 
+[![CI](https://github.com/wey-gu/py-pglite/actions/workflows/ci.yml/badge.svg)](https://github.com/wey-gu/py-pglite/actions/workflows/ci.yml)
+[![PyPI version](https://badge.fury.io/py/py-pglite.svg)](https://badge.fury.io/py/py-pglite)
+[![Python](https://img.shields.io/pypi/pyversions/py-pglite.svg)](https://pypi.org/project/py-pglite/)
+[![License](https://img.shields.io/pypi/l/py-pglite.svg)](https://github.com/wey-gu/py-pglite/blob/main/LICENSE)
+
 A Python testing library that provides seamless integration between [PGlite](https://github.com/electric-sql/pglite) and Python test suites. Get the full power of PostgreSQL in your tests without the overhead of a full PostgreSQL installation.
 
 ## 🎯 Why py-pglite?
