@@ -1,5 +1,7 @@
 # py-pglite
 
+![image](https://github.com/user-attachments/assets/3c6ef886-5075-4d82-a180-a6b1dafe792b)
+
 [![CI](https://github.com/wey-gu/py-pglite/actions/workflows/ci.yml/badge.svg)](https://github.com/wey-gu/py-pglite/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/py-pglite.svg)](https://badge.fury.io/py/py-pglite)
 [![Python](https://img.shields.io/pypi/pyversions/py-pglite.svg)](https://pypi.org/project/py-pglite/)
