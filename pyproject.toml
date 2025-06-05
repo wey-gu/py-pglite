@@ -36,8 +36,8 @@ classifiers = [
 ]
 dependencies = [
     "sqlalchemy>=2.0.41",
-    "psycopg>=3.2.9",
-    "psutil>=7.0.0",
+    "psycopg>=3.0.0",
+    "psutil>=6.0.0",
 ]
 
 [project.optional-dependencies]
