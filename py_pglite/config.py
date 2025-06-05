@@ -1,0 +1,64 @@
+"""Configuration for PGlite testing."""
+
+import logging
+from dataclasses import dataclass
+from pathlib import Path
+
+
+@dataclass
+class PGliteConfig:
+    """Configuration for PGlite test database.
+
+    Args:
+        timeout: Timeout in seconds for PGlite startup (default: 30)
+        cleanup_on_exit: Whether to cleanup socket/process on exit (default: True)
+        log_level: Logging level for PGlite operations (default: "INFO")
+        socket_path: Custom socket path (default: "/tmp/.s.PGSQL.5432")
+        work_dir: Working directory for PGlite files (default: None, uses temp)
+        node_modules_check: Whether to verify node_modules exists (default: True)
+        auto_install_deps: Whether to auto-install npm dependencies (default: True)
+    """
+
+    timeout: int = 30
+    cleanup_on_exit: bool = True
+    log_level: str = "INFO"
+    socket_path: str = "/tmp/.s.PGSQL.5432"
+    work_dir: Path | None = None
+    node_modules_check: bool = True
+    auto_install_deps: bool = True
+
+    def __post_init__(self) -> None:
+        """Validate configuration after initialization."""
+        if self.timeout <= 0:
+            raise ValueError("timeout must be positive")
+
+        if self.log_level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
+            raise ValueError(f"Invalid log_level: {self.log_level}")
+
+        if self.work_dir is not None:
+            self.work_dir = Path(self.work_dir).resolve()
+
+    @property
+    def log_level_int(self) -> int:
+        """Get logging level as integer."""
+        level_value = getattr(logging, self.log_level)
+        return int(level_value)
+
+    def get_connection_string(self) -> str:
+        """Get PostgreSQL connection string for PGlite."""
+        # PGlite creates a Unix domain socket at the specified path
+        # For psycopg, we need to specify the directory and port separately
+        socket_dir = str(Path(self.socket_path).parent)
+        # Extract port from socket filename (e.g., .s.PGSQL.5432 -> 5432)
+        socket_name = Path(self.socket_path).name
+        if ".PGSQL." in socket_name:
+            socket_name.split(".PGSQL.")[-1]
+        else:
+            pass
+
+        # Match the working version exactly: postgres:postgres@/postgres?host=/tmp
+        connection_string = (
+            f"postgresql+psycopg://postgres:postgres@/postgres?host={socket_dir}"
+        )
+
+        return connection_string
