@@ -182,6 +182,8 @@ def test_create_user_endpoint(pglite_engine):
         assert response.status_code == 200
 ```
 
+See also [examples/test_fastapi_auth_example.py](examples/test_fastapi_auth_example.py) for an example of how to use py-pglite with FastAPI e2e test that includes authentication.
+
 ### Complex Testing Scenario
 
 ```python
