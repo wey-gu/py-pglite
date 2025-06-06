@@ -17,17 +17,18 @@ Key patterns shown:
 import logging
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Any, Generator
+from typing import Any, Generator, Optional, List
 
 import pytest
 from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.testclient import TestClient
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlmodel import Session, SQLModel, Field, select, delete
 from py_pglite import pglite_session  # noqa: F401  # type: ignore
+from sqlalchemy import create_engine
 
 
 # Configuration
@@ -75,13 +76,13 @@ class Token(BaseModel):
     token_type: str
 
 
-# Database Models
 class User(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
-    full_name: str | None = None
+    full_name: Optional[str] = None
     is_superuser: bool = False
+    is_active: bool = True
 
 
 class Project(SQLModel, table=True):
@@ -265,23 +266,14 @@ def create_app() -> FastAPI:
 # Test Fixtures
 @pytest.fixture(scope="function")
 def clean_db(pglite_session: Session) -> Generator[Session, None, None]:
-    """Clean database and create fresh schema for each test."""
-    try:
-        # Create tables
-        SQLModel.metadata.create_all(pglite_session.get_bind())
-        
-        # Clean any existing data
-        pglite_session.execute(delete(Project))
-        pglite_session.execute(delete(User))
-        pglite_session.commit()
-        
-        yield pglite_session
-        
-    finally:
-        # Clean up after test
-        pglite_session.execute(delete(Project))
-        pglite_session.execute(delete(User))
-        pglite_session.commit()
+    """Create a clean database session for each test."""
+    # Create tables if they don't exist
+    SQLModel.metadata.create_all(bind=pglite_session.get_bind())
+    yield pglite_session
+    # Clean up after test
+    for table in reversed(SQLModel.metadata.sorted_tables):
+        pglite_session.execute(delete(table))
+    pglite_session.commit()
 
 
 @pytest.fixture(scope="function")  
@@ -289,12 +281,15 @@ def app_with_db(clean_db: Session) -> Generator[FastAPI, None, None]:
     """Create FastAPI app with database dependency override."""
     app = create_app()
     
-    # Override database dependency
-    app.dependency_overrides[app.state.get_db] = lambda: clean_db
+    def override_get_db():
+        try:
+            yield clean_db
+        finally:
+            pass
     
+    # Override the database dependency
+    app.dependency_overrides[app.state.get_db] = override_get_db
     yield app
-    
-    # Clean up
     app.dependency_overrides.clear()
 
 
