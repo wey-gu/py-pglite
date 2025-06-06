@@ -45,7 +45,7 @@ pip install "py-pglite[dev]"
 ### Requirements
 
 - **Python**: 3.10+
-- **Node.js**: 18+ (for PGlite)
+- **Node.js**: 20+ (for PGlite)
 - **SQLAlchemy**: 2.0+
 
 The library automatically manages PGlite npm dependencies.
