@@ -3,6 +3,8 @@
 ![image](https://github.com/user-attachments/assets/3c6ef886-5075-4d82-a180-a6b1dafe792b)
 
 [![CI](https://github.com/wey-gu/py-pglite/actions/workflows/ci.yml/badge.svg)](https://github.com/wey-gu/py-pglite/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/wey-gu/py-pglite/branch/main/graph/badge.svg?token=YOUR_CODECOV_TOKEN)](https://codecov.io/gh/wey-gu/py-pglite)
+[![Ruff](https://img.shields.io/badge/style-ruff-blue?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
 [![PyPI version](https://badge.fury.io/py/py-pglite.svg)](https://badge.fury.io/py/py-pglite)
 [![Python](https://img.shields.io/pypi/pyversions/py-pglite.svg)](https://pypi.org/project/py-pglite/)
 [![License](https://img.shields.io/pypi/l/py-pglite.svg)](https://github.com/wey-gu/py-pglite/blob/main/LICENSE)
@@ -181,6 +183,8 @@ def test_create_user_endpoint(pglite_engine):
         response = client.post("/users/", json={"name": "Bob"})
         assert response.status_code == 200
 ```
+
+See also [examples/test_fastapi_auth_example.py](examples/test_fastapi_auth_example.py) for an example of how to use py-pglite with FastAPI e2e test that includes authentication.
 
 ### Complex Testing Scenario
 

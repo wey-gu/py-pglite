@@ -54,6 +54,7 @@ def main():
         ("Running advanced tests", ["python", "-m", "pytest", "examples/test_advanced.py", "-v"]),
         ("Running utils tests", ["python", "-m", "pytest", "examples/test_utils.py", "-v"]),
         ("Running FastAPI integration tests", ["python", "-m", "pytest", "examples/test_fastapi_integration.py", "-v"]),
+        ("Running FastAPI auth example tests", ["python", "-m", "pytest", "examples/test_fastapi_auth_example.py", "-v"]),
     ]
     
     # Track success/failure
