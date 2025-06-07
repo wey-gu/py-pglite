@@ -5,7 +5,7 @@
 groups = ["default", "dev", "fastapi", "sqlmodel"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d3e1c6796333b4b62feea79ceb54558b51151c42b292b3470aba31dea6ce9a16"
+content_hash = "sha256:005d213556d4591e6308d54caf7f61c6bbbf2a929bf7d3615805bbadf083cd3c"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -39,6 +39,20 @@ dependencies = [
 files = [
     {file = "anyio-4.9.0-py3-none-any.whl", hash = "sha256:9f76d541cad6e36af7beb62e978876f3b41e3e04f2c1fbf0884604c0a9c4d93c"},
     {file = "anyio-4.9.0.tar.gz", hash = "sha256:673c0c244e15788651a4ff38710fea9675823028a6f08a5eda409e0c9840a028"},
+]
+
+[[package]]
+name = "asgiref"
+version = "3.8.1"
+requires_python = ">=3.8"
+summary = "ASGI specs, helper code, and adapters"
+groups = ["dev"]
+dependencies = [
+    "typing-extensions>=4; python_version < \"3.11\"",
+]
+files = [
+    {file = "asgiref-3.8.1-py3-none-any.whl", hash = "sha256:3e1e3ecc849832fe52ccf2cb6686b7a55f82bb1d6aee72a58826471390335e47"},
+    {file = "asgiref-3.8.1.tar.gz", hash = "sha256:c343bd80a0bec947a9860adb4c432ffa7db769836c64238fc34bdc3fec84d590"},
 ]
 
 [[package]]
@@ -563,6 +577,22 @@ files = [
 ]
 
 [[package]]
+name = "django"
+version = "5.2.2"
+requires_python = ">=3.10"
+summary = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
+groups = ["dev"]
+dependencies = [
+    "asgiref>=3.8.1",
+    "sqlparse>=0.3.1",
+    "tzdata; sys_platform == \"win32\"",
+]
+files = [
+    {file = "django-5.2.2-py3-none-any.whl", hash = "sha256:997ef2162d04ead6869551b22cde4e06da1f94cf595f4af3f3d3afeae1f3f6fe"},
+    {file = "django-5.2.2.tar.gz", hash = "sha256:85852e517f84435e9b13421379cd6c43ef5b48a9c8b391d29a26f7900967e952"},
+]
+
+[[package]]
 name = "docutils"
 version = "0.21.2"
 requires_python = ">=3.9"
@@ -649,7 +679,7 @@ name = "greenlet"
 version = "3.2.3"
 requires_python = ">=3.9"
 summary = "Lightweight in-process concurrent programming"
-groups = ["default", "dev", "fastapi", "sqlmodel"]
+groups = ["dev", "fastapi", "sqlmodel"]
 marker = "(platform_machine == \"win32\" or platform_machine == \"WIN32\" or platform_machine == \"AMD64\" or platform_machine == \"amd64\" or platform_machine == \"x86_64\" or platform_machine == \"ppc64le\" or platform_machine == \"aarch64\") and python_version < \"3.14\""
 files = [
     {file = "greenlet-3.2.3-cp310-cp310-macosx_11_0_universal2.whl", hash = "sha256:1afd685acd5597349ee6d7a88a8bec83ce13c106ac78c196ee9dde7c04fe87be"},
@@ -1383,6 +1413,20 @@ files = [
 ]
 
 [[package]]
+name = "pytest-django"
+version = "4.11.1"
+requires_python = ">=3.8"
+summary = "A Django plugin for pytest."
+groups = ["dev"]
+dependencies = [
+    "pytest>=7.0.0",
+]
+files = [
+    {file = "pytest_django-4.11.1-py3-none-any.whl", hash = "sha256:1b63773f648aa3d8541000c26929c1ea63934be1cfa674c76436966d73fe6a10"},
+    {file = "pytest_django-4.11.1.tar.gz", hash = "sha256:a949141a1ee103cb0e7a20f1451d355f83f5e4a5d07bdd4dcfdd1fd0ff227991"},
+]
+
+[[package]]
 name = "python-jose"
 version = "3.5.0"
 requires_python = ">=3.9"
@@ -1819,7 +1863,7 @@ name = "sqlalchemy"
 version = "2.0.41"
 requires_python = ">=3.7"
 summary = "Database Abstraction Library"
-groups = ["default", "dev", "fastapi", "sqlmodel"]
+groups = ["dev", "fastapi", "sqlmodel"]
 dependencies = [
     "greenlet>=1; (platform_machine == \"win32\" or platform_machine == \"WIN32\" or platform_machine == \"AMD64\" or platform_machine == \"amd64\" or platform_machine == \"x86_64\" or platform_machine == \"ppc64le\" or platform_machine == \"aarch64\") and python_version < \"3.14\"",
     "importlib-metadata; python_version < \"3.8\"",
@@ -1875,6 +1919,17 @@ dependencies = [
 files = [
     {file = "sqlmodel-0.0.24-py3-none-any.whl", hash = "sha256:6778852f09370908985b667d6a3ab92910d0d5ec88adcaf23dbc242715ff7193"},
     {file = "sqlmodel-0.0.24.tar.gz", hash = "sha256:cc5c7613c1a5533c9c7867e1aab2fd489a76c9e8a061984da11b4e613c182423"},
+]
+
+[[package]]
+name = "sqlparse"
+version = "0.5.3"
+requires_python = ">=3.8"
+summary = "A non-validating SQL parser."
+groups = ["dev"]
+files = [
+    {file = "sqlparse-0.5.3-py3-none-any.whl", hash = "sha256:cf2196ed3418f3ba5de6af7e82c694a9fbdbfecccdfc72e281548517081f16ca"},
+    {file = "sqlparse-0.5.3.tar.gz", hash = "sha256:09f67787f56a0b16ecdbde1bfc7f5d9c3371ca683cfeaa8e6ff60b4807ec9272"},
 ]
 
 [[package]]
@@ -2051,7 +2106,7 @@ name = "tzdata"
 version = "2025.2"
 requires_python = ">=2"
 summary = "Provider of IANA time zone data"
-groups = ["default"]
+groups = ["default", "dev"]
 marker = "sys_platform == \"win32\""
 files = [
     {file = "tzdata-2025.2-py2.py3-none-any.whl", hash = "sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8"},
