@@ -224,7 +224,7 @@ Contributions welcome! Please read our [Contributing Guide](CONTRIBUTING.md).
 2. Create a feature branch
 3. Make your changes
 4. Add tests for new functionality
-5. Run the development workflow: `python hacking.py`
+5. Run the development workflow: `python hacking.py` | `uv run hacking.py` | `pdm run hacking.py`
 6. Submit a pull request
 
 ## 📄 License
