@@ -1,22 +1,22 @@
 # Py-PGlite
 
-<div style="display: flex; align-items: flex-start;">
-  <div style="flex: 0 0 auto; margin-right: 18px;">
-    <img src="https://github.com/user-attachments/assets/3c6ef886-5075-4d82-a180-a6b1dafe792b" alt="py-pglite Logo" width="160" style="border-radius: 8px;"/>
-  </div>
-  <div style="flex: 1;">
-    <p><strong>Instant PostgreSQL for Python testing</strong> ⚡</p>
-    <p><code>pip install py-pglite</code></p>
-    <pre><code class="language-python">def test_users(pglite_session):
+<img src="https://github.com/user-attachments/assets/3c6ef886-5075-4d82-a180-a6b1dafe792b" alt="py-pglite Logo" width="60" align="left" style="margin-right: 16px;"/>
+
+**Instant PostgreSQL for Python testing** ⚡
+
+`pip install py-pglite`
+
+<br clear="all"/>
+
+```python
+def test_users(pglite_session):
     user = User(name="Alice")
     pglite_session.add(user)
     pglite_session.commit()
-    assert user.id == 1  # It's real PostgreSQL!</code></pre>
-    <p><strong>That's it.</strong> No Docker, no setup, no config files. Real PostgreSQL, instant testing.</p>
-  </div>
-</div>
+    assert user.id == 1  # It's real PostgreSQL!
+```
 
-<br clear="all"/>
+**That's it.** No Docker, no setup, no config files. Real PostgreSQL, instant testing.
 
 [![CI](https://github.com/wey-gu/py-pglite/actions/workflows/ci.yml/badge.svg)](https://github.com/wey-gu/py-pglite/actions/workflows/ci.yml) [![PyPI](https://badge.fury.io/py/py-pglite.svg)](https://badge.fury.io/py/py-pglite) [![Python](https://img.shields.io/pypi/pyversions/py-pglite.svg)](https://pypi.org/project/py-pglite/)
 
@@ -254,9 +254,7 @@ pytest tests/django/       # Auto-isolated
 ---
 
 <<<<<<< HEAD
-
 # Custom configuration
-
 config = PGliteConfig(
     timeout=30,
     cleanup_on_exit=True,
@@ -264,15 +262,13 @@ config = PGliteConfig(
 )
 
 # Manual management
-
 with PGliteManager(config) as manager:
     engine = manager.get_engine()
     SQLModel.metadata.create_all(engine)
-
+    
     with Session(engine) as session:
         # Your database operations here
         pass
-
 ```
 
 ## 🔧 Features
@@ -478,7 +474,6 @@ def test_with_custom_cleanup(pglite_engine):
     # Custom cleanup if needed
     utils.clean_database_data(pglite_engine)
 ```
-
 =======
 *py-pglite: Because testing should be simple.* ⚡
 >>>>>>> 7555fb5 (feat & refactor: decouple sqlalchemy, introduce django & pytest-django)
