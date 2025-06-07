@@ -73,8 +73,9 @@ jobs:
 
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
+      # trusted-publisher no need for password
+      # with:
+      #   password: ${{ secrets.PYPI_API_TOKEN }}
 
   create-github-release:
     runs-on: ubuntu-latest
