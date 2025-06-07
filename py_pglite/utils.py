@@ -1,189 +1,154 @@
-"""Utility functions for PGlite testing."""
+"""Framework-agnostic utility functions for PGlite testing."""
 
-from sqlalchemy import text
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session
+import logging
+from typing import Any
 
+import psycopg
 
-def clean_database_data(
-    engine: Engine, exclude_tables: list[str] | None = None
-) -> None:
-    """Clean all data from database tables while preserving schema.
-
-    Args:
-        engine: SQLAlchemy engine
-        exclude_tables: List of table names to exclude from cleaning
-    """
-    exclude_tables = exclude_tables or []
-
-    with Session(engine) as session:
-        with session.connection() as conn:
-            # Disable foreign key checks temporarily
-            conn.execute(text("SET session_replication_role = replica"))
-
-            # Get all user tables
-            result = conn.execute(
-                text(
-                    """
-                SELECT tablename
-                FROM pg_tables
-                WHERE schemaname = 'public'
-                ORDER BY tablename
-            """
-                )
-            )
-
-            tables = [
-                row[0] for row in result.fetchall() if row[0] not in exclude_tables
-            ]
-
-            # Delete data from all tables
-            for table in tables:
-                # Table names from database metadata are safe, but use nosec for clarity
-                conn.execute(text(f'DELETE FROM "{table}"'))  # nosec B608 - table name from metadata
-
-            # Re-enable foreign key checks
-            conn.execute(text("SET session_replication_role = DEFAULT"))
-
-            session.commit()
+logger = logging.getLogger(__name__)
 
 
-def reset_sequences(engine: Engine) -> None:
-    """Reset all sequences to start from 1.
+def get_connection_from_string(connection_string: str) -> psycopg.Connection:
+    """Get a raw psycopg connection from connection string.
 
     Args:
-        engine: SQLAlchemy engine
-    """
-    with Session(engine) as session:
-        with session.connection() as conn:
-            # Get all sequences
-            result = conn.execute(
-                text(
-                    """
-                SELECT sequence_name
-                FROM information_schema.sequences
-                WHERE sequence_schema = 'public'
-            """
-                )
-            )
-
-            sequences = [row[0] for row in result.fetchall()]
-
-            # Reset each sequence
-            for seq in sequences:
-                # Sequence names from database metadata are safe
-                conn.execute(text(f'ALTER SEQUENCE "{seq}" RESTART WITH 1'))  # nosec B608 - sequence name from metadata
-
-            session.commit()
-
-
-def get_table_row_counts(engine: Engine) -> dict[str, int]:
-    """Get row counts for all tables.
-
-    Args:
-        engine: SQLAlchemy engine
+        connection_string: PostgreSQL connection string
 
     Returns:
-        Dictionary mapping table names to row counts
+        psycopg Connection object
     """
-    counts = {}
-
-    with Session(engine) as session:
-        with session.connection() as conn:
-            # Get all table names
-            result = conn.execute(
-                text("""
-                SELECT tablename
-                FROM pg_tables
-                WHERE schemaname = 'public'
-                ORDER BY tablename
-            """)
-            )
-
-            tables = [row[0] for row in result.fetchall()]
-
-            # Count rows in each table
-            for table in tables:
-                # Table names from database metadata are safe, but use nosec for clarity
-                count_result = conn.execute(text(f'SELECT COUNT(*) FROM "{table}"'))  # nosec B608 - table name from metadata
-                row = count_result.fetchone()
-                counts[table] = row[0] if row is not None else 0
-
-    return counts
+    return psycopg.connect(connection_string)
 
 
-def verify_database_empty(
-    engine: Engine, exclude_tables: list[str] | None = None
+def test_connection(connection_string: str) -> bool:
+    """Test if database connection is working.
+
+    Args:
+        connection_string: PostgreSQL connection string
+
+    Returns:
+        True if connection successful, False otherwise
+    """
+    try:
+        with get_connection_from_string(connection_string) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1")
+                result = cur.fetchone()
+                return result is not None and result[0] == 1
+    except Exception as e:
+        logger.warning(f"Connection test failed: {e}")
+        return False
+
+
+def get_database_version(connection_string: str) -> str | None:
+    """Get PostgreSQL version string.
+
+    Args:
+        connection_string: PostgreSQL connection string
+
+    Returns:
+        Version string or None if failed
+    """
+    try:
+        with get_connection_from_string(connection_string) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT version()")
+                result = cur.fetchone()
+                return result[0] if result else None
+    except Exception as e:
+        logger.warning(f"Failed to get database version: {e}")
+        return None
+
+
+def get_table_names(connection_string: str, schema: str = "public") -> list[str]:
+    """Get list of table names in a schema.
+
+    Args:
+        connection_string: PostgreSQL connection string
+        schema: Schema name (default: public)
+
+    Returns:
+        List of table names
+    """
+    try:
+        with get_connection_from_string(connection_string) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT table_name
+                    FROM information_schema.tables
+                    WHERE table_schema = %s
+                    AND table_type = 'BASE TABLE'
+                    ORDER BY table_name
+                """,
+                    (schema,),
+                )
+                return [row[0] for row in cur.fetchall()]
+    except Exception as e:
+        logger.warning(f"Failed to get table names: {e}")
+        return []
+
+
+def table_exists(
+    connection_string: str, table_name: str, schema: str = "public"
 ) -> bool:
-    """Verify that database tables are empty.
+    """Check if a table exists in the database.
 
     Args:
-        engine: SQLAlchemy engine
-        exclude_tables: List of table names to exclude from check
+        connection_string: PostgreSQL connection string
+        table_name: Name of table to check
+        schema: Schema name (default: public)
 
     Returns:
-        True if all tables are empty, False otherwise
+        True if table exists, False otherwise
     """
-    exclude_tables = exclude_tables or []
-    counts = get_table_row_counts(engine)
+    try:
+        with get_connection_from_string(connection_string) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables
+                        WHERE table_schema = %s
+                        AND table_name = %s
+                    )
+                """,
+                    (schema, table_name),
+                )
+                result = cur.fetchone()
+                return result[0] if result else False
+    except Exception as e:
+        logger.warning(f"Failed to check table existence: {e}")
+        return False
 
-    for table, count in counts.items():
-        if table not in exclude_tables and count > 0:
-            return False
 
-    return True
-
-
-def create_test_schema(engine: Engine, schema_name: str = "test_schema") -> None:
-    """Create a test schema for isolated testing.
+def execute_sql(
+    connection_string: str, query: str, params: Any | None = None
+) -> list[tuple] | None:
+    """Execute SQL and return results.
 
     Args:
-        engine: SQLAlchemy engine
-        schema_name: Name of schema to create
+        connection_string: PostgreSQL connection string
+        query: SQL query to execute
+        params: Query parameters (optional)
+
+    Returns:
+        List of result tuples, or None if failed
     """
-    with Session(engine) as session:
-        with session.connection() as conn:
-            # Schema name is passed as parameter, validate it's safe
-            if not schema_name.replace("_", "").replace("-", "").isalnum():
-                raise ValueError(f"Invalid schema name: {schema_name}")
-            conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"'))  # nosec B608 - validated schema name
-            session.commit()
+    try:
+        with get_connection_from_string(connection_string) as conn:
+            with conn.cursor() as cur:
+                if params:
+                    cur.execute(query, params)  # type: ignore
+                else:
+                    cur.execute(query)  # type: ignore
 
-
-def drop_test_schema(engine: Engine, schema_name: str = "test_schema") -> None:
-    """Drop a test schema.
-
-    Args:
-        engine: SQLAlchemy engine
-        schema_name: Name of schema to drop
-    """
-    with Session(engine) as session:
-        with session.connection() as conn:
-            # Schema name is passed as parameter, validate it's safe
-            if not schema_name.replace("_", "").replace("-", "").isalnum():
-                raise ValueError(f"Invalid schema name: {schema_name}")
-            conn.execute(text(f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE'))  # nosec B608 - validated schema name
-            session.commit()
-
-
-def execute_sql_file(engine: Engine, file_path: str) -> None:
-    """Execute SQL commands from a file.
-
-    Args:
-        engine: SQLAlchemy engine
-        file_path: Path to SQL file
-    """
-    with open(file_path) as f:
-        sql_content = f.read()
-
-    with Session(engine) as session:
-        with session.connection() as conn:
-            # Split on semicolons and execute each statement
-            statements = [
-                stmt.strip() for stmt in sql_content.split(";") if stmt.strip()
-            ]
-
-            for statement in statements:
-                conn.execute(text(statement))
-
-            session.commit()
+                # Check if it's a SELECT query by trying to fetch
+                try:
+                    return cur.fetchall()
+                except psycopg.ProgrammingError:
+                    # Not a SELECT query, return empty list to indicate success
+                    return []
+    except Exception as e:
+        logger.warning(f"Failed to execute SQL: {e}")
+        return None

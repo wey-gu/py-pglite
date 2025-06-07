@@ -2,7 +2,7 @@
 
 import pytest
 from sqlalchemy import text
-from sqlmodel import Field, Session, SQLModel, select
+from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from py_pglite import PGliteConfig, PGliteManager
 

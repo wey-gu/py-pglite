@@ -3,7 +3,9 @@
 import pytest
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.testclient import TestClient
-from sqlmodel import Field, Session, SQLModel, select
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+
+from py_pglite.sqlalchemy import pglite_engine
 
 
 # Example models

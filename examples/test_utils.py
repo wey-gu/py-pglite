@@ -3,7 +3,7 @@
 from sqlalchemy import text
 from sqlmodel import Field, Session, SQLModel, select
 
-from py_pglite import utils
+from py_pglite.sqlalchemy import utils
 
 
 # Example models for testing

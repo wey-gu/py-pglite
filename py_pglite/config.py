@@ -11,6 +11,7 @@ def _get_secure_socket_path() -> str:
     """Generate a secure socket path in user's temp directory."""
     temp_dir = Path(tempfile.gettempdir()) / f"py-pglite-{os.getpid()}"
     temp_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
+    # Use PostgreSQL's standard socket naming convention
     return str(temp_dir / ".s.PGSQL.5432")
 
 
@@ -55,17 +56,11 @@ class PGliteConfig:
 
     def get_connection_string(self) -> str:
         """Get PostgreSQL connection string for PGlite."""
-        # PGlite creates a Unix domain socket at the specified path
-        # For psycopg, we need to specify the directory and port separately
+        # For psycopg with Unix domain sockets, we need to specify the directory
+        # and use the standard PostgreSQL socket naming convention
         socket_dir = str(Path(self.socket_path).parent)
-        # Extract port from socket filename (e.g., .s.PGSQL.5432 -> 5432)
-        socket_name = Path(self.socket_path).name
-        if ".PGSQL." in socket_name:
-            socket_name.split(".PGSQL.")[-1]
-        else:
-            pass
 
-        # Match the working version exactly: postgres:postgres@/postgres?host=/tmp
+        # Use the socket directory as host - psycopg will look for .s.PGSQL.5432
         connection_string = (
             f"postgresql+psycopg://postgres:postgres@/postgres?host={socket_dir}"
         )

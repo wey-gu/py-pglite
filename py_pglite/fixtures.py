@@ -1,46 +1,39 @@
-"""Pytest fixtures for PGlite integration."""
+"""Pytest fixtures for PGlite integration - Framework Agnostic Core."""
 
-import time
+import os
+import tempfile
+import uuid
 from collections.abc import Generator
-from typing import Any
+from pathlib import Path
 
 import pytest
-from sqlalchemy import text
-from sqlalchemy.engine import Engine
 
 from .config import PGliteConfig
 from .manager import PGliteManager
 
-# Try to import SQLAlchemy Session types
-try:
-    from sqlalchemy.orm import Session as SQLAlchemySession
 
-    HAS_SQLALCHEMY_ORM = True
-except ImportError:
-    SQLAlchemySession = None  # type: ignore
-    HAS_SQLALCHEMY_ORM = False
-
-# Try to import SQLModel
-try:
-    from sqlmodel import Session as SQLModelSession
-    from sqlmodel import SQLModel
-
-    HAS_SQLMODEL = True
-except ImportError:
-    SQLModelSession = None  # type: ignore
-    SQLModel = None  # type: ignore
-    HAS_SQLMODEL = False
-
-
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def pglite_manager() -> Generator[PGliteManager, None, None]:
-    """Pytest fixture providing a PGlite manager for the test module.
+    """Pytest fixture providing a PGlite manager for the test session.
+
+    This is the core, framework-agnostic fixture. Framework-specific
+    fixtures build on top of this.
 
     Yields:
         PGliteManager: Active PGlite manager instance
     """
-    manager = PGliteManager()
+    # Create unique configuration to prevent socket conflicts
+    config = PGliteConfig()
+
+    # Create a unique socket directory for this test session
+    # PGlite expects socket_path to be the full path including .s.PGSQL.5432
+    socket_dir = Path(tempfile.gettempdir()) / f"py-pglite-test-{uuid.uuid4().hex[:8]}"
+    socket_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
+    config.socket_path = str(socket_dir / ".s.PGSQL.5432")
+
+    manager = PGliteManager(config)
     manager.start()
+    manager.wait_for_ready()
 
     try:
         yield manager
@@ -49,79 +42,34 @@ def pglite_manager() -> Generator[PGliteManager, None, None]:
 
 
 @pytest.fixture(scope="module")
-def pglite_engine(pglite_manager: PGliteManager) -> Engine:
-    """Pytest fixture providing SQLAlchemy engine connected to PGlite.
+def pglite_manager_isolated() -> Generator[PGliteManager, None, None]:
+    """Pytest fixture providing an isolated PGlite manager per test module.
 
-    Args:
-        pglite_manager: PGlite manager instance
-
-    Returns:
-        Engine: SQLAlchemy engine connected to PGlite
-    """
-    # Get the engine
-    engine = pglite_manager.get_engine()
-
-    # Wait for database to be ready like the working version
-    max_retries = 15
-    for attempt in range(max_retries):
-        try:
-            with engine.connect() as conn:
-                result = conn.execute(text("SELECT 1 as test"))
-                row = result.fetchone()
-                if row is not None and row[0] == 1:
-                    break
-        except Exception:
-            if attempt < max_retries - 1:
-                time.sleep(1.0)
-            else:
-                raise
-
-    return engine
-
-
-@pytest.fixture(scope="function")
-def pglite_session(pglite_engine: Engine) -> Generator[Any, None, None]:
-    """Pytest fixture providing a database session with automatic cleanup.
-
-    Creates tables, provides a session, and cleans up after each test.
-    Works with both SQLAlchemy ORM and SQLModel.
-
-    Args:
-        pglite_engine: SQLAlchemy engine
+    Use this fixture when you need stronger isolation between test modules
+    to prevent cross-test interference.
 
     Yields:
-        Session: Database session (SQLAlchemy or SQLModel)
+        PGliteManager: Active PGlite manager instance
     """
-    # Type hint for session variable
-    session: Any | None = None
-    is_sqlmodel = False
+    # Create unique configuration to prevent socket conflicts
+    config = PGliteConfig()
 
-    # Create all tables if SQLModel is available
-    if HAS_SQLMODEL and SQLModel is not None and SQLModelSession is not None:
-        SQLModel.metadata.create_all(pglite_engine)
-        session = SQLModelSession(pglite_engine)
-        is_sqlmodel = True
-    elif HAS_SQLALCHEMY_ORM and SQLAlchemySession is not None:
-        # For pure SQLAlchemy, user needs to create tables manually
-        session = SQLAlchemySession(pglite_engine)
-        is_sqlmodel = False
-    else:
-        raise ImportError(
-            "Neither SQLModel nor SQLAlchemy ORM Session found. "
-            "Install with: pip install 'py-pglite[sqlmodel]' or sqlalchemy"
-        )
+    # Create a unique socket directory for this test module
+    # PGlite expects socket_path to be the full path including .s.PGSQL.5432
+    socket_dir = (
+        Path(tempfile.gettempdir()) / f"py-pglite-module-{uuid.uuid4().hex[:8]}"
+    )
+    socket_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
+    config.socket_path = str(socket_dir / ".s.PGSQL.5432")
+
+    manager = PGliteManager(config)
+    manager.start()
+    manager.wait_for_ready()
 
     try:
-        yield session
+        yield manager
     finally:
-        if session is not None:
-            session.close()
-
-        # Clean up tables for next test
-        if is_sqlmodel and SQLModel is not None:
-            # Drop and recreate for clean state
-            SQLModel.metadata.drop_all(pglite_engine)
-            SQLModel.metadata.create_all(pglite_engine)
+        manager.stop()
 
 
 # Additional configuration fixtures
@@ -137,7 +85,7 @@ def pglite_config() -> PGliteConfig:
     return PGliteConfig()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def pglite_manager_custom(
     pglite_config: PGliteConfig,
 ) -> Generator[PGliteManager, None, None]:
@@ -149,6 +97,14 @@ def pglite_manager_custom(
     Yields:
         PGliteManager: Active PGlite manager instance
     """
+    # Ensure unique socket path even with custom config
+    if not hasattr(pglite_config, "socket_path") or not pglite_config.socket_path:
+        socket_dir = (
+            Path(tempfile.gettempdir()) / f"py-pglite-custom-{uuid.uuid4().hex[:8]}"
+        )
+        socket_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
+        pglite_config.socket_path = str(socket_dir / ".s.PGSQL.5432")
+
     manager = PGliteManager(pglite_config)
     manager.start()
     manager.wait_for_ready()
