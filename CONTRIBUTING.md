@@ -320,6 +320,24 @@ def test_users(pglite_session):
 
 ---
 
+## 🔧 **Known Issues & Solutions**
+
+### **Connection Timeouts (Fixed in v0.2.0+)**
+
+**Issue:** `psycopg.errors.ConnectionTimeout` when creating tables or running DDL operations.
+
+**Cause:** PGlite's socket server handles one connection at a time. Multiple SQLAlchemy engines caused connection conflicts.
+
+**Solution:** py-pglite now uses a shared engine architecture automatically. All `get_engine()` calls return the same instance, preventing timeouts.
+
+```python
+# This now works perfectly - no timeouts!
+engine = manager.get_engine()
+SQLModel.metadata.create_all(engine)  # ✅ Works
+```
+
+---
+
 ## 🎉 **Release Process**
 
 ### **Local Validation**

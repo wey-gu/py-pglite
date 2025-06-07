@@ -1,8 +1,16 @@
-"""SQLAlchemy-specific pytest fixtures for PGlite integration."""
+"""Isolated pytest configuration for examples.
+
+This ensures examples have their own PGlite instances and don't interfere
+with the main test suite or each other when running all tests together.
+"""
 
 import logging
+import os
+import tempfile
 import time
+import uuid
 from collections.abc import Generator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -11,8 +19,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from ..config import PGliteConfig
-from ..manager import PGliteManager
+from py_pglite.config import PGliteConfig
+from py_pglite.manager import PGliteManager
 
 # Try to import SQLModel
 try:
@@ -28,39 +36,44 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope="session")
-def pglite_config() -> PGliteConfig:
-    """Pytest fixture providing PGlite configuration."""
-    return PGliteConfig()
-
-
-@pytest.fixture(scope="session")
-def pglite_engine(pglite_manager: PGliteManager) -> Engine:
-    """Pytest fixture providing a SQLAlchemy engine connected to PGlite.
-
-    Uses the core pglite_manager fixture to ensure all integrations
-    share the same PGlite instance.
+@pytest.fixture(scope="module")
+def pglite_manager() -> Generator[PGliteManager, None, None]:
+    """Isolated PGlite manager for examples - one per test module.
+    
+    This overrides the session-scoped fixture from the main package
+    to provide better isolation when running all tests together.
     """
-    # Use the shared engine from manager (no custom parameters to avoid conflicts)
-    return pglite_manager.get_engine()
+    # Create unique configuration to prevent socket conflicts
+    config = PGliteConfig()
+    
+    # Create a unique socket directory for this example module
+    # PGlite expects socket_path to be the full path including .s.PGSQL.5432
+    socket_dir = Path(tempfile.gettempdir()) / f"py-pglite-example-{uuid.uuid4().hex[:8]}"
+    socket_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
+    config.socket_path = str(socket_dir / ".s.PGSQL.5432")
+    
+    manager = PGliteManager(config)
+    manager.start()
+    manager.wait_for_ready()
+
+    try:
+        yield manager
+    finally:
+        manager.stop()
 
 
-@pytest.fixture(scope="session")
-def pglite_sqlalchemy_engine(pglite_manager: PGliteManager) -> Engine:
-    """Pytest fixture providing an optimized SQLAlchemy engine connected to PGlite."""
+@pytest.fixture(scope="module")
+def pglite_engine(pglite_manager: PGliteManager) -> Engine:
+    """Isolated SQLAlchemy engine for examples."""
     # Use the shared engine from manager (no custom parameters to avoid conflicts)
     return pglite_manager.get_engine()
 
 
 @pytest.fixture(scope="function")
 def pglite_session(pglite_engine: Engine) -> Generator[Any, None, None]:
-    """Pytest fixture providing a SQLAlchemy/SQLModel session with proper isolation.
-
-    This fixture ensures database isolation between tests by cleaning all data
-    at the start of each test.
-    """
-    # Clean up data before test starts
-    logger.info("Starting database cleanup before test...")
+    """Isolated SQLAlchemy/SQLModel session for examples with proper cleanup."""
+    # Clean up data before test starts with retry logic
+    logger.info("Starting database cleanup before example test...")
     retry_count = 3
     for attempt in range(retry_count):
         try:
@@ -81,33 +94,28 @@ def pglite_session(pglite_engine: Engine) -> Generator[Any, None, None]:
                 if table_names:
                     # Disable foreign key checks for faster cleanup
                     conn.execute(text("SET session_replication_role = replica;"))
-
+                    
                     # Truncate all tables
                     for table_name in table_names:
                         logger.info(f"Truncating table: {table_name}")
                         conn.execute(
-                            text(
-                                f'TRUNCATE TABLE "{table_name}" '
-                                f"RESTART IDENTITY CASCADE;"
-                            )
+                            text(f'TRUNCATE TABLE "{table_name}" RESTART IDENTITY CASCADE;')
                         )
 
                     # Re-enable foreign key checks
                     conn.execute(text("SET session_replication_role = DEFAULT;"))
-
+                    
                     # Commit the cleanup
                     conn.commit()
                     logger.info("Database cleanup completed successfully")
                 else:
                     logger.info("No tables found to clean")
                 break  # Success, exit retry loop
-
+                
         except Exception as e:
             logger.info(f"Database cleanup attempt {attempt + 1} failed: {e}")
             if attempt == retry_count - 1:
-                logger.warning(
-                    "Database cleanup failed after all retries, continuing anyway"
-                )
+                logger.warning("Database cleanup failed after all retries, continuing anyway")
             else:
                 time.sleep(0.5)  # Brief pause before retry
 
@@ -136,10 +144,4 @@ def pglite_session(pglite_engine: Engine) -> Generator[Any, None, None]:
         try:
             session.close()
         except Exception as e:
-            logger.warning(f"Error closing session: {e}")
-
-
-@pytest.fixture(scope="function")
-def pglite_sqlalchemy_session(pglite_session: Session) -> Session:
-    """Legacy fixture name for backwards compatibility."""
-    return pglite_session
+            logger.warning(f"Error closing session: {e}") 

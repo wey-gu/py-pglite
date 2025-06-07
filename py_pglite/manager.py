@@ -33,6 +33,7 @@ class PGliteManager:
         self.process: subprocess.Popen[str] | None = None
         self.work_dir: Path | None = None
         self._original_cwd: str | None = None
+        self._shared_engine: Any | None = None
 
         # Set up logging
         self.logger = logging.getLogger(__name__)
@@ -322,6 +323,14 @@ startServer();"""
             self.logger.warning(f"Error stopping PGlite: {e}")
         finally:
             self.process = None
+            # Clean up shared engine properly
+            if hasattr(self, "_shared_engine") and self._shared_engine is not None:
+                try:
+                    self._shared_engine.dispose()
+                except Exception as e:
+                    self.logger.warning(f"Error disposing engine: {e}")
+                finally:
+                    self._shared_engine = None
             if self.config.cleanup_on_exit:
                 self._cleanup_socket()
 
@@ -334,11 +343,16 @@ startServer();"""
 
         NOTE: This method requires SQLAlchemy to be installed.
 
+        IMPORTANT: Returns a shared engine instance to prevent connection timeouts.
+        PGlite's socket server can only handle 1 connection at a time, so multiple
+        engines would cause psycopg.errors.ConnectionTimeout. The shared engine
+        architecture ensures all database operations use the same connection.
+
         Args:
             **engine_kwargs: Additional arguments for create_engine
 
         Returns:
-            SQLAlchemy Engine connected to PGlite
+            SQLAlchemy Engine connected to PGlite (shared instance)
 
         Raises:
             ImportError: If SQLAlchemy is not installed
@@ -347,29 +361,59 @@ startServer();"""
         if not self.is_running():
             raise RuntimeError("PGlite server is not running. Call start() first.")
 
+        # Always return shared engine to avoid connection conflicts
+        # PGlite socket server can only handle one connection at a time
+        if hasattr(self, "_shared_engine") and self._shared_engine is not None:
+            return self._shared_engine
+
         try:
             from sqlalchemy import create_engine
+            from sqlalchemy.pool import NullPool, StaticPool
         except ImportError as e:
             raise ImportError(
                 "SQLAlchemy is required for get_engine(). "
                 "Install with: pip install py-pglite[sqlalchemy]"
             ) from e
 
+        # Default configuration optimized for testing with PGlite
         default_kwargs = {
             "echo": False,
-            "pool_pre_ping": True,
-            "pool_recycle": 300,
-            "connect_args": {"connect_timeout": 10, "application_name": "py-pglite"},
+            "pool_pre_ping": False,  # Disable pre-ping for Unix sockets
+            "pool_recycle": 3600,  # Longer recycle time for testing
+            "connect_args": {
+                "connect_timeout": 60,  # Much longer timeout for table creation
+                "application_name": "py-pglite",
+                "sslmode": "disable",  # Disable SSL for Unix sockets
+                "prepare_threshold": None,  # Disable prepared statements for test stability
+                "keepalives_idle": 600,  # Keep connection alive longer
+                "keepalives_interval": 30,  # Check every 30 seconds
+                "keepalives_count": 3,  # Allow 3 failed keepalive probes
+            },
         }
 
-        # Only add pool_timeout if not using StaticPool (which doesn't support it)
+        # Check if user specified a poolclass
         poolclass = engine_kwargs.get("poolclass")
-        if poolclass is None or poolclass.__name__ != "StaticPool":
+
+        if poolclass is None:
+            # Default to StaticPool for testing - single persistent connection
+            default_kwargs["poolclass"] = StaticPool
+        elif poolclass.__name__ in ("StaticPool", "NullPool"):
+            # StaticPool and NullPool don't accept pool_size/max_overflow parameters
+            pass
+        else:
+            # User chose a different pool, add timeout and size settings
             default_kwargs["pool_timeout"] = 30
+            default_kwargs["pool_size"] = 5
+            default_kwargs["max_overflow"] = 10
 
-        default_kwargs.update(engine_kwargs)
+        # Merge user kwargs with defaults (user kwargs take precedence)
+        final_kwargs = {**default_kwargs, **engine_kwargs}
 
-        return create_engine(self.config.get_connection_string(), **default_kwargs)
+        # Create and store the shared engine
+        self._shared_engine = create_engine(
+            self.config.get_connection_string(), **final_kwargs
+        )
+        return self._shared_engine
 
     def wait_for_ready(self, max_retries: int = 15, delay: float = 1.0) -> bool:
         """Wait for database to be ready and responsive.
@@ -394,8 +438,8 @@ startServer();"""
                 "Install with: pip install py-pglite[sqlalchemy]"
             ) from e
 
-        # Create engine once and reuse it
-        engine = self.get_engine()
+        # Use the shared engine that get_engine() creates
+        engine = self.get_engine(pool_pre_ping=False)
 
         for attempt in range(max_retries):
             try:
@@ -404,7 +448,28 @@ startServer();"""
                     result = conn.execute(text("SELECT 1 as test"))
                     row = result.fetchone()
                     if row is not None and row[0] == 1:
+                        # Additional check: try to create a temporary table to ensure DDL works
+                        try:
+                            conn.execute(
+                                text("CREATE TEMP TABLE readiness_test (id INTEGER)")
+                            )
+                            conn.execute(text("DROP TABLE readiness_test"))
+                            conn.commit()  # Ensure transaction completes
+                        except Exception as ddl_error:
+                            # If DDL fails, continue retrying
+                            self.logger.warning(
+                                f"DDL test failed (attempt {attempt + 1}): {ddl_error}"
+                            )
+                            if attempt < max_retries - 1:
+                                time.sleep(delay)
+                                continue
+                            else:
+                                raise
+
                         self.logger.info(f"Database ready after {attempt + 1} attempts")
+
+                        # Give a small additional delay to ensure stability
+                        time.sleep(0.2)
                         return True
 
             except Exception as e:

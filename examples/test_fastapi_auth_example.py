@@ -372,7 +372,7 @@ def test_create_superuser(clean_db: Session):
 
     assert user.email == "admin@example.com"
     assert user.is_superuser is True
-    assert verify_password("secret123", user.hashed_password)
+    assert verify_password(user.hashed_password, "secret123")
 
 
 def test_user_authentication(client: TestClient, superuser: User):

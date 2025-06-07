@@ -3,6 +3,7 @@
 import os
 import secrets
 import tempfile
+from pathlib import Path
 from typing import Any
 
 HAS_DJANGO = False
@@ -134,7 +135,9 @@ def configure_django_for_pglite(
 
     # Generate secure socket path if not provided
     if socket_path is None:
-        socket_path = os.path.join(tempfile.gettempdir(), "pglite_socket.sock")
+        socket_dir = Path(tempfile.gettempdir()) / f"py-pglite-django-{os.getpid()}"
+        socket_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
+        socket_path = str(socket_dir / ".s.PGSQL.5432")
 
     # Generate secure secret key
     secret_key = os.environ.get("DJANGO_SECRET_KEY") or secrets.token_urlsafe(50)
@@ -147,10 +150,10 @@ def configure_django_for_pglite(
                 "NAME": "postgres",
                 "USER": "postgres",
                 "PASSWORD": "postgres",
-                "HOST": socket_path,
+                "HOST": str(Path(socket_path).parent),  # Use socket directory as host
                 "PORT": "",
                 "OPTIONS": {
-                    "host": socket_path,
+                    "host": str(Path(socket_path).parent),
                 },
                 "TEST": {
                     "NAME": "test_pglite_db",
@@ -187,20 +190,23 @@ def get_django_connection_params(manager: PGliteManager) -> dict[str, Any]:
     """
     conn_str = manager.config.get_connection_string()
 
-    # Extract socket path from connection string
-    socket_path = os.path.join(tempfile.gettempdir(), "pglite_socket.sock")  # Default
+    # Extract socket directory from connection string
+    socket_dir = (
+        Path(tempfile.gettempdir()) / f"py-pglite-django-{os.getpid()}"
+    )  # Default
     if "host=" in conn_str:
-        socket_path = conn_str.split("host=")[1].split("&")[0]
+        socket_dir_str = conn_str.split("host=")[1].split("&")[0]
+        socket_dir = Path(socket_dir_str)
 
     return {
         "ENGINE": "py_pglite.django.backend",
         "NAME": "postgres",
         "USER": "postgres",
         "PASSWORD": "postgres",
-        "HOST": socket_path,
+        "HOST": str(socket_dir),
         "PORT": "",
         "OPTIONS": {
-            "host": socket_path,
+            "host": str(socket_dir),
         },
         "TEST": {
             "NAME": "test_pglite_db",

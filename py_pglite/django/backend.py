@@ -9,6 +9,7 @@ import os
 import tempfile
 import threading
 import uuid
+from pathlib import Path
 from typing import Any
 
 try:
@@ -83,12 +84,14 @@ class PGliteDatabaseCreation(DatabaseCreation):  # type: ignore
         """Get or create a PGlite manager for the given database name."""
         with _manager_lock:
             if db_name not in _pglite_managers:
-                # Create unique socket path for this database
+                # Create unique socket directory for this database
                 config = PGliteConfig()
-                config.socket_path = os.path.join(
-                    tempfile.gettempdir(),
-                    f"pglite_{db_name}_{uuid.uuid4().hex[:8]}.sock",
+                socket_dir = (
+                    Path(tempfile.gettempdir())
+                    / f"py-pglite-django-{db_name}-{uuid.uuid4().hex[:8]}"
                 )
+                socket_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
+                config.socket_path = str(socket_dir / ".s.PGSQL.5432")
                 _pglite_managers[db_name] = PGliteManager(config)
 
             return _pglite_managers[db_name]
