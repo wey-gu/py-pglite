@@ -5,6 +5,8 @@ It should be used as: 'py_pglite.django.backend'
 """
 # mypy: disable-error-code=import-untyped,attr-defined,misc,no-any-return
 
+import os
+import tempfile
 import threading
 import uuid
 from typing import Any
@@ -83,8 +85,9 @@ class PGliteDatabaseCreation(DatabaseCreation):  # type: ignore
             if db_name not in _pglite_managers:
                 # Create unique socket path for this database
                 config = PGliteConfig()
-                config.socket_path = (
-                    f"/tmp/pglite_{db_name}_{uuid.uuid4().hex[:8]}.sock"
+                config.socket_path = os.path.join(
+                    tempfile.gettempdir(),
+                    f"pglite_{db_name}_{uuid.uuid4().hex[:8]}.sock",
                 )
                 _pglite_managers[db_name] = PGliteManager(config)
 

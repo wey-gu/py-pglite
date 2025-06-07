@@ -1,5 +1,8 @@
 """Django utilities for py-pglite."""
 
+import os
+import secrets
+import tempfile
 from typing import Any
 
 HAS_DJANGO = False
@@ -112,12 +115,12 @@ def flush_django_database(verbosity: int = 0) -> None:
 
 
 def configure_django_for_pglite(
-    socket_path: str = "/tmp/pglite_socket.sock", **extra_settings: Any
+    socket_path: str | None = None, **extra_settings: Any
 ) -> None:
     """Configure Django settings to use PGlite.
 
     Args:
-        socket_path: Unix socket path for PGlite
+        socket_path: Unix socket path for PGlite (auto-generated if None)
         **extra_settings: Additional Django settings
     """
     if not HAS_DJANGO:
@@ -128,6 +131,13 @@ def configure_django_for_pglite(
 
     if settings and settings.configured:
         return
+
+    # Generate secure socket path if not provided
+    if socket_path is None:
+        socket_path = os.path.join(tempfile.gettempdir(), "pglite_socket.sock")
+
+    # Generate secure secret key
+    secret_key = os.environ.get("DJANGO_SECRET_KEY") or secrets.token_urlsafe(50)
 
     default_settings = {
         "DEBUG": True,
@@ -148,7 +158,7 @@ def configure_django_for_pglite(
             }
         },
         "USE_TZ": True,
-        "SECRET_KEY": "test-secret-key-for-pglite",
+        "SECRET_KEY": secret_key,
         "INSTALLED_APPS": [
             "django.contrib.auth",
             "django.contrib.contenttypes",
@@ -178,7 +188,7 @@ def get_django_connection_params(manager: PGliteManager) -> dict[str, Any]:
     conn_str = manager.config.get_connection_string()
 
     # Extract socket path from connection string
-    socket_path = "/tmp/pglite_socket.sock"  # Default
+    socket_path = os.path.join(tempfile.gettempdir(), "pglite_socket.sock")  # Default
     if "host=" in conn_str:
         socket_path = conn_str.split("host=")[1].split("&")[0]
 
@@ -234,14 +244,14 @@ def get_django_models() -> list[Any]:
 def create_django_superuser(
     username: str = "admin",
     email: str = "admin@example.com",
-    password: str = "adminpass",
+    password: str | None = None,
 ) -> Any:
     """Create a Django superuser for testing.
 
     Args:
         username: Username for the superuser
         email: Email for the superuser
-        password: Password for the superuser
+        password: Password for the superuser (auto-generated if None)
 
     Returns:
         Created user instance
@@ -255,6 +265,10 @@ def create_django_superuser(
     from django.contrib.auth import get_user_model
 
     User = get_user_model()
+
+    # Generate secure password if not provided
+    if password is None:
+        password = os.environ.get("DJANGO_ADMIN_PASSWORD") or secrets.token_urlsafe(16)
 
     # Create superuser if it doesn't exist
     try:

@@ -1,5 +1,7 @@
 """Django-specific pytest fixtures for PGlite integration."""
 
+import os
+import secrets
 from collections.abc import Generator
 from typing import Any
 
@@ -49,6 +51,11 @@ def django_pglite_settings() -> None:
 
     # Configure Django to use PGlite backend
     if settings and not settings.configured:
+        # Generate a secure random secret key for testing
+        secret_key = os.environ.get(
+            "DJANGO_SECRET_KEY",
+        ) or secrets.token_urlsafe(50)
+
         settings.configure(
             DEBUG=True,
             DATABASES={
@@ -66,7 +73,7 @@ def django_pglite_settings() -> None:
                 }
             },
             USE_TZ=True,
-            SECRET_KEY="test-secret-key-for-pglite",
+            SECRET_KEY=secret_key,
             INSTALLED_APPS=[
                 "django.contrib.auth",
                 "django.contrib.contenttypes",
@@ -108,9 +115,12 @@ def django_pglite_db(pglite_manager: PGliteManager) -> Generator[None, None, Non
 
     # Auto-configure Django to use our PGlite instance
     conn_str = pglite_manager.config.get_connection_string()
-    socket_dir = conn_str.split("host=")[1].split("&")[0].split("#")[0]
+    socket_dir = conn_str.split("host=")[1].split(sep="&")[0].split("#")[0]
 
     # Update Django's connection settings transparently
+    if connection is None:
+        raise RuntimeError("Django connection is not available")
+
     original_config = connection.settings_dict.copy()  # type: ignore
     connection.settings_dict.update(
         {  # type: ignore
@@ -129,9 +139,17 @@ def django_pglite_db(pglite_manager: PGliteManager) -> Generator[None, None, Non
 
     # Auto-create tables for any models that need them
     try:
-        call_command("migrate", verbosity=0, interactive=False, run_syncdb=True)  # type: ignore
-    except Exception:
-        # If migrations fail, try to create tables manually using Django's schema editor
+        call_command(
+            "migrate",
+            verbosity=0,
+            interactive=False,
+            run_syncdb=True,
+        )  # type: ignore
+    except Exception as e:
+        # If migrations fail, try to create tables manually
+        # using Django's schema editor
+        if settings and settings.DEBUG:
+            print(f"Migration failed, attempting manual table creation: {e}")
         try:
             with connection.schema_editor() as schema_editor:  # type: ignore
                 # Get all models from all apps
@@ -139,10 +157,17 @@ def django_pglite_db(pglite_manager: PGliteManager) -> Generator[None, None, Non
                     for model in app_config.get_models():
                         try:
                             schema_editor.create_model(model)
-                        except Exception:
-                            pass  # Table might already exist
-        except Exception:
-            pass  # Continue even if table creation fails
+                        except Exception as model_error:
+                            # Log specific model creation failures in debug mode
+                            if settings and settings.DEBUG:
+                                print(
+                                    f"Table creation failed for {model.__name__}: "
+                                    f"{model_error}"
+                                )
+        except Exception as schema_error:
+            # Log schema editor failures in debug mode
+            if settings and settings.DEBUG:
+                print(f"Schema editor failed: {schema_error}")
 
     try:
         yield
@@ -150,13 +175,15 @@ def django_pglite_db(pglite_manager: PGliteManager) -> Generator[None, None, Non
         # Cleanup: Clear all data for next test and restore original config
         try:
             call_command("flush", verbosity=0, interactive=False)  # type: ignore
-        except Exception:
-            pass
+        except Exception as flush_error:
+            if settings and settings.DEBUG:
+                print(f"Database flush failed: {flush_error}")
 
         # Restore original database configuration
-        connection.settings_dict.clear()  # type: ignore
-        connection.settings_dict.update(original_config)  # type: ignore
-        connection.close()  # type: ignore
+        if connection is not None:
+            connection.settings_dict.clear()  # type: ignore
+            connection.settings_dict.update(original_config)  # type: ignore
+            connection.close()  # type: ignore
 
 
 @pytest.fixture(scope="function")
@@ -178,6 +205,9 @@ def django_pglite_transactional_db(
     conn_str = pglite_manager.config.get_connection_string()
     socket_dir = conn_str.split("host=")[1].split("&")[0].split("#")[0]
 
+    if connection is None:
+        raise RuntimeError("Django connection is not available")
+
     original_config = connection.settings_dict.copy()  # type: ignore
     connection.settings_dict.update(
         {  # type: ignore
@@ -195,9 +225,17 @@ def django_pglite_transactional_db(
 
     # Auto-create tables
     try:
-        call_command("migrate", verbosity=0, interactive=False, run_syncdb=True)  # type: ignore
-    except Exception:
-        # If migrations fail, try to create tables manually using Django's schema editor
+        call_command(
+            "migrate",
+            verbosity=0,
+            interactive=False,
+            run_syncdb=True,
+        )  # type: ignore
+    except Exception as e:
+        # If migrations fail, try to create tables manually
+        # using Django's schema editor
+        if settings and settings.DEBUG:
+            print(f"Migration failed, attempting manual table creation: {e}")
         try:
             with connection.schema_editor() as schema_editor:  # type: ignore
                 # Get all models from all apps
@@ -205,10 +243,17 @@ def django_pglite_transactional_db(
                     for model in app_config.get_models():
                         try:
                             schema_editor.create_model(model)
-                        except Exception:
-                            pass  # Table might already exist
-        except Exception:
-            pass  # Continue even if table creation fails
+                        except Exception as model_error:
+                            # Log specific model creation failures in debug mode
+                            if settings and settings.DEBUG:
+                                print(
+                                    f"Table creation failed for {model.__name__}: "
+                                    f"{model_error}"
+                                )
+        except Exception as schema_error:
+            # Log schema editor failures in debug mode
+            if settings and settings.DEBUG:
+                print(f"Schema editor failed: {schema_error}")
 
     try:
         yield
@@ -216,12 +261,14 @@ def django_pglite_transactional_db(
         # Cleanup for next test and restore config
         try:
             call_command("flush", verbosity=0, interactive=False)  # type: ignore
-        except Exception:
-            pass
+        except Exception as flush_error:
+            if settings and settings.DEBUG:
+                print(f"Database flush failed: {flush_error}")
 
-        connection.settings_dict.clear()  # type: ignore
-        connection.settings_dict.update(original_config)  # type: ignore
-        connection.close()  # type: ignore
+        if connection is not None:
+            connection.settings_dict.clear()  # type: ignore
+            connection.settings_dict.update(original_config)  # type: ignore
+            connection.close()  # type: ignore
 
 
 # Pytest-django compatible aliases for zero-config experience
@@ -276,10 +323,15 @@ def django_admin_user(django_user_model: Any) -> Any:
     Returns:
         Admin user instance
     """
+    # Generate a secure random password for testing
+    admin_password = os.environ.get(
+        "DJANGO_ADMIN_PASSWORD",
+    ) or secrets.token_urlsafe(16)
+
     return django_user_model.objects.create_user(
         username="admin",
         email="admin@example.com",
-        password="adminpass",
+        password=admin_password,
         is_staff=True,
         is_superuser=True,
     )

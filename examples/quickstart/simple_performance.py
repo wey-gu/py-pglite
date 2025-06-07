@@ -94,8 +94,7 @@ def measure_feature_power():
                     )::jsonb,
                     ARRAY[
                         'tag_' || (generate_series % 5),
-                        'category_' || (generate_series % 3),
-                    ],
+                        'category_' || (generate_series % 3)],
                     ARRAY[random() * 100, random() * 50, random() * 200]
                 FROM generate_series(1, 1000)
             """)
