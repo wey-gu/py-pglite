@@ -15,21 +15,22 @@ Key patterns shown:
 """
 
 import logging
-import secrets
+from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
-from typing import Any, Generator, Optional, List
 
 import pytest
 from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+)
 from fastapi.testclient import TestClient
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
-from sqlmodel import Session, SQLModel, Field, select, delete
-from py_pglite import pglite_session  # noqa: F401  # type: ignore
-from sqlalchemy import create_engine
+from sqlmodel import Field, Session, SQLModel, delete, select
 
+from py_pglite import pglite_session  # noqa: F401  # type: ignore
 
 # Configuration
 SECRET_KEY = "test-secret-key-for-pytest"
@@ -78,10 +79,10 @@ class Token(BaseModel):
 
 class User(SQLModel, table=True):
     __table_args__ = {'extend_existing': True}
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
-    full_name: Optional[str] = None
+    full_name: str | None = None
     is_superuser: bool = False
     is_active: bool = True
 
@@ -143,11 +144,11 @@ def authenticate_user(session: Session, email: str, password: str) -> User | Non
 # FastAPI App
 def create_app() -> FastAPI:
     app = FastAPI(title="Advanced Auth Example")
-    
+
     # Database dependency (will be overridden in tests)
     def get_db():
         raise NotImplementedError("Database dependency should be overridden in tests")
-    
+
     # Authentication dependency
     def get_current_user(
         credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -158,7 +159,7 @@ def create_app() -> FastAPI:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
+
         try:
             payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
             email = payload.get("sub")
@@ -166,12 +167,12 @@ def create_app() -> FastAPI:
                 raise credentials_exception
         except JWTError:
             raise credentials_exception
-            
+
         user = get_user_by_email(db, email)
         if user is None:
             raise credentials_exception
         return user
-    
+
     def get_current_superuser(current_user: User = Depends(get_current_user)) -> User:
         if not current_user.is_superuser:
             raise HTTPException(
@@ -179,7 +180,7 @@ def create_app() -> FastAPI:
                 detail="Not enough permissions"
             )
         return current_user
-    
+
     # Routes
     @app.post("/auth/login", response_model=Token)
     def login(email: str, password: str, db: Session = Depends(get_db)):
@@ -194,7 +195,7 @@ def create_app() -> FastAPI:
             data={"sub": user.email}, expires_delta=access_token_expires
         )
         return {"access_token": access_token, "token_type": "bearer"}
-    
+
     @app.post("/users/", response_model=UserRead)
     def create_user_endpoint(
         user: UserCreate,
@@ -205,11 +206,11 @@ def create_app() -> FastAPI:
         if db_user:
             raise HTTPException(status_code=400, detail="Email already registered")
         return create_user(db, user)
-    
+
     @app.get("/users/me", response_model=UserRead)
     def read_users_me(current_user: User = Depends(get_current_user)):
         return current_user
-    
+
     @app.get("/users/", response_model=list[UserRead])
     def read_users(
         skip: int = 0,
@@ -219,7 +220,7 @@ def create_app() -> FastAPI:
     ):
         users = db.exec(select(User).offset(skip).limit(limit)).all()
         return users
-    
+
     @app.post("/projects/", response_model=ProjectRead)
     def create_project(
         project: ProjectCreate,
@@ -235,7 +236,7 @@ def create_app() -> FastAPI:
         db.commit()
         db.refresh(db_project)
         return db_project
-    
+
     @app.get("/projects/", response_model=list[ProjectRead])
     def read_projects(
         skip: int = 0,
@@ -245,7 +246,7 @@ def create_app() -> FastAPI:
     ):
         projects = db.exec(select(Project).offset(skip).limit(limit)).all()
         return projects
-    
+
     @app.get("/projects/{project_id}", response_model=ProjectRead)
     def read_project(
         project_id: int,
@@ -256,12 +257,12 @@ def create_app() -> FastAPI:
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         return project
-    
+
     # Store dependencies for testing
     app.state.get_db = get_db
     app.state.get_current_user = get_current_user
     app.state.get_current_superuser = get_current_superuser
-    
+
     return app
 
 
@@ -278,17 +279,17 @@ def clean_db(pglite_session: Session) -> Generator[Session, None, None]:
     pglite_session.commit()
 
 
-@pytest.fixture(scope="function")  
+@pytest.fixture(scope="function")
 def app_with_db(clean_db: Session) -> Generator[FastAPI, None, None]:
     """Create FastAPI app with database dependency override."""
     app = create_app()
-    
+
     def override_get_db():
         try:
             yield clean_db
         finally:
             pass
-    
+
     # Override the database dependency
     app.dependency_overrides[app.state.get_db] = override_get_db
     yield app
@@ -340,7 +341,7 @@ def superuser_token(client: TestClient, superuser: User) -> str:
 def normal_user_token(client: TestClient, normal_user: User) -> str:
     """Get normal user authentication token."""
     response = client.post(
-        "/auth/login", 
+        "/auth/login",
         params={"email": normal_user.email, "password": "test-password"}
     )
     assert response.status_code == 200
@@ -367,9 +368,9 @@ def test_create_superuser(clean_db: Session):
         password="secret123",
         is_superuser=True
     )
-    
+
     user = create_user(clean_db, user_create)
-    
+
     assert user.email == "admin@example.com"
     assert user.is_superuser is True
     assert verify_password("secret123", user.hashed_password)
@@ -382,25 +383,25 @@ def test_user_authentication(client: TestClient, superuser: User):
         "/auth/login",
         params={"email": superuser.email, "password": "test-password"}
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
     assert data["token_type"] == "bearer"
-    
+
     # Test failed login
     response = client.post(
         "/auth/login",
         params={"email": superuser.email, "password": "wrong-password"}
     )
-    
+
     assert response.status_code == 401
 
 
 def test_get_current_user(client: TestClient, superuser: User, superuser_headers: dict):
     """Test getting current user information."""
     response = client.get("/users/me", headers=superuser_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["email"] == superuser.email
@@ -420,9 +421,9 @@ def test_create_user_as_superuser(client: TestClient, superuser_headers: dict):
         "password": "password123",
         "full_name": "New User"
     }
-    
+
     response = client.post("/users/", json=user_data, headers=superuser_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["email"] == "newuser@example.com"
@@ -433,12 +434,12 @@ def test_create_user_as_superuser(client: TestClient, superuser_headers: dict):
 def test_create_user_as_normal_user(client: TestClient, normal_user_headers: dict):
     """Test that normal users cannot create other users."""
     user_data = {
-        "email": "newuser@example.com", 
+        "email": "newuser@example.com",
         "password": "password123"
     }
-    
+
     response = client.post("/users/", json=user_data, headers=normal_user_headers)
-    
+
     assert response.status_code == 403
 
 
@@ -447,7 +448,7 @@ def test_list_users_permissions(client: TestClient, superuser_headers: dict, nor
     # Superuser can list users
     response = client.get("/users/", headers=superuser_headers)
     assert response.status_code == 200
-    
+
     # Normal user cannot list users
     response = client.get("/users/", headers=normal_user_headers)
     assert response.status_code == 403
@@ -460,20 +461,20 @@ def test_project_crud(client: TestClient, normal_user: User, normal_user_headers
         "name": "Test Project",
         "description": "A test project"
     }
-    
+
     response = client.post("/projects/", json=project_data, headers=normal_user_headers)
-    
+
     assert response.status_code == 200
     project = response.json()
     assert project["name"] == "Test Project"
     assert project["owner_id"] == normal_user.id
-    
+
     # List projects
     response = client.get("/projects/", headers=normal_user_headers)
     assert response.status_code == 200
     projects = response.json()
     assert len(projects) >= 1
-    
+
     # Get specific project
     project_id = project["id"]
     response = client.get(f"/projects/{project_id}", headers=normal_user_headers)
@@ -484,10 +485,10 @@ def test_project_crud(client: TestClient, normal_user: User, normal_user_headers
 def test_project_unauthorized(client: TestClient):
     """Test project endpoints require authentication."""
     project_data = {"name": "Test Project"}
-    
+
     response = client.post("/projects/", json=project_data)
     assert response.status_code == 403
-    
+
     response = client.get("/projects/")
     assert response.status_code == 403
 
@@ -498,7 +499,7 @@ def test_duplicate_email(client: TestClient, superuser: User, superuser_headers:
         "email": superuser.email,  # Use existing email
         "password": "password123"
     }
-    
+
     response = client.post("/users/", json=user_data, headers=superuser_headers)
     assert response.status_code == 400
     assert "Email already registered" in response.json()["detail"]
@@ -516,32 +517,32 @@ def test_complex_scenario(
         {"email": "alice@example.com", "password": "pass123", "full_name": "Alice"},
         {"email": "bob@example.com", "password": "pass123", "full_name": "Bob"},
     ]
-    
+
     created_users = []
     for user_data in users_data:
         response = client.post("/users/", json=user_data, headers=superuser_headers)
         assert response.status_code == 200
         created_users.append(response.json())
-    
+
     # Login as Alice and create project
     alice_token_response = client.post(
         "/auth/login",
         params={"email": "alice@example.com", "password": "pass123"}
     )
     alice_headers = {"Authorization": f"Bearer {alice_token_response.json()['access_token']}"}
-    
+
     project_response = client.post(
         "/projects/",
         json={"name": "Alice's Project", "description": "Alice's first project"},
         headers=alice_headers
     )
     assert project_response.status_code == 200
-    
+
     # Verify superuser can see all users and projects
     users_response = client.get("/users/", headers=superuser_headers)
     all_users = users_response.json()
     assert len(all_users) >= 3  # superuser + alice + bob
-    
+
     projects_response = client.get("/projects/", headers=alice_headers)
     all_projects = projects_response.json()
     assert len(all_projects) >= 1
@@ -554,14 +555,14 @@ def test_token_expiration_simulation(client: TestClient, superuser: User):
         data={"sub": superuser.email},
         expires_delta=timedelta(seconds=-1)  # Already expired
     )
-    
+
     headers = {"Authorization": f"Bearer {short_token}"}
     response = client.get("/users/me", headers=headers)
-    
+
     # Should fail with 401 due to expired token
     assert response.status_code == 401
 
 
 if __name__ == "__main__":
     # Example of running specific test
-    pytest.main([__file__ + "::test_complex_scenario", "-v"]) 
+    pytest.main([__file__ + "::test_complex_scenario", "-v"])
