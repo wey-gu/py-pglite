@@ -33,31 +33,23 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e ".[dev]"
-        pip install coverage[toml] pytest-cov
-
-    - name: Install type stubs
-      run: |
         pip install types-psutil
 
-    - name: Lint with Ruff
+    - name: Run full development workflow
       run: |
-        ruff check py_pglite/
-        ruff format --check py_pglite/
+        python scripts/dev.py
+      env:
+        PYTHONPATH: .
 
-    - name: Type check with MyPy
+    - name: Generate coverage report for codecov
+      if: matrix.python-version == '3.11'
       run: |
-        mypy py_pglite/
+        pip install coverage[toml] pytest-cov
+        pytest tests/ examples/ --cov=py_pglite --cov-report=xml --cov-report=term-missing
 
-    - name: Test package build
-      run: |
-        pip install build
-        python -m build
-
-    - name: Run tests with coverage
-      run: |
-        pytest examples/ --cov=py_pglite --cov-report=xml --cov-report=term-missing -v
-
-    - uses: codecov/codecov-action@v5
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v5
       with:
         fail_ci_if_error: true
         files: ./coverage.xml
@@ -80,7 +72,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: "20"
+        node-version: "22"
 
     - name: Test package installation
       run: |

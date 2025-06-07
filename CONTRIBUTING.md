@@ -1,154 +1,354 @@
-# 🛠️ Hacking py-pglite
+# 🚀 Contributing to py-pglite
 
-Thank you for your interest in contributing to py-pglite! This guide will help you get started.
+**Welcome!** We built py-pglite with a **Vite-style development experience** - instant setup, fast feedback, and easy maintenance.
 
-## Development Setup
-
-1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/wey-gu/py-pglite.git
-   cd py-pglite
-   ```
-
-2. **Install in development mode:**
-
-   ```bash
-   pip install -e ".[dev]"
-   pip install types-psutil  # for mypy type checking
-   ```
-
-3. **Install Node.js:** PGlite requires Node.js (version 18 or later)
-
-## Code Quality
-
-We use several tools to maintain code quality:
-
-- **Ruff**: For linting and formatting
-- **MyPy**: For static type checking
-- **Pytest**: For testing
-
-Run all checks:
+## ⚡ **Quick Start** (30 seconds)
 
 ```bash
-# Linting and formatting
-ruff check py_pglite/
-ruff format py_pglite/
+# Clone and setup
+git clone https://github.com/wey-gu/py-pglite.git
+cd py-pglite
 
-# Type checking
-mypy py_pglite/
+# Install dependencies
+make install
 
-# Tests with coverage
-pytest examples/ --cov=py_pglite --cov-report=term-missing -v
+# Run full development workflow (like CI)
+make dev
 ```
 
-## Testing
+**That's it!** You're ready to contribute.
 
-- Tests are located in the `examples/` directory as they serve as both tests and usage examples
-- All tests should pass before submitting a PR
-- New features should include tests
-- Aim for high test coverage
+---
 
-## Pull Request Process
+## 🎯 **Development Commands**
 
-1. **Fork the repository** and create a feature branch
-2. **Make your changes** following the code style guidelines
-3. **Add or update tests** for any new functionality
-4. **Ensure all tests pass** and code quality checks pass
-5. **Update documentation** if needed
-6. **Submit a pull request** with a clear description of your changes
+We use **one unified script** that mirrors CI exactly:
 
-## GitHub Actions Workflows
+### **Core Commands**
 
-### CI Pipeline (`.github/workflows/ci.yml`)
+```bash
+make dev         # Full workflow (linting + tests + examples)
+make test        # Run tests only  
+make examples    # Run examples only
+make lint        # Run linting only
+make quick       # Quick checks during development
+```
 
-Runs on every push and pull request:
+### **Utility Commands**
 
-- **Matrix testing**: Python 3.10-3.12 × Node.js 18-20
-- **Code quality**: Ruff linting/formatting, MyPy type checking
-- **Testing**: Full test suite with coverage reporting
-- **Security**: Safety and Bandit security scans
-- **Package testing**: Build and installation verification
+```bash
+make install     # Install in development mode
+make clean       # Clean build artifacts  
+make fmt         # Auto-fix formatting
+make status      # Show project status
+```
 
-### Release Pipeline (`.github/workflows/release.yml`)
+### **Direct Script Usage**
 
-Triggered by version tags (e.g., `v0.2.0`):
+```bash
+# Use the script directly for more control
+python scripts/dev.py              # Full workflow
+python scripts/dev.py --quick      # Quick checks  
+python scripts/dev.py --test       # Tests only
+python scripts/dev.py --examples   # Examples only
+python scripts/dev.py --lint       # Linting only
+```
 
-- **Pre-release testing**: Full CI pipeline
-- **PyPI publication**: Automated release to PyPI using trusted publishing
-- **GitHub release**: Creates GitHub release with built packages
+---
 
-## Making a Release
+## 🔥 **Development Workflow**
 
-Releases are automated through GitHub Actions. To make a release:
+### **1. Quick Development Loop**
 
-1. **Update the version** in `py_pglite/__init__.py`:
+```bash
+# Make your changes
+vim py_pglite/manager.py
 
-   ```python
-   __version__ = "0.2.0"  # Update version number
-   ```
+# Quick validation
+make quick              # ~10s: linting + imports
 
-2. **Commit the version change:**
+# Full validation  
+make dev                # ~30s: everything (like CI)
+```
 
-   ```bash
-   git add py_pglite/__init__.py
-   git commit -m "Bump version to 0.2.0"
-   git push origin main
-   ```
+### **2. Testing Specific Components**
 
-3. **Create and push a version tag:**
+```bash
+make test               # All tests
+make examples           # All examples  
+pytest tests/test_core_manager.py -v    # Specific test
+```
 
-   ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
-   ```
+### **3. Before Committing**
 
-4. **GitHub Actions will automatically:**
-   - Run the full test suite
-   - Build the package
-   - Publish to PyPI
-   - Create a GitHub release
+```bash
+make dev                # Full workflow
+make fmt                # Auto-fix formatting
+```
 
-### Version Synchronization
+**Local `make dev` === CI pipeline** - if it passes locally, it passes in CI!
 
-The package maintains version synchronization between Python and npm packages:
+---
 
-- Python version is defined in `py_pglite/__init__.py`
-- npm package.json version is automatically updated from Python version
-- Both packages are always released with the same version number
+## 📁 **Project Structure**
 
-## PyPI Trusted Publishing Setup
+```
+py-pglite/
+├── py_pglite/                 # 📦 Core package
+│   ├── __init__.py           #    Public API
+│   ├── manager.py            #    PGlite management
+│   ├── config.py             #    Configuration
+│   ├── sqlalchemy/           #    SQLAlchemy integration
+│   ├── django/               #    Django integration  
+│   └── pytest_plugin.py     #    Pytest plugin
+│
+├── tests/                    # 🧪 Core tests
+│   ├── test_core_manager.py  #    Manager tests
+│   ├── test_advanced.py      #    Advanced features
+│   └── test_framework_isolation.py # Framework isolation
+│
+├── examples/                 # 📚 Examples & demos
+│   ├── quickstart/           #    ⚡ Instant demos
+│   └── testing-patterns/     #    🧪 Production examples
+│
+├── scripts/                  # 🔧 Development tools
+│   └── dev.py               #    Unified development script
+│
+└── Makefile                  # 🎯 Convenience commands
+```
 
-The release workflow uses PyPI's trusted publishing feature for secure, automated releases. Repository maintainers need to:
+---
 
-1. **Set up PyPI trusted publishing:**
-   - Go to PyPI project settings
-   - Add GitHub as a trusted publisher
-   - Configure: `wey-gu/py-pglite` repository, `release.yml` workflow
+## 🧪 **Testing Strategy**
 
-2. **Configure GitHub environment:**
-   - Create a `pypi` environment in repository settings
-   - Set environment protection rules if desired
+### **Core Tests** (`tests/`)
 
-## Code Style Guidelines
+- **Manager lifecycle** - Start/stop, configuration
+- **Framework isolation** - SQLAlchemy/Django separation  
+- **Advanced features** - Complex scenarios
+- **FastAPI integration** - REST API patterns
 
-- **Follow PEP 8** (enforced by Ruff)
-- **Use type hints** everywhere (enforced by MyPy strict mode)
-- **Write descriptive docstrings** for public APIs
-- **Use modern Python features** (Union → |, etc.)
-- **Keep lines under 88 characters**
+### **Example Tests** (`examples/`)
 
-## Documentation
+- **SQLAlchemy patterns** - Real ORM usage
+- **Django patterns** - Real Django models
+- **Quickstart demos** - User experience validation
 
-- **README.md**: Main documentation with examples
-- **Docstrings**: All public functions and classes
-- **Examples**: Comprehensive examples that also serve as tests
-- **Type hints**: Complete type coverage for better developer experience
+### **Framework Isolation**
 
-## Questions?
+```bash
+# Test SQLAlchemy alone
+pytest examples/testing-patterns/sqlalchemy/ -p no:django
 
-- **Open an issue** for bugs or feature requests
-- **Start a discussion** for questions or ideas
-- **Check existing issues** before creating new ones
+# Test Django alone  
+pytest examples/testing-patterns/django/
 
-Thank you for contributing! 🎉
+# Test framework coexistence
+pytest tests/test_framework_isolation.py
+```
+
+---
+
+## 🎨 **Code Style**
+
+We use **Ruff** for linting and formatting:
+
+```bash
+make lint               # Check style
+make fmt                # Auto-fix formatting
+ruff check py_pglite/   # Manual check
+ruff format py_pglite/  # Manual format
+```
+
+**Style Guide:**
+
+- **PEP 8** compliant
+- **Type hints** for public APIs
+- **Docstrings** for public functions
+- **f-strings** for formatting
+- **pathlib** over os.path
+
+---
+
+## 🚀 **Adding Features**
+
+### **1. Core Features** (manager, config)
+
+```bash
+# Edit core
+vim py_pglite/manager.py
+
+# Test core  
+pytest tests/test_core_manager.py -v
+
+# Full validation
+make dev
+```
+
+### **2. Framework Integration** (SQLAlchemy, Django)
+
+```bash
+# Edit integration
+vim py_pglite/sqlalchemy/fixtures.py
+
+# Test integration
+pytest examples/testing-patterns/sqlalchemy/ -v
+
+# Test isolation
+pytest tests/test_framework_isolation.py -v
+```
+
+### **3. Examples/Demos**
+
+```bash
+# Add example
+vim examples/testing-patterns/new_example.py
+
+# Test example
+pytest examples/testing-patterns/new_example.py -v
+
+# Test quickstart
+python examples/quickstart/demo_instant.py
+```
+
+---
+
+## 📝 **Documentation**
+
+### **README Updates**
+
+- Keep examples **simple and compelling**
+- Show **zero-config experience**
+- Maintain **Vite-style messaging**
+
+### **Code Documentation**
+
+```python
+def new_feature(param: str) -> bool:
+    """Short description.
+    
+    Args:
+        param: Parameter description
+        
+    Returns:
+        Description of return value
+        
+    Example:
+        >>> new_feature("test")
+        True
+    """
+```
+
+---
+
+## 🐛 **Issue Workflow**
+
+### **Bug Reports**
+
+1. **Reproduce** with minimal example
+2. **Check** which component (core, SQLAlchemy, Django)
+3. **Write test** that fails
+4. **Fix** the issue  
+5. **Validate** with `make dev`
+
+### **Feature Requests**
+
+1. **Discuss** in GitHub issue first
+2. **Design** for framework isolation
+3. **Implement** with tests
+4. **Document** with examples
+5. **Validate** full workflow
+
+---
+
+## 🎯 **Design Principles**
+
+### **1. Framework Agnostic Core**
+
+```python
+# ✅ Good - no framework dependencies
+from py_pglite import PGliteManager
+
+# ❌ Bad - framework-specific in core
+from py_pglite.sqlalchemy import SomeHelper
+```
+
+### **2. Optional Dependencies**
+
+```python
+# ✅ Good - graceful degradation
+try:
+    from sqlalchemy import Engine
+except ImportError:
+    Engine = None  # type: ignore
+```
+
+### **3. Zero Configuration**
+
+```python
+# ✅ Good - works immediately
+def test_users(pglite_session):
+    user = User(name="Alice")
+    pglite_session.add(user)
+    # Tables created automatically!
+
+# ❌ Bad - requires manual setup
+def test_users(pglite_session):
+    Base.metadata.create_all(pglite_session.bind)  # Manual step
+```
+
+---
+
+## 🎉 **Release Process**
+
+### **Local Validation**
+
+```bash
+make dev                # Full workflow passes
+make clean              # Clean build
+python scripts/dev.py   # Final check
+```
+
+### **CI Validation**
+
+- **All Python versions** (3.10, 3.11, 3.12, 3.13)
+- **All frameworks** (SQLAlchemy, Django, FastAPI)
+- **All examples** pass
+- **Package builds** correctly
+
+### **Release**
+
+```bash
+git tag v0.3.0          # Create tag
+git push origin v0.3.0  # Trigger release workflow
+```
+
+CI automatically:
+
+- ✅ Runs full test suite
+- ✅ Builds package
+- ✅ Publishes to PyPI
+- ✅ Creates GitHub release
+
+---
+
+## 💝 **Community**
+
+### **Getting Help**
+
+- 🐛 **GitHub Issues** - Bug reports, feature requests
+- 💬 **Discussions** - Questions, ideas, feedback
+- 📧 **Direct contact** - <maintainer@py-pglite.com>
+
+### **Contributing**
+
+- 🔀 **Pull requests** welcome!
+- 📝 **Documentation** improvements
+- 🧪 **Test coverage** enhancements  
+- 🎨 **Example** additions
+
+---
+
+**Thank you for contributing to py-pglite!**
+
+Together we're building the **Vite of database testing** - instant, powerful, and delightful to use. 🚀

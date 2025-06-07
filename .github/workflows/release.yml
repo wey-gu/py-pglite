@@ -29,15 +29,11 @@ jobs:
         pip install -e ".[dev]"
         pip install types-psutil
 
-    - name: Run full test suite
+    - name: Run full development workflow
       run: |
-        pytest examples/ --cov=py_pglite -v
-
-    - name: Lint and type check
-      run: |
-        ruff check py_pglite/
-        ruff format --check py_pglite/
-        mypy py_pglite/
+        python scripts/dev.py
+      env:
+        PYTHONPATH: .
 
     - name: Test package build
       run: |

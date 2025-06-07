@@ -2,9 +2,8 @@
 
 import pytest
 from sqlalchemy import text
-from sqlmodel import Field, Session, SQLModel, select
-
-from py_pglite import PGliteConfig, PGliteManager
+from sqlmodel import Session, SQLModel, Field, create_engine, select
+from py_pglite import PGliteManager, PGliteConfig
 
 
 # Example models
@@ -30,13 +29,13 @@ def test_custom_configuration():
         log_level="DEBUG",
         cleanup_on_exit=True
     )
-
+    
     with PGliteManager(config) as manager:
         engine = manager.get_engine()
-
+        
         # Create tables
         SQLModel.metadata.create_all(engine)
-
+        
         with Session(engine) as session:
             # Test database connectivity using connection directly
             with session.connection() as conn:
@@ -49,16 +48,16 @@ def test_custom_configuration():
 def test_manual_lifecycle_management():
     """Test manual management of PGlite lifecycle."""
     manager = PGliteManager()
-
+    
     try:
         # Start manually
         manager.start()
         assert manager.is_running()
-
+        
         # Get engine and use it (readiness is checked in fixture, no need to check again)
         engine = manager.get_engine(echo=True)  # Enable SQL logging
         SQLModel.metadata.create_all(engine)
-
+        
         with Session(engine) as session:
             # Create some test data
             products = [
@@ -66,26 +65,26 @@ def test_manual_lifecycle_management():
                 Product(name="Coffee", price=4.50, category="Food"),
                 Product(name="Book", price=12.99, category="Education"),
             ]
-
+            
             for product in products:
                 session.add(product)
             session.commit()
             session.refresh(products[0])  # Refresh to get the ID
-
+            
             # Query products by category
             electronics = session.exec(
                 select(Product).where(Product.category == "Electronics")
             ).all()
             assert len(electronics) == 1
             assert electronics[0].name == "Laptop"
-
+            
             # Test complex query with joins (after adding orders)
             laptop = electronics[0]
             assert laptop.id is not None  # Ensure ID is set
             order = Order(product_id=laptop.id, quantity=2, total=1999.98)
             session.add(order)
             session.commit()
-
+            
             # Raw SQL query using connection
             with session.connection() as conn:
                 result = conn.execute(
@@ -97,13 +96,13 @@ def test_manual_lifecycle_management():
                     """),
                     {"category": "Electronics"}
                 )
-
+                
                 row = result.fetchone()
                 assert row is not None
                 assert row[0] == "Laptop"
                 assert row[1] == 2
                 assert row[2] == 1999.98
-
+            
     finally:
         # Clean shutdown
         manager.stop()
@@ -120,10 +119,10 @@ def test_multiple_sessions():
     with PGliteManager() as manager:
         # Use a single engine with multiple sessions (recommended)
         engine = manager.get_engine(echo=False)
-
+        
         # Test basic functionality
         SQLModel.metadata.create_all(engine)
-
+        
         # Test first session
         session1 = Session(engine)
         try:
@@ -134,7 +133,7 @@ def test_multiple_sessions():
         finally:
             session1.close()
             print("Session 1 closed")
-
+        
         # Test second session (same engine, different session)
         session2 = Session(engine)
         try:
@@ -145,32 +144,32 @@ def test_multiple_sessions():
         finally:
             session2.close()
             print("Session 2 closed")
-
+            
         # Test concurrent sessions
         sessions = []
         try:
             for i in range(3):
                 session = Session(engine)
                 sessions.append(session)
-
+                
                 # Each session can read the existing data
                 products = session.exec(select(Product)).all()
                 expected_count = 1 + i  # 1 original + i new products
                 assert len(products) == expected_count
-
+                
                 # Each session can add new data
                 new_product = Product(
-                    name=f"Product {i}",
-                    price=float(i * 10),
+                    name=f"Product {i}", 
+                    price=float(i * 10), 
                     category="Test"
                 )
                 session.add(new_product)
                 session.commit()
-
+                
         finally:
             for session in sessions:
                 session.close()
-
+                
         # Verify final state
         final_session = Session(engine)
         try:
@@ -179,30 +178,30 @@ def test_multiple_sessions():
             print(f"All sessions completed successfully, total products: {len(all_products)}")
         finally:
             final_session.close()
-
+            
         print("Multiple sessions test completed successfully")
 
 
 def test_error_handling():
     """Test error handling scenarios."""
     manager = PGliteManager()
-
+    
     # Should fail if not started
     with pytest.raises(RuntimeError, match="not running"):
         manager.get_engine()
-
+    
     # Start and test
     manager.start()
-
+    
     try:
         engine = manager.get_engine()
-
+        
         # Test invalid SQL using connection
         with Session(engine) as session:
             with pytest.raises(Exception):  # Should raise some SQL error
                 with session.connection() as conn:
                     conn.execute(text("SELECT invalid_syntax FROM nonexistent_table"))
-
+                
     finally:
         manager.stop()
 
@@ -212,10 +211,10 @@ def test_concurrent_sessions():
     with PGliteManager() as manager:
         engine = manager.get_engine()
         SQLModel.metadata.create_all(engine)
-
+        
         # Create multiple sessions
         sessions = [Session(engine) for _ in range(5)]
-
+        
         try:
             # Each session creates a product
             products = []
@@ -228,12 +227,12 @@ def test_concurrent_sessions():
                 session.add(product)
                 session.commit()
                 products.append(product)
-
+            
             # Verify all products exist using a new session
             with Session(engine) as verify_session:
                 all_products = verify_session.exec(select(Product)).all()
                 assert len(all_products) == 5
-
+                
         finally:
             for session in sessions:
-                session.close()
+                session.close() 

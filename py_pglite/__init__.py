@@ -1,32 +1,22 @@
 """py-pglite: Python testing library for PGlite integration.
 
 Provides seamless integration between PGlite (in-memory PostgreSQL)
-and Python test suites.
+and Python test suites with support for SQLAlchemy, SQLModel, and Django.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-# Main exports
+# Core exports (always available)
 from .config import PGliteConfig
 from .manager import PGliteManager
 
-# Import fixtures for pytest plugin discovery
-try:
-    from .fixtures import (  # noqa: F401
-        pglite_engine,
-        pglite_manager,
-        pglite_session,
-    )
-
-    HAS_PYTEST = True
-except ImportError:
-    HAS_PYTEST = False
-
+# Core public API - framework agnostic
 __all__ = [
     "PGliteConfig",
     "PGliteManager",
 ]
 
-# Add pytest fixtures to __all__ if available
-if HAS_PYTEST:
-    __all__.extend(["pglite_engine", "pglite_manager", "pglite_session"])
+# Framework integrations are imported separately:
+# from py_pglite.sqlalchemy import pglite_session, pglite_engine
+# from py_pglite.django import db, transactional_db
+# Or use the pytest plugin which auto-discovers fixtures

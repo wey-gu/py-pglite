@@ -11,8 +11,6 @@ from pathlib import Path
 from typing import Any
 
 import psutil
-from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine
 
 from . import __version__
 from .config import PGliteConfig
@@ -21,8 +19,8 @@ from .config import PGliteConfig
 class PGliteManager:
     """Manages PGlite process lifecycle for testing.
 
-    Handles starting, stopping, and health monitoring of PGlite server processes.
-    Provides SQLAlchemy engines connected to the PGlite instance.
+    Framework-agnostic PGlite process manager. Provides database connections
+    through framework-specific methods that require their respective dependencies.
     """
 
     def __init__(self, config: PGliteConfig | None = None):
@@ -118,18 +116,34 @@ async function startServer() {{
 
         // Handle graceful shutdown
         process.on('SIGINT', async () => {{
-            await server.stop();
-            await db.close();
-            console.log('Server stopped and database closed');
+            console.log('Received SIGINT, shutting down gracefully...');
+            try {{
+                await server.stop();
+                await db.close();
+                console.log('Server stopped and database closed');
+            }} catch (err) {{
+                console.error('Error during shutdown:', err);
+            }}
             process.exit(0);
         }});
 
         process.on('SIGTERM', async () => {{
-            await server.stop();
-            await db.close();
-            console.log('Server stopped and database closed');
+            console.log('Received SIGTERM, shutting down gracefully...');
+            try {{
+                await server.stop();
+                await db.close();
+                console.log('Server stopped and database closed');
+            }} catch (err) {{
+                console.error('Error during shutdown:', err);
+            }}
             process.exit(0);
         }});
+
+        // Keep the process alive
+        process.on('exit', () => {{
+            console.log('Process exiting...');
+        }});
+
     }} catch (err) {{
         console.error('Failed to start PGlite server:', err);
         process.exit(1);
@@ -181,6 +195,7 @@ startServer();"""
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=60,  # Add timeout for npm install
             )
             self.logger.info(f"npm install completed: {result.stdout}")
 
@@ -203,7 +218,7 @@ startServer();"""
             # Install dependencies
             self._install_dependencies(self.work_dir)
 
-            # Start PGlite process
+            # Start PGlite process with limited output buffering
             self.logger.info("Starting PGlite server...")
             # nosec B603,B607 - node with fixed script, safe for testing library
             self.process = subprocess.Popen(
@@ -211,39 +226,65 @@ startServer();"""
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,  # Combine stderr with stdout
                 text=True,
-                bufsize=1,
+                bufsize=0,  # Unbuffered for real-time monitoring
                 universal_newlines=True,
             )
 
-            # Wait for startup with real-time output monitoring
+            # Wait for startup with robust monitoring
             start_time = time.time()
             socket_path = Path(self.config.socket_path)
+            ready_logged = False
 
             while time.time() - start_time < self.config.timeout:
                 # Check if process died
                 if self.process.poll() is not None:
-                    stdout, stderr = self.process.communicate()
+                    # Get output with timeout to prevent hanging
+                    try:
+                        stdout, stderr = self.process.communicate(timeout=2)
+                        output = (
+                            stdout[:1000] if stdout else "No output"
+                        )  # Limit output
+                    except subprocess.TimeoutExpired:
+                        output = "Process output timeout"
+
                     raise RuntimeError(
-                        f"PGlite process died: stdout={stdout}, stderr={stderr}"
+                        f"PGlite process died during startup. Output: {output}"
                     )
 
-                # Check if socket exists - simpler approach like working version
-                if socket_path.exists():
+                # Check if socket exists and log ready message once
+                if socket_path.exists() and not ready_logged:
                     self.logger.info("PGlite socket created, server should be ready...")
-                    # Give it a moment to be fully ready
-                    time.sleep(2)
-                    self.logger.info("PGlite server started successfully")
-                    break
+                    ready_logged = True
 
-                time.sleep(1.0)  # Check less frequently
+                    # Test basic connectivity to ensure it's really ready
+                    try:
+                        import socket
+
+                        test_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                        test_socket.settimeout(1)
+                        test_socket.connect(str(socket_path))
+                        test_socket.close()
+                        self.logger.info("PGlite server started successfully")
+                        break
+                    except (ImportError, OSError):
+                        # Socket exists but not ready yet, continue waiting
+                        pass
+
+                time.sleep(0.5)  # Check more frequently for better responsiveness
             else:
-                # Timeout
-                if self.process.poll() is None:
-                    self.process.kill()
-                stdout, stderr = self.process.communicate()
+                # Timeout - cleanup and raise error
+                if self.process and self.process.poll() is None:
+                    self.logger.warning("PGlite server startup timeout, terminating...")
+                    self.process.terminate()
+                    try:
+                        self.process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        self.logger.warning("Force killing PGlite process...")
+                        self.process.kill()
+                        self.process.wait()
+
                 raise RuntimeError(
-                    f"PGlite server failed to start within {self.config.timeout} "
-                    f"seconds: stdout={stdout}, stderr={stderr}"
+                    f"PGlite server failed to start within {self.config.timeout} seconds"
                 )
 
         finally:
@@ -257,18 +298,25 @@ startServer();"""
             return
 
         try:
-            # Send SIGTERM first
+            # Send SIGTERM first for graceful shutdown
+            self.logger.debug("Sending SIGTERM to PGlite process...")
             self.process.terminate()
 
-            # Wait for graceful shutdown
+            # Wait for graceful shutdown with timeout
             try:
                 self.process.wait(timeout=5)
+                self.logger.info("PGlite server stopped gracefully")
             except subprocess.TimeoutExpired:
-                # Force kill
+                # Force kill if graceful shutdown fails
+                self.logger.warning(
+                    "PGlite process didn't stop gracefully, force killing..."
+                )
                 self.process.kill()
-                self.process.wait()
-
-            self.logger.info("PGlite server stopped")
+                try:
+                    self.process.wait(timeout=2)
+                    self.logger.info("PGlite server stopped forcefully")
+                except subprocess.TimeoutExpired:
+                    self.logger.error("Failed to kill PGlite process!")
 
         except Exception as e:
             self.logger.warning(f"Error stopping PGlite: {e}")
@@ -281,8 +329,71 @@ startServer();"""
         """Check if PGlite process is running."""
         return self.process is not None and self.process.poll() is None
 
+    def get_engine(self, **engine_kwargs: Any) -> Any:
+        """Get SQLAlchemy engine connected to PGlite.
+
+        NOTE: This method requires SQLAlchemy to be installed.
+
+        Args:
+            **engine_kwargs: Additional arguments for create_engine
+
+        Returns:
+            SQLAlchemy Engine connected to PGlite
+
+        Raises:
+            ImportError: If SQLAlchemy is not installed
+            RuntimeError: If PGlite server is not running
+        """
+        if not self.is_running():
+            raise RuntimeError("PGlite server is not running. Call start() first.")
+
+        try:
+            from sqlalchemy import create_engine
+        except ImportError as e:
+            raise ImportError(
+                "SQLAlchemy is required for get_engine(). "
+                "Install with: pip install py-pglite[sqlalchemy]"
+            ) from e
+
+        default_kwargs = {
+            "echo": False,
+            "pool_pre_ping": True,
+            "pool_recycle": 300,
+            "connect_args": {"connect_timeout": 10, "application_name": "py-pglite"},
+        }
+
+        # Only add pool_timeout if not using StaticPool (which doesn't support it)
+        poolclass = engine_kwargs.get("poolclass")
+        if poolclass is None or poolclass.__name__ != "StaticPool":
+            default_kwargs["pool_timeout"] = 30
+
+        default_kwargs.update(engine_kwargs)
+
+        return create_engine(self.config.get_connection_string(), **default_kwargs)
+
     def wait_for_ready(self, max_retries: int = 15, delay: float = 1.0) -> bool:
-        """Wait for database to be ready and responsive."""
+        """Wait for database to be ready and responsive.
+
+        NOTE: This method requires SQLAlchemy to be installed.
+
+        Args:
+            max_retries: Maximum number of connection attempts
+            delay: Delay between attempts in seconds
+
+        Returns:
+            True if database becomes ready, False otherwise
+
+        Raises:
+            ImportError: If SQLAlchemy is not installed
+        """
+        try:
+            from sqlalchemy import text
+        except ImportError as e:
+            raise ImportError(
+                "SQLAlchemy is required for wait_for_ready(). "
+                "Install with: pip install py-pglite[sqlalchemy]"
+            ) from e
+
         # Create engine once and reuse it
         engine = self.get_engine()
 
@@ -308,26 +419,3 @@ startServer();"""
                     )
                     raise
         return False
-
-    def get_engine(self, **engine_kwargs: Any) -> Engine:
-        """Get SQLAlchemy engine connected to PGlite.
-
-        Args:
-            **engine_kwargs: Additional arguments for create_engine
-
-        Returns:
-            SQLAlchemy Engine connected to PGlite
-        """
-        if not self.is_running():
-            raise RuntimeError("PGlite server is not running. Call start() first.")
-
-        default_kwargs = {
-            "echo": False,
-            "pool_pre_ping": True,
-            "pool_recycle": 300,
-            "pool_timeout": 30,
-            "connect_args": {"connect_timeout": 10, "application_name": "py-pglite"},
-        }
-        default_kwargs.update(engine_kwargs)
-
-        return create_engine(self.config.get_connection_string(), **default_kwargs)
