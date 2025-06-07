@@ -6,7 +6,7 @@ with authentication, user roles, and complex relationships using py-pglite.
 
 Key patterns shown:
 1. JWT Authentication with superuser creation
-2. Role-based access control  
+2. Role-based access control
 3. Complex model relationships
 4. Function-scoped test isolation
 5. Environment-based configuration
@@ -18,6 +18,7 @@ import logging
 from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 import pytest
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import (
@@ -26,11 +27,8 @@ from fastapi.security import (
 )
 from fastapi.testclient import TestClient
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, delete, select
-
-from py_pglite import pglite_session  # noqa: F401  # type: ignore
 
 # Configuration
 SECRET_KEY = "test-secret-key-for-pytest"
@@ -38,7 +36,6 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 # Logging setup
@@ -78,7 +75,7 @@ class Token(BaseModel):
 
 
 class User(SQLModel, table=True):
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = {"extend_existing": True}
     id: int | None = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
@@ -88,7 +85,7 @@ class User(SQLModel, table=True):
 
 
 class Project(SQLModel, table=True):
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = {"extend_existing": True}
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(unique=True, index=True)
     description: str | None = None
@@ -96,12 +93,12 @@ class Project(SQLModel, table=True):
 
 
 # Authentication utilities
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(hashed_password: str, plain_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
@@ -136,7 +133,10 @@ def get_user_by_email(session: Session, email: str) -> User | None:
 
 def authenticate_user(session: Session, email: str, password: str) -> User | None:
     user = get_user_by_email(session, email)
-    if not user or not verify_password(password, user.hashed_password):
+    if not user or not verify_password(
+        hashed_password=user.hashed_password,
+        plain_password=password,
+    ):
         return None
     return user
 
@@ -152,7 +152,7 @@ def create_app() -> FastAPI:
     # Authentication dependency
     def get_current_user(
         credentials: HTTPAuthorizationCredentials = Depends(security),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
     ) -> User:
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -161,7 +161,9 @@ def create_app() -> FastAPI:
         )
 
         try:
-            payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+            payload = jwt.decode(
+                credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
+            )
             email = payload.get("sub")
             if not isinstance(email, str) or email is None:
                 raise credentials_exception
@@ -176,8 +178,7 @@ def create_app() -> FastAPI:
     def get_current_superuser(current_user: User = Depends(get_current_user)) -> User:
         if not current_user.is_superuser:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not enough permissions"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
             )
         return current_user
 
@@ -200,7 +201,7 @@ def create_app() -> FastAPI:
     def create_user_endpoint(
         user: UserCreate,
         db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_superuser)
+        current_user: User = Depends(get_current_superuser),
     ):
         db_user = get_user_by_email(db, user.email)
         if db_user:
@@ -216,21 +217,23 @@ def create_app() -> FastAPI:
         skip: int = 0,
         limit: int = 100,
         db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_superuser)
+        current_user: User = Depends(get_current_superuser),
     ):
-        users = db.exec(select(User).offset(skip).limit(limit)).all()
+        users = db.exec(statement=select(User).offset(skip).limit(limit)).all()
         return users
 
     @app.post("/projects/", response_model=ProjectRead)
     def create_project(
         project: ProjectCreate,
         db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user),
     ):
         db_project = Project(
             name=project.name,
             description=project.description,
-            owner_id=current_user.id if current_user.id is not None else 0  # Ensure owner_id is int
+            owner_id=current_user.id
+            if current_user.id is not None
+            else 0,  # Ensure owner_id is int
         )
         db.add(db_project)
         db.commit()
@@ -242,7 +245,7 @@ def create_app() -> FastAPI:
         skip: int = 0,
         limit: int = 100,
         db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user),
     ):
         projects = db.exec(select(Project).offset(skip).limit(limit)).all()
         return projects
@@ -251,7 +254,7 @@ def create_app() -> FastAPI:
     def read_project(
         project_id: int,
         db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user),
     ):
         project = db.exec(select(Project).where(Project.id == project_id)).first()
         if not project:
@@ -309,7 +312,7 @@ def superuser(clean_db: Session) -> User:
         email="admin@example.com",
         password="test-password",
         full_name="Test Admin",
-        is_superuser=True
+        is_superuser=True,
     )
     return create_user(clean_db, user_create)
 
@@ -321,7 +324,7 @@ def normal_user(clean_db: Session) -> User:
         email="user@example.com",
         password="test-password",
         full_name="Test User",
-        is_superuser=False
+        is_superuser=False,
     )
     return create_user(clean_db, user_create)
 
@@ -330,8 +333,7 @@ def normal_user(clean_db: Session) -> User:
 def superuser_token(client: TestClient, superuser: User) -> str:
     """Get superuser authentication token."""
     response = client.post(
-        "/auth/login",
-        params={"email": superuser.email, "password": "test-password"}
+        "/auth/login", params={"email": superuser.email, "password": "test-password"}
     )
     assert response.status_code == 200
     return response.json()["access_token"]
@@ -341,8 +343,7 @@ def superuser_token(client: TestClient, superuser: User) -> str:
 def normal_user_token(client: TestClient, normal_user: User) -> str:
     """Get normal user authentication token."""
     response = client.post(
-        "/auth/login",
-        params={"email": normal_user.email, "password": "test-password"}
+        "/auth/login", params={"email": normal_user.email, "password": "test-password"}
     )
     assert response.status_code == 200
     return response.json()["access_token"]
@@ -364,9 +365,7 @@ def normal_user_headers(normal_user_token: str) -> dict[str, str]:
 def test_create_superuser(clean_db: Session):
     """Test superuser creation and authentication."""
     user_create = UserCreate(
-        email="admin@example.com",
-        password="secret123",
-        is_superuser=True
+        email="admin@example.com", password="secret123", is_superuser=True
     )
 
     user = create_user(clean_db, user_create)
@@ -380,8 +379,7 @@ def test_user_authentication(client: TestClient, superuser: User):
     """Test user login and token generation."""
     # Test successful login
     response = client.post(
-        "/auth/login",
-        params={"email": superuser.email, "password": "test-password"}
+        "/auth/login", params={"email": superuser.email, "password": "test-password"}
     )
 
     assert response.status_code == 200
@@ -391,8 +389,7 @@ def test_user_authentication(client: TestClient, superuser: User):
 
     # Test failed login
     response = client.post(
-        "/auth/login",
-        params={"email": superuser.email, "password": "wrong-password"}
+        "/auth/login", params={"email": superuser.email, "password": "wrong-password"}
     )
 
     assert response.status_code == 401
@@ -419,7 +416,7 @@ def test_create_user_as_superuser(client: TestClient, superuser_headers: dict):
     user_data = {
         "email": "newuser@example.com",
         "password": "password123",
-        "full_name": "New User"
+        "full_name": "New User",
     }
 
     response = client.post("/users/", json=user_data, headers=superuser_headers)
@@ -433,17 +430,16 @@ def test_create_user_as_superuser(client: TestClient, superuser_headers: dict):
 
 def test_create_user_as_normal_user(client: TestClient, normal_user_headers: dict):
     """Test that normal users cannot create other users."""
-    user_data = {
-        "email": "newuser@example.com",
-        "password": "password123"
-    }
+    user_data = {"email": "newuser@example.com", "password": "password123"}
 
     response = client.post("/users/", json=user_data, headers=normal_user_headers)
 
     assert response.status_code == 403
 
 
-def test_list_users_permissions(client: TestClient, superuser_headers: dict, normal_user_headers: dict):
+def test_list_users_permissions(
+    client: TestClient, superuser_headers: dict, normal_user_headers: dict
+):
     """Test user listing permissions."""
     # Superuser can list users
     response = client.get("/users/", headers=superuser_headers)
@@ -457,10 +453,7 @@ def test_list_users_permissions(client: TestClient, superuser_headers: dict, nor
 def test_project_crud(client: TestClient, normal_user: User, normal_user_headers: dict):
     """Test project creation and management."""
     # Create project
-    project_data = {
-        "name": "Test Project",
-        "description": "A test project"
-    }
+    project_data = {"name": "Test Project", "description": "A test project"}
 
     response = client.post("/projects/", json=project_data, headers=normal_user_headers)
 
@@ -497,7 +490,7 @@ def test_duplicate_email(client: TestClient, superuser: User, superuser_headers:
     """Test creating user with duplicate email."""
     user_data = {
         "email": superuser.email,  # Use existing email
-        "password": "password123"
+        "password": "password123",
     }
 
     response = client.post("/users/", json=user_data, headers=superuser_headers)
@@ -506,10 +499,7 @@ def test_duplicate_email(client: TestClient, superuser: User, superuser_headers:
 
 
 def test_complex_scenario(
-    client: TestClient,
-    clean_db: Session,
-    superuser: User,
-    superuser_headers: dict
+    client: TestClient, clean_db: Session, superuser: User, superuser_headers: dict
 ):
     """Test complex scenario with multiple users and projects."""
     # Create additional users
@@ -526,15 +516,16 @@ def test_complex_scenario(
 
     # Login as Alice and create project
     alice_token_response = client.post(
-        "/auth/login",
-        params={"email": "alice@example.com", "password": "pass123"}
+        "/auth/login", params={"email": "alice@example.com", "password": "pass123"}
     )
-    alice_headers = {"Authorization": f"Bearer {alice_token_response.json()['access_token']}"}
+    alice_headers = {
+        "Authorization": f"Bearer {alice_token_response.json()['access_token']}"
+    }
 
     project_response = client.post(
         "/projects/",
         json={"name": "Alice's Project", "description": "Alice's first project"},
-        headers=alice_headers
+        headers=alice_headers,
     )
     assert project_response.status_code == 200
 
@@ -553,7 +544,7 @@ def test_token_expiration_simulation(client: TestClient, superuser: User):
     # Create a token with very short expiration
     short_token = create_access_token(
         data={"sub": superuser.email},
-        expires_delta=timedelta(seconds=-1)  # Already expired
+        expires_delta=timedelta(seconds=-1),  # Already expired
     )
 
     headers = {"Authorization": f"Bearer {short_token}"}
