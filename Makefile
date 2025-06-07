@@ -2,6 +2,7 @@
 # ================================
 #
 # Vite-style convenience commands for development
+# Supports pip, PDM, and UV package managers
 
 .PHONY: help dev test examples lint quick clean install
 
@@ -21,6 +22,11 @@ help:
 	@echo "  make install     Install in development mode"
 	@echo "  make clean       Clean build artifacts"
 	@echo "  make fmt         Auto-fix formatting"
+	@echo ""
+	@echo "Package Manager Support:"
+	@echo "  make dev         # Standard pip commands"
+	@echo "  PDM_RUN_CWD=. make dev    # Use PDM"
+	@echo "  UV=1 make dev            # Use UV"
 	@echo ""
 	@echo "Example Usage:"
 	@echo "  make dev         # Full workflow (linting + tests + examples)"

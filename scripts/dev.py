@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import os
 import subprocess
 import sys
 import time
@@ -23,6 +24,33 @@ class DevWorkflow:
         self.root_dir = Path(__file__).parent.parent
         self.start_time = time.time()
         self.failed_steps = []
+        
+        # Detect package manager based on environment variables
+        self._setup_package_manager()
+        
+    def _setup_package_manager(self):
+        """Detect and configure package manager commands."""
+        use_uv = os.environ.get("UV") is not None
+        use_pdm = os.environ.get("PDM_RUN_CWD") is not None
+
+        if use_pdm:
+            print("🔧 PDM_RUN_CWD environment variable detected - using pdm commands")
+            self.install_cmd = ["pdm", "install"]
+            self.python_cmd = ["pdm", "run", "python"]
+            self.mypy_cmd = ["pdm", "run", "mypy"]
+            self.ruff_cmd = ["pdm", "run", "ruff"]
+        elif use_uv:
+            print("🔧 UV environment variable detected - using uv commands")
+            self.install_cmd = ["uv", "pip", "install", "-e"]
+            self.python_cmd = ["uv", "run", "python"]
+            self.mypy_cmd = ["uv", "run", "mypy"]
+            self.ruff_cmd = ["uv", "run", "ruff"]
+        else:
+            print("🔧 Using standard pip and python commands")
+            self.install_cmd = ["pip", "install", "-e"]
+            self.python_cmd = ["python"]
+            self.mypy_cmd = ["mypy"]
+            self.ruff_cmd = ["ruff"]
         
     def run_command(self, description: str, command: list[str], cwd: Path | None = None) -> bool:
         """Run a command with Vite-style output."""
@@ -59,11 +87,11 @@ class DevWorkflow:
         print("=" * 50)
         
         success = True
-        if not self.run_command("Ruff linting", ["ruff", "check", "py_pglite/"]):
+        if not self.run_command("Ruff linting", self.ruff_cmd + ["check", "py_pglite/"]):
             success = False
-        if not self.run_command("Ruff formatting", ["ruff", "format", "--check", "py_pglite/"]):
+        if not self.run_command("Ruff formatting", self.ruff_cmd + ["format", "--check", "py_pglite/"]):
             success = False
-        if not self.run_command("MyPy type checking", ["mypy", "py_pglite/"]):
+        if not self.run_command("MyPy type checking", self.mypy_cmd + ["py_pglite/"]):
             success = False
             
         return success
@@ -75,7 +103,7 @@ class DevWorkflow:
         
         return self.run_command(
             "Core test suite", 
-            ["python", "-m", "pytest", "tests/", "-v", "--tb=short"]
+            self.python_cmd + ["-m", "pytest", "tests/", "-v", "--tb=short"]
         )
 
     def test_examples(self) -> bool:
@@ -88,21 +116,21 @@ class DevWorkflow:
         # SQLAlchemy examples
         if not self.run_command(
             "SQLAlchemy examples",
-            ["python", "-m", "pytest", "examples/testing-patterns/sqlalchemy/", "-v"]
+            self.python_cmd + ["-m", "pytest", "examples/testing-patterns/sqlalchemy/", "-v"]
         ):
             success = False
             
         # Django examples  
         if not self.run_command(
             "Django examples",
-            ["python", "-m", "pytest", "examples/testing-patterns/django/", "-v"]
+            self.python_cmd + ["-m", "pytest", "examples/testing-patterns/django/", "-v"]
         ):
             success = False
             
         # Fixtures showcase
         if not self.run_command(
             "Fixtures showcase",
-            ["python", "-m", "pytest", "examples/testing-patterns/test_fixtures_showcase.py", "-v"]
+            self.python_cmd + ["-m", "pytest", "examples/testing-patterns/test_fixtures_showcase.py", "-v"]
         ):
             success = False
             
@@ -118,7 +146,7 @@ class DevWorkflow:
         # Test instant demo
         if not self.run_command(
             "Instant demo",
-            ["python", "examples/quickstart/demo_instant.py"],
+            self.python_cmd + ["examples/quickstart/demo_instant.py"],
             cwd=self.root_dir
         ):
             success = False
@@ -126,7 +154,7 @@ class DevWorkflow:
         # Test performance demo
         if not self.run_command(
             "Performance demo", 
-            ["python", "examples/quickstart/simple_performance.py"],
+            self.python_cmd + ["examples/quickstart/simple_performance.py"],
             cwd=self.root_dir
         ):
             success = False
@@ -139,13 +167,19 @@ class DevWorkflow:
         print("=" * 50)
         
         # Install in dev mode
-        if not self.run_command("Install in dev mode", ["pip", "install", "-e", "."]):
+        if self.install_cmd[0] == "pdm":
+            # PDM installs dependencies from pyproject.toml automatically
+            install_command = self.install_cmd
+        else:
+            # UV and pip need the "." to install current directory
+            install_command = self.install_cmd + ["."]
+        if not self.run_command("Install in dev mode", install_command):
             return False
             
         # Test import
         if not self.run_command(
             "Test imports",
-            ["python", "-c", "import py_pglite; from py_pglite import PGliteManager, PGliteConfig; print('✅ All imports working')"]
+            self.python_cmd + ["-c", "import py_pglite; from py_pglite import PGliteManager, PGliteConfig; print('✅ All imports working')"]
         ):
             return False
             

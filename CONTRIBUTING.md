@@ -9,8 +9,12 @@
 git clone https://github.com/wey-gu/py-pglite.git
 cd py-pglite
 
-# Install dependencies
-make install
+# Install dependencies (choose your package manager)
+make install          # Standard pip
+# OR
+PDM_RUN_CWD=. make install    # PDM
+# OR  
+UV=1 make install            # UV
 
 # Run full development workflow (like CI)
 make dev
@@ -53,6 +57,23 @@ python scripts/dev.py --test       # Tests only
 python scripts/dev.py --examples   # Examples only
 python scripts/dev.py --lint       # Linting only
 ```
+
+### **📦 Package Manager Support**
+
+py-pglite supports modern Python package managers:
+
+```bash
+# Standard pip (default)
+make dev
+
+# PDM (Project Dependency Manager)
+PDM_RUN_CWD=. make dev
+
+# UV (Ultra-fast Python package installer)
+UV=1 make dev
+```
+
+**Auto-detection:** The development script automatically detects your package manager based on environment variables and uses the appropriate commands.
 
 ---
 
