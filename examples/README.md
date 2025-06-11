@@ -128,7 +128,7 @@ def test_models(pglite_django_db):
 @pytest.mark.django_db
 def test_with_pytest_django(pglite_django_db):
     Post.objects.create(title="Hello World")
-    assert Post.objects.count() == 1  # 更多测试功能！
+    assert Post.objects.count() == 1
 ```
 
 ### **🚀 Production Examples**

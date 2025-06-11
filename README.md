@@ -225,7 +225,7 @@ def test_bulk_insert_performance(pglite_session):
 # Pure SQLAlchemy tests
 pytest -m sqlalchemy -p no:django
 
-# Pure Django tests  
+# Pure Django tests
 pytest -m django
 
 # Directory isolation
@@ -240,9 +240,9 @@ pytest tests/django/       # Auto-isolated
 ## 💝 **Community**
 
 > **"Finally, PostgreSQL testing that just works!"** - *Happy Developer*
-
+>
 > **"From 30 minutes of setup to 30 seconds. Game changer."** - *Django User*
-
+>
 > **"Vite for databases. This is the future."** - *FastAPI Enthusiast*
 
 ---
@@ -254,4 +254,3 @@ pytest tests/django/       # Auto-isolated
 ---
 
 *py-pglite: Because testing should be simple.* ⚡
-
