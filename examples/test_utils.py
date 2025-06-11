@@ -42,7 +42,7 @@ def test_database_cleanup_utils(pglite_engine):
             title="Python Testing Guide",
             author_id=author.id,
             isbn="978-0123456789",
-            published_year=2024
+            published_year=2024,
         )
         session.add(book)
         session.commit()
@@ -138,7 +138,7 @@ def test_partial_cleanup(pglite_engine):
             title="Temporary Book",
             author_id=author.id,
             isbn="978-0987654321",
-            published_year=2024
+            published_year=2024,
         )
         session.add(book)
         session.commit()
@@ -153,7 +153,9 @@ def test_partial_cleanup(pglite_engine):
 
     # Verify with exclude list in verification
     assert utils.verify_database_empty(pglite_engine, exclude_tables=["author"])
-    assert not utils.verify_database_empty(pglite_engine)  # Should be False due to author
+    assert not utils.verify_database_empty(
+        pglite_engine
+    )  # Should be False due to author
 
 
 def test_schema_operations(pglite_engine):
@@ -167,8 +169,10 @@ def test_schema_operations(pglite_engine):
     with Session(pglite_engine) as session:
         with session.connection() as conn:
             result = conn.execute(
-                text("SELECT schema_name FROM information_schema.schemata WHERE schema_name = :name"),
-                {"name": test_schema}
+                text(
+                    "SELECT schema_name FROM information_schema.schemata WHERE schema_name = :name"
+                ),
+                {"name": test_schema},
             )
             schemas = result.fetchall()
             assert len(schemas) == 1
@@ -180,8 +184,10 @@ def test_schema_operations(pglite_engine):
     with Session(pglite_engine) as session:
         with session.connection() as conn:
             result = conn.execute(
-                text("SELECT schema_name FROM information_schema.schemata WHERE schema_name = :name"),
-                {"name": test_schema}
+                text(
+                    "SELECT schema_name FROM information_schema.schemata WHERE schema_name = :name"
+                ),
+                {"name": test_schema},
             )
             schemas = result.fetchall()
             assert len(schemas) == 0
@@ -198,8 +204,8 @@ def test_combined_cleanup_fixture(pglite_session: Session):
         # Clean all tables manually to ensure fresh state
         conn.execute(text('DELETE FROM "book"'))
         conn.execute(text('DELETE FROM "author"'))
-        conn.execute(text('ALTER SEQUENCE author_id_seq RESTART WITH 1'))
-        conn.execute(text('ALTER SEQUENCE book_id_seq RESTART WITH 1'))
+        conn.execute(text("ALTER SEQUENCE author_id_seq RESTART WITH 1"))
+        conn.execute(text("ALTER SEQUENCE book_id_seq RESTART WITH 1"))
         pglite_session.commit()
 
     # Add test data directly using the existing session
@@ -213,7 +219,7 @@ def test_combined_cleanup_fixture(pglite_session: Session):
         title="Test Book",
         author_id=author.id,
         isbn="978-0111111111",
-        published_year=2024
+        published_year=2024,
     )
     pglite_session.add(book)
     pglite_session.commit()
