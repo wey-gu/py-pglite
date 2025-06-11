@@ -119,12 +119,12 @@ def test_users(pglite_session):
     pglite_session.commit()
     assert user.id == 1  # Real PostgreSQL!
 
-# Django tests (基础用法)
+# Django tests without pytest-django
 def test_models(pglite_django_db):
     Post.objects.create(title="Hello World")
     assert Post.objects.count() == 1  # Zero config!
 
-# Django tests (使用 pytest-django)
+# Django tests with pytest-django
 @pytest.mark.django_db
 def test_with_pytest_django(pglite_django_db):
     Post.objects.create(title="Hello World")
