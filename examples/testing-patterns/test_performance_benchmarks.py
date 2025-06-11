@@ -32,7 +32,7 @@ class BenchmarkUser(SQLModel, table=True):
 
 class BenchmarkOrder(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="benchmark_users.id", index=True)
+    user_id: int = Field(foreign_key="benchmarkuser.id", index=True)
     amount: float
     status: str = Field(default="pending")
     created_at: str | None = Field(default=None)
@@ -104,7 +104,7 @@ class TestPerformanceBenchmarks:
             # Cleanup for next test
             with Session(benchmark_engine) as session:
                 session.execute(
-                    text("TRUNCATE TABLE benchmark_users RESTART IDENTITY CASCADE")
+                    text("TRUNCATE TABLE benchmarkuser RESTART IDENTITY CASCADE")
                 )
                 session.commit()
 
@@ -251,19 +251,19 @@ class TestPerformanceBenchmarks:
 
         # Test various query patterns
         query_tests = [
-            ("Simple select", "SELECT COUNT(*) FROM benchmark_users"),
-            ("Filtered query", "SELECT * FROM benchmark_users WHERE score > 500"),
+            ("Simple select", "SELECT COUNT(*) FROM benchmarkuser"),
+            ("Filtered query", "SELECT * FROM benchmarkuser WHERE score > 500"),
             (
                 "Aggregation",
-                "SELECT score, COUNT(*) FROM benchmark_users GROUP BY score HAVING COUNT(*) > 1",
+                "SELECT score, COUNT(*) FROM benchmarkuser GROUP BY score HAVING COUNT(*) > 1",
             ),
             (
                 "Pattern matching",
-                "SELECT * FROM benchmark_users WHERE username LIKE 'large_user_1%'",
+                "SELECT * FROM benchmarkuser WHERE username LIKE 'large_user_1%'",
             ),
             (
                 "JSON simulation",
-                "SELECT username, CASE WHEN score > 750 THEN 'high' WHEN score > 250 THEN 'medium' ELSE 'low' END as tier FROM benchmark_users",
+                "SELECT username, CASE WHEN score > 750 THEN 'high' WHEN score > 250 THEN 'medium' ELSE 'low' END as tier FROM benchmarkuser",
             ),
         ]
 
@@ -299,7 +299,7 @@ class TestPerformanceBenchmarks:
                     with Session(benchmark_engine) as session:
                         # Quick operation
                         result = session.execute(
-                            text("SELECT COUNT(*) FROM benchmark_users WHERE id = :id"),
+                            text("SELECT COUNT(*) FROM benchmarkuser WHERE id = :id"),
                             {"id": (worker_id * 20 + i) % 100 + 1},
                         ).scalar()
                         successful_operations += 1
@@ -382,11 +382,12 @@ class TestPerformanceBenchmarks:
                 session.commit()
 
                 # Perform operations on the data
-                high_scorers = session.exec(
-                    select(BenchmarkUser)
-                    .where(BenchmarkUser.score > 50)
-                    .where(BenchmarkUser.username.like(f"temp_cycle_{cycle}_%"))  # type: ignore
-                ).all()
+                high_scorers = session.execute(
+                    text(
+                        "SELECT * FROM benchmarkuser WHERE score > 50 AND username LIKE :pattern"
+                    ),
+                    {"pattern": f"temp_cycle_{cycle}_%"},
+                ).fetchall()
 
                 # Cleanup immediately
                 for user in temp_users:
@@ -410,11 +411,10 @@ class TestPerformanceBenchmarks:
 
         # Verify no data leakage
         with Session(benchmark_engine) as session:
-            remaining_temp = session.exec(
-                select(BenchmarkUser).where(
-                    BenchmarkUser.username.like("%temp_cycle_%")
-                )  # type: ignore
-            ).all()
+            remaining_temp = session.execute(
+                text("SELECT * FROM benchmarkuser WHERE username LIKE :pattern"),
+                {"pattern": "%temp_cycle_%"},
+            ).fetchall()
 
         # Performance and stability assertions
         assert len(remaining_temp) == 0, "No temporary data should remain after cleanup"
