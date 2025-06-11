@@ -130,7 +130,8 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
             "🚫 Django not available. Install with: pip install py-pglite[django]"
         )
 
-    if item.get_closest_marker("pglite_pytest_django") and not HAS_PYTEST_DJANGO:
+    # Only check for pytest-django if the test is explicitly marked to use it
+    if item.get_closest_marker("pytest_django") and not HAS_PYTEST_DJANGO:
         pytest.skip(
             "🚫 pytest-django not available. Install with: pip install pytest-django"
         )

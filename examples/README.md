@@ -55,10 +55,13 @@ Perfect SQLAlchemy integration with automatic cleanup.
 ### **🌟 Django** - Auto-configured testing  
 
 ```bash
+# Basic Django test, without pytest-django
 pytest testing-patterns/django/ -v
-```
 
-Django models + pytest-django compatibility, zero setup.
+# Django test with pytest-django (requires pytest-django)
+pip install pytest-django
+pytest testing-patterns/django/test_pytest_django.py -v
+```
 
 ### **🎪 Comprehensive** - All fixtures
 
@@ -116,10 +119,16 @@ def test_users(pglite_session):
     pglite_session.commit()
     assert user.id == 1  # Real PostgreSQL!
 
-# Django tests  
-def test_models(db):
+# Django tests (基础用法)
+def test_models(pglite_django_db):
     Post.objects.create(title="Hello World")
     assert Post.objects.count() == 1  # Zero config!
+
+# Django tests (使用 pytest-django)
+@pytest.mark.django_db
+def test_with_pytest_django(pglite_django_db):
+    Post.objects.create(title="Hello World")
+    assert Post.objects.count() == 1  # 更多测试功能！
 ```
 
 ### **🚀 Production Examples**
