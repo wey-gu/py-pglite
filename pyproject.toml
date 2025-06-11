@@ -37,7 +37,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "psycopg>=3.0.0", 
     "psutil>=6.0.0",
 ]
 
@@ -46,6 +45,8 @@ dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=6.1.1",
+    "psycopg>=3.0.0",
+    "asyncpg>=0.29.0", 
     "sqlalchemy>=2.0.41",
     "sqlmodel>=0.0.24",
     "django>=4.0.0",
@@ -62,6 +63,16 @@ dev = [
     "bcrypt>=4.3.0",
     "types-psutil>=7.0.0",
 ]
+psycopg = [
+    "psycopg>=3.0.0",
+]
+asyncpg = [
+    "asyncpg>=0.29.0",
+]
+async = [
+    "asyncpg>=0.29.0",
+    "pytest-asyncio>=0.21.0",
+]
 sqlalchemy = [
     "sqlalchemy>=2.0.41",
 ]
@@ -77,6 +88,16 @@ fastapi = [
     "sqlalchemy>=2.0.41",
     "fastapi>=0.115.12",
     "sqlmodel>=0.0.24",
+]
+all = [
+    "psycopg>=3.0.0",
+    "asyncpg>=0.29.0",
+    "sqlalchemy>=2.0.41",
+    "sqlmodel>=0.0.24",
+    "django>=4.0.0",
+    "pytest-django>=4.5.0",
+    "fastapi>=0.115.12",
+    "pytest-asyncio>=0.21.0",
 ]
 
 [project.urls]

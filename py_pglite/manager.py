@@ -375,3 +375,18 @@ startServer();"""
                 )
 
         return False
+
+    def wait_for_ready(self, max_retries: int = 15, delay: float = 1.0) -> bool:
+        """Wait for database to be ready (framework-agnostic).
+
+        This is an alias for wait_for_ready_basic() to maintain API consistency
+        across different manager types while keeping the base manager framework-agnostic.
+
+        Args:
+            max_retries: Maximum number of connection attempts
+            delay: Delay between attempts in seconds
+
+        Returns:
+            True if database becomes ready, False otherwise
+        """
+        return self.wait_for_ready_basic(max_retries=max_retries, delay=delay)
