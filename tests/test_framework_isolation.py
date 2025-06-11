@@ -24,7 +24,7 @@ def test_core_imports_without_frameworks():
 
     # Verify core functionality
     config = PGliteConfig()
-    assert hasattr(config, 'cleanup_on_exit')
+    assert hasattr(config, "cleanup_on_exit")
     assert config.cleanup_on_exit is True
 
     # Manager can be instantiated
@@ -41,7 +41,7 @@ def test_sqlalchemy_isolation():
         from py_pglite.sqlalchemy.utils import create_all_tables
 
         # Should be available
-        assert hasattr(sqlalchemy_fixtures, 'pglite_engine')
+        assert hasattr(sqlalchemy_fixtures, "pglite_engine")
         assert callable(create_all_tables)
     except ImportError:
         # If SQLAlchemy not installed, this is expected
@@ -57,7 +57,7 @@ def test_django_isolation():
         from py_pglite.django.utils import configure_django_for_pglite
 
         # Should be available
-        assert hasattr(django_fixtures, 'django_pglite_db')
+        assert hasattr(django_fixtures, "django_pglite_db")
         assert callable(configure_django_for_pglite)
     except ImportError:
         # If Django not installed, this is expected
@@ -73,6 +73,7 @@ def test_framework_coexistence():
     # Test SQLAlchemy import
     try:
         from py_pglite.sqlalchemy import fixtures as sqlalchemy_fixtures
+
         sqlalchemy_available = True
     except ImportError:
         pass
@@ -80,6 +81,7 @@ def test_framework_coexistence():
     # Test Django import
     try:
         from py_pglite.django import fixtures as django_fixtures
+
         django_available = True
     except ImportError:
         pass
@@ -89,16 +91,17 @@ def test_framework_coexistence():
         # Re-import to ensure they're bound in this scope
         from py_pglite.django import fixtures as django_fixtures  # noqa: F401
         from py_pglite.sqlalchemy import fixtures as sqlalchemy_fixtures  # noqa: F401
+
         # Both should work without conflicts
-        assert hasattr(sqlalchemy_fixtures, 'pglite_engine')
-        assert hasattr(django_fixtures, 'django_pglite_db')
+        assert hasattr(sqlalchemy_fixtures, "pglite_engine")
+        assert hasattr(django_fixtures, "django_pglite_db")
 
 
 def test_optional_dependency_handling():
     """Test that missing optional dependencies are handled gracefully."""
 
     # Test that core works even if optional deps are missing
-    with patch.dict(sys.modules, {'sqlalchemy': None, 'django': None}):
+    with patch.dict(sys.modules, {"sqlalchemy": None, "django": None}):
         # Core should still work
         from py_pglite import PGliteConfig, PGliteManager
 
@@ -112,6 +115,7 @@ def test_pytest_plugin_isolation():
 
     try:
         import py_pglite.pytest_plugin  # noqa: F401
+
         # Plugin module should be importable without errors
         assert True  # Basic import test
     except ImportError:
@@ -132,6 +136,7 @@ def test_sequential_framework_usage():
     # Then try SQLAlchemy (if available)
     try:
         from py_pglite.sqlalchemy import fixtures  # noqa: F401
+
         # Should not interfere with core
         assert manager.config == config
     except ImportError:
@@ -140,6 +145,7 @@ def test_sequential_framework_usage():
     # Then try Django (if available)
     try:
         from py_pglite.django.utils import configure_django_for_pglite
+
         # Should not interfere with core or SQLAlchemy
         assert manager.config == config
     except ImportError:

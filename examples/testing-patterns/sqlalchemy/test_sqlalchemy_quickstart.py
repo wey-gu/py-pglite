@@ -11,7 +11,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from py_pglite import PGliteConfig, PGliteManager
+from py_pglite import PGliteConfig
+from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
 
 Base = declarative_base()
 
@@ -29,7 +30,7 @@ class User(Base):
 @pytest.fixture(scope="module")
 def sqlalchemy_pglite_engine() -> Generator[Engine, None, None]:
     """Module-scoped PGlite engine to avoid conflicts with other test modules."""
-    manager = PGliteManager(PGliteConfig())
+    manager = SQLAlchemyPGliteManager(PGliteConfig())
     manager.start()
 
     try:

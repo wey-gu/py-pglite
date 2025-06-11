@@ -4,9 +4,11 @@ Provides seamless integration between PGlite (in-memory PostgreSQL)
 and Python test suites with support for SQLAlchemy, SQLModel, and Django.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 # Core exports (always available)
+# Database client exports (choose your preferred client)
+from .clients import AsyncpgClient, PsycopgClient, get_client, get_default_client
 from .config import PGliteConfig
 from .manager import PGliteManager
 
@@ -14,6 +16,11 @@ from .manager import PGliteManager
 __all__ = [
     "PGliteConfig",
     "PGliteManager",
+    # Database clients
+    "get_client",
+    "get_default_client",
+    "PsycopgClient",
+    "AsyncpgClient",
 ]
 
 # Framework integrations are imported separately:

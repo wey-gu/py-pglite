@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from ..config import PGliteConfig
-from ..manager import PGliteManager
+from .manager import SQLAlchemyPGliteManager
 
 # Try to import SQLModel
 try:
@@ -35,21 +35,40 @@ def pglite_config() -> PGliteConfig:
 
 
 @pytest.fixture(scope="session")
-def pglite_engine(pglite_manager: PGliteManager) -> Engine:
-    """Pytest fixture providing a SQLAlchemy engine connected to PGlite.
+def pglite_sqlalchemy_manager(
+    pglite_config: PGliteConfig,
+) -> Generator[SQLAlchemyPGliteManager, None, None]:
+    """Pytest fixture providing an SQLAlchemy-enabled PGlite manager."""
+    manager = SQLAlchemyPGliteManager(pglite_config)
+    manager.start()
 
-    Uses the core pglite_manager fixture to ensure all integrations
-    share the same PGlite instance.
-    """
-    # Use the shared engine from manager (no custom parameters to avoid conflicts)
-    return pglite_manager.get_engine()
+    # Wait for database to be ready
+    if not manager.wait_for_ready():
+        raise RuntimeError("Failed to start PGlite database")
+
+    try:
+        yield manager
+    finally:
+        manager.stop()
 
 
 @pytest.fixture(scope="session")
-def pglite_sqlalchemy_engine(pglite_manager: PGliteManager) -> Engine:
+def pglite_engine(pglite_sqlalchemy_manager: SQLAlchemyPGliteManager) -> Engine:
+    """Pytest fixture providing a SQLAlchemy engine connected to PGlite.
+
+    Uses the SQLAlchemy-enabled manager to ensure proper SQLAlchemy integration.
+    """
+    # Use the shared engine from manager (no custom parameters to avoid conflicts)
+    return pglite_sqlalchemy_manager.get_engine()
+
+
+@pytest.fixture(scope="session")
+def pglite_sqlalchemy_engine(
+    pglite_sqlalchemy_manager: SQLAlchemyPGliteManager,
+) -> Engine:
     """Pytest fixture providing an optimized SQLAlchemy engine connected to PGlite."""
     # Use the shared engine from manager (no custom parameters to avoid conflicts)
-    return pglite_manager.get_engine()
+    return pglite_sqlalchemy_manager.get_engine()
 
 
 @pytest.fixture(scope="function")

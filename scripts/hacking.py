@@ -10,7 +10,7 @@ This script is deprecated. Use the new unified development script:
     python scripts/dev.py --test       # Tests only
     python scripts/dev.py --examples   # Examples only
     python scripts/dev.py --lint       # Linting only
-    
+
 Or use the convenient Makefile:
 
     make dev                           # Full workflow
@@ -54,15 +54,13 @@ def main():
     print("❓ Help:")
     print("   python scripts/dev.py --help")
     print("   make help")
-    
+
     print("\n🔄 Auto-redirecting to full workflow...")
-    
+
     # Auto-redirect to new script
     root_dir = Path(__file__).parent.parent
-    result = subprocess.run([
-        sys.executable, "scripts/dev.py"
-    ], cwd=root_dir)
-    
+    result = subprocess.run([sys.executable, "scripts/dev.py"], cwd=root_dir)
+
     return result.returncode
 
 

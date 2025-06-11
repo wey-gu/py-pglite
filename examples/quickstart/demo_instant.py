@@ -10,7 +10,7 @@ Usage:
     python demo_instant.py
 """
 
-from py_pglite import PGliteManager
+from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
 
 
 def main():
@@ -20,7 +20,7 @@ def main():
     print("=" * 40)
 
     # 🎯 ONE LINE: Real PostgreSQL ready!
-    with PGliteManager() as db:
+    with SQLAlchemyPGliteManager() as db:
         engine = db.get_engine()
 
         print("✅ PostgreSQL started (zero config!)")

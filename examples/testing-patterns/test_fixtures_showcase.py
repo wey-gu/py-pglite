@@ -13,7 +13,7 @@ from sqlalchemy import Boolean, Column, DateTime, Integer, String, text
 from sqlalchemy.orm import Session, declarative_base
 from sqlalchemy.sql import func
 
-from py_pglite import PGliteManager
+from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
 
 Base = declarative_base()
 
@@ -41,7 +41,7 @@ class User(Base):
 @pytest.fixture(scope="function")
 def clean_db():
     """Function-scoped clean database for perfect test isolation."""
-    manager = PGliteManager()
+    manager = SQLAlchemyPGliteManager()
     manager.start()
     engine = manager.get_engine()
     Base.metadata.create_all(engine)

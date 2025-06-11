@@ -16,10 +16,10 @@ from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-from py_pglite import PGliteManager
+from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
 
 # ⚡ ONE LINE SETUP - Real PostgreSQL ready!
-manager = PGliteManager()
+manager = SQLAlchemyPGliteManager()
 manager.start()
 engine = manager.get_engine()
 

@@ -113,59 +113,115 @@ make fmt                # Auto-fix formatting
 
 ## 📁 **Project Structure**
 
-```
+```bash
 py-pglite/
-├── py_pglite/                 # 📦 Core package
-│   ├── __init__.py           #    Public API
-│   ├── manager.py            #    PGlite management
-│   ├── config.py             #    Configuration
-│   ├── sqlalchemy/           #    SQLAlchemy integration
-│   ├── django/               #    Django integration  
-│   └── pytest_plugin.py     #    Pytest plugin
+├── py_pglite/                    # 📦 Core package
+│   ├── __init__.py              #    Public API
+│   ├── manager.py               #    Framework-agnostic PGlite management
+│   ├── config.py                #    Robust configuration system
+│   ├── utils.py                 #    Framework-agnostic utilities
+│   ├── sqlalchemy/              #    SQLAlchemy integration
+│   │   ├── manager.py           #    Enhanced SQLAlchemy manager
+│   │   ├── fixtures.py          #    Pytest fixtures
+│   │   └── utils.py             #    SQLAlchemy utilities
+│   ├── django/                  #    Django integration  
+│   │   ├── backend.py           #    Custom database backend
+│   │   ├── fixtures.py          #    Django fixtures
+│   │   └── utils.py             #    Django utilities
+│   └── pytest_plugin.py         #    Auto-discovery pytest plugin
 │
-├── tests/                    # 🧪 Core tests
-│   ├── test_core_manager.py  #    Manager tests
-│   ├── test_advanced.py      #    Advanced features
-│   └── test_framework_isolation.py # Framework isolation
+├── tests/                       # 🧪 Core tests (88 tests)
+│   ├── test_core_manager.py     #    Manager lifecycle & process management
+│   ├── test_advanced.py         #    Advanced usage patterns
+│   ├── test_configuration.py    #    🆕 Configuration validation & edge cases
+│   ├── test_connection_management.py # 🆕 Connection pooling & lifecycle
+│   ├── test_reliability.py      #    🆕 Error recovery & resilience
+│   ├── test_django_backend.py   #    🆕 Django backend & decoupling
+│   ├── test_fastapi_integration.py #  FastAPI patterns
+│   └── test_framework_isolation.py # Framework isolation validation
 │
-├── examples/                 # 📚 Examples & demos
-│   ├── quickstart/           #    ⚡ Instant demos
-│   └── testing-patterns/     #    🧪 Production examples
+├── examples/                    # 📚 Examples & demos (51 tests)
+│   ├── quickstart/              #    ⚡ Instant demos
+│   │   ├── demo_instant.py      #    5-line PostgreSQL demo
+│   │   ├── simple_fastapi.py    #    FastAPI integration
+│   │   └── simple_performance.py #   Performance comparison
+│   └── testing-patterns/        #    🧪 Production examples
+│       ├── sqlalchemy/          #    SQLAlchemy patterns (2 tests)
+│       ├── django/              #    Django patterns (10 tests)
+│       └── test_fixtures_showcase.py # Advanced patterns (8 tests)
 │
-├── scripts/                  # 🔧 Development tools
-│   └── dev.py               #    Unified development script
+├── scripts/                     # 🔧 Development tools
+│   └── dev.py                   #    Unified development script
 │
-└── Makefile                  # 🎯 Convenience commands
+└── Makefile                     # 🎯 Convenience commands
 ```
 
 ---
 
 ## 🧪 **Testing Strategy**
 
-### **Core Tests** (`tests/`)
+### **Comprehensive Test Coverage (139 Total Tests)**
 
-- **Manager lifecycle** - Start/stop, configuration
-- **Framework isolation** - SQLAlchemy/Django separation  
-- **Advanced features** - Complex scenarios
-- **FastAPI integration** - REST API patterns
+**Core Tests** (`tests/` - 88 tests)
 
-### **Example Tests** (`examples/`)
+- **🏗️ Manager lifecycle** (`test_core_manager.py`) - Process management, configuration
+- **⚙️ Configuration validation** (`test_configuration.py`) - Edge cases, validation, performance
+- **🔗 Connection management** (`test_connection_management.py`) - Pooling, lifecycle, concurrency
+- **🛡️ Reliability & recovery** (`test_reliability.py`) - Error handling, process recovery, edge cases
+- **🌟 Django backend** (`test_django_backend.py`) - Django integration, decoupling validation
+- **🚀 FastAPI integration** (`test_fastapi_integration.py`) - REST API patterns
+- **🔀 Framework isolation** (`test_framework_isolation.py`) - SQLAlchemy/Django separation
+- **💎 Advanced features** (`test_advanced.py`) - Complex scenarios, manual management
 
-- **SQLAlchemy patterns** - Real ORM usage
-- **Django patterns** - Real Django models
-- **Quickstart demos** - User experience validation
+**Example Tests** (`examples/` - 51 tests)
 
-### **Framework Isolation**
+- **🎯 SQLAlchemy patterns** (2 tests) - Real ORM usage, modern SQLAlchemy 2.0
+- **⭐ Django patterns** (10 tests) - Django ORM, pytest-django, advanced features
+- **🎪 Advanced patterns** (8 tests) - Performance, PostgreSQL features, transactions
+- **⚡ Quickstart validation** (31 tests) - User experience, FastAPI, utilities
+
+### **Quality Assurance Features**
 
 ```bash
-# Test SQLAlchemy alone
+# Framework isolation validation
+pytest -m sqlalchemy -p no:django     # Pure SQLAlchemy (no Django bleeding)
+pytest -m django -p no:sqlalchemy     # Pure Django (no SQLAlchemy bleeding)
+
+# Comprehensive coverage areas
+pytest tests/test_configuration.py    # Config validation & edge cases
+pytest tests/test_reliability.py      # Error recovery & resilience
+pytest tests/test_connection_management.py # Connection pooling & cleanup
+
+# Real-world scenario validation
+pytest examples/testing-patterns/     # Production usage patterns
+```
+
+### **Battle-Tested Scenarios**
+
+Our test suite validates these critical scenarios:
+
+- ✅ **Process recovery** - Manager restart, cleanup, resource management
+- ✅ **Connection storms** - Concurrent access, pool exhaustion, timeout handling
+- ✅ **Memory stability** - Long-running suites, large datasets, cleanup validation
+- ✅ **Unicode data** - International character sets, special characters
+- ✅ **Framework decoupling** - Zero bleeding between SQLAlchemy/Django components
+- ✅ **Configuration robustness** - Edge cases, validation, invalid inputs
+- ✅ **Production patterns** - FastAPI + SQLAlchemy, Django models, complex queries
+
+### **Framework Isolation Testing**
+
+```bash
+# Test SQLAlchemy isolation
 pytest examples/testing-patterns/sqlalchemy/ -p no:django
 
-# Test Django alone  
-pytest examples/testing-patterns/django/
+# Test Django isolation  
+pytest examples/testing-patterns/django/ -p no:sqlalchemy
 
 # Test framework coexistence
 pytest tests/test_framework_isolation.py
+
+# Test decoupling fix
+pytest tests/test_django_backend.py::TestDjangoBackendDecoupling
 ```
 
 ---
@@ -322,6 +378,24 @@ def test_users(pglite_session):
 
 ## 🔧 **Known Issues & Solutions**
 
+### **Django Backend Decoupling (Fixed in v0.3.0+)**
+
+**Issue:** Django backend was calling `manager.wait_for_ready()` but the base `PGliteManager` only had `wait_for_ready_basic()`, causing framework coupling.
+
+**Cause:** Django integration was inadvertently depending on SQLAlchemy-specific methods, breaking the framework-agnostic design.
+
+**Solution:** Added `wait_for_ready()` method to base `PGliteManager` that delegates to `wait_for_ready_basic()` for API consistency.
+
+```python
+# Now works perfectly across all frameworks
+def test_django_backend_ready(db):
+    # Django backend uses base manager with consistent API
+    manager = get_pglite_manager()
+    manager.wait_for_ready()  # ✅ Works in both SQLAlchemy and Django
+```
+
+**Validation:** Comprehensive Django backend tests added (`test_django_backend.py`) with 9 tests covering decoupling, imports, and error handling.
+
 ### **Connection Timeouts (Fixed in v0.2.0+)**
 
 **Issue:** `psycopg.errors.ConnectionTimeout` when creating tables or running DDL operations.
@@ -335,6 +409,26 @@ def test_users(pglite_session):
 engine = manager.get_engine()
 SQLModel.metadata.create_all(engine)  # ✅ Works
 ```
+
+**Additional Improvements:**
+
+- **Connection pooling** - StaticPool and NullPool support with proper configuration
+- **Timeout handling** - Configurable timeouts with robust retry logic
+- **Process recovery** - Automatic cleanup and restart on failures
+- **Resource management** - Comprehensive socket and memory cleanup
+
+### **Framework Isolation (Enhanced in v0.3.0+)**
+
+**Validation:** py-pglite now has comprehensive framework isolation testing:
+
+```bash
+# These work perfectly without interference
+pytest -m sqlalchemy -p no:django     # Pure SQLAlchemy
+pytest -m django -p no:sqlalchemy     # Pure Django  
+pytest tests/test_framework_isolation.py # Validation suite
+```
+
+**Coverage:** 139 total tests including edge cases, error recovery, and production scenarios.
 
 ---
 

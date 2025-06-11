@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from py_pglite.config import PGliteConfig
-from py_pglite.manager import PGliteManager
+from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
 
 # Try to import SQLModel
 try:
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
-def pglite_manager() -> Generator[PGliteManager, None, None]:
+def pglite_manager() -> Generator[SQLAlchemyPGliteManager, None, None]:
     """Isolated PGlite manager for examples - one per test module.
 
     This overrides the session-scoped fixture from the main package
@@ -54,7 +54,7 @@ def pglite_manager() -> Generator[PGliteManager, None, None]:
     socket_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
     config.socket_path = str(socket_dir / ".s.PGSQL.5432")
 
-    manager = PGliteManager(config)
+    manager = SQLAlchemyPGliteManager(config)
     manager.start()
     manager.wait_for_ready()
 
@@ -65,7 +65,7 @@ def pglite_manager() -> Generator[PGliteManager, None, None]:
 
 
 @pytest.fixture(scope="module")
-def pglite_engine(pglite_manager: PGliteManager) -> Engine:
+def pglite_engine(pglite_manager: SQLAlchemyPGliteManager) -> Engine:
     """Isolated SQLAlchemy engine for examples."""
     # Use the shared engine from manager (no custom parameters to avoid conflicts)
     return pglite_manager.get_engine()
