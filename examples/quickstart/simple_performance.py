@@ -15,7 +15,7 @@ import time
 
 from sqlalchemy import text
 
-from py_pglite import PGliteManager
+from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
 
 
 def measure_boot_time():
@@ -26,7 +26,7 @@ def measure_boot_time():
     # py-pglite boot time
     print("⚡ py-pglite startup...")
     start = time.time()
-    with PGliteManager() as manager:
+    with SQLAlchemyPGliteManager() as manager:
         engine = manager.get_engine()
         with engine.connect() as conn:
             conn.execute(text("SELECT 1")).scalar()
@@ -64,7 +64,7 @@ def measure_feature_power():
     print("\n🐘 FEATURE POWER TEST")
     print("=" * 50)
 
-    with PGliteManager() as manager:
+    with SQLAlchemyPGliteManager() as manager:
         engine = manager.get_engine()
 
         with engine.connect() as conn:
@@ -205,7 +205,7 @@ def measure_raw_performance():
     print("=" * 50)
 
     # Setup databases
-    with PGliteManager() as manager:
+    with SQLAlchemyPGliteManager() as manager:
         engine = manager.get_engine()
         sqlite_conn = sqlite3.connect(":memory:")
 
@@ -317,7 +317,7 @@ def generate_final_report(boot_times, feature_time, perf_times):
 
     print("\n" + "🎯 THE HONEST TRUTH" + "\n" + "=" * 60)
 
-    print("📊 PERFORMANCE COMPARISON:")
+    print("�� PERFORMANCE COMPARISON:")
     print(f"   Boot Time:    SQLite {sqlite_boot:.3f}s vs py-pglite {pglite_boot:.2f}s")
     print(
         f"   Insert Speed: SQLite {1000 / sqlite_insert:,.0f}/s vs "

@@ -2,9 +2,16 @@
 
 import pytest
 from sqlalchemy import text
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field, Session, SQLModel, select
+from typing import TYPE_CHECKING
 
-from py_pglite import PGliteConfig, PGliteManager
+from py_pglite import PGliteConfig
+from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
+
+if TYPE_CHECKING:
+    from py_pglite.sqlalchemy import (
+        SQLAlchemyPGliteManager as SQLAlchemyPGliteManagerType,
+    )
 
 
 # Example models
@@ -25,13 +32,10 @@ class Order(SQLModel, table=True):
 def test_custom_configuration():
     """Test using custom PGlite configuration."""
     # Custom config with longer timeout
-    config = PGliteConfig(
-        timeout=30,
-        log_level="DEBUG",
-        cleanup_on_exit=True
-    )
+    config = PGliteConfig(timeout=30, log_level="DEBUG", cleanup_on_exit=True)
 
-    with PGliteManager(config) as manager:
+    manager: SQLAlchemyPGliteManager
+    with SQLAlchemyPGliteManager(config) as manager:
         engine = manager.get_engine()
 
         # Create tables
@@ -48,7 +52,7 @@ def test_custom_configuration():
 
 def test_manual_lifecycle_management():
     """Test manual management of PGlite lifecycle."""
-    manager = PGliteManager()
+    manager: SQLAlchemyPGliteManager = SQLAlchemyPGliteManager()
 
     try:
         # Start manually
@@ -95,7 +99,7 @@ def test_manual_lifecycle_management():
                         JOIN "order" o ON p.id = o.product_id 
                         WHERE p.category = :category
                     """),
-                    {"category": "Electronics"}
+                    {"category": "Electronics"},
                 )
 
                 row = result.fetchone()
@@ -112,12 +116,13 @@ def test_manual_lifecycle_management():
 
 def test_multiple_sessions():
     """Test multiple sessions with the same engine (recommended approach).
-    
-    Note: Creating multiple engines from the same PGlite manager can cause 
-    connection pool conflicts. The recommended approach is to use multiple 
+
+    Note: Creating multiple engines from the same PGlite manager can cause
+    connection pool conflicts. The recommended approach is to use multiple
     sessions with the same engine.
     """
-    with PGliteManager() as manager:
+    manager: SQLAlchemyPGliteManager
+    with SQLAlchemyPGliteManager() as manager:
         # Use a single engine with multiple sessions (recommended)
         engine = manager.get_engine(echo=False)
 
@@ -160,9 +165,7 @@ def test_multiple_sessions():
 
                 # Each session can add new data
                 new_product = Product(
-                    name=f"Product {i}",
-                    price=float(i * 10),
-                    category="Test"
+                    name=f"Product {i}", price=float(i * 10), category="Test"
                 )
                 session.add(new_product)
                 session.commit()
@@ -176,7 +179,9 @@ def test_multiple_sessions():
         try:
             all_products = final_session.exec(select(Product)).all()
             assert len(all_products) == 4  # 1 original + 3 new
-            print(f"All sessions completed successfully, total products: {len(all_products)}")
+            print(
+                f"All sessions completed successfully, total products: {len(all_products)}"
+            )
         finally:
             final_session.close()
 
@@ -185,7 +190,7 @@ def test_multiple_sessions():
 
 def test_error_handling():
     """Test error handling scenarios."""
-    manager = PGliteManager()
+    manager = SQLAlchemyPGliteManager()
 
     # Should fail if not started
     with pytest.raises(RuntimeError, match="not running"):
@@ -209,7 +214,8 @@ def test_error_handling():
 
 def test_concurrent_sessions():
     """Test multiple concurrent sessions."""
-    with PGliteManager() as manager:
+    manager: SQLAlchemyPGliteManager
+    with SQLAlchemyPGliteManager() as manager:
         engine = manager.get_engine()
         SQLModel.metadata.create_all(engine)
 
@@ -221,9 +227,7 @@ def test_concurrent_sessions():
             products = []
             for i, session in enumerate(sessions):
                 product = Product(
-                    name=f"Product {i}",
-                    price=float(i * 10),
-                    category="Test"
+                    name=f"Product {i}", price=float(i * 10), category="Test"
                 )
                 session.add(product)
                 session.commit()

@@ -15,7 +15,7 @@ class UserCreate(SQLModel):
 
 
 class APIUser(SQLModel, table=True):
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = {"extend_existing": True}
     id: int | None = Field(default=None, primary_key=True)
     name: str
     email: str
@@ -29,6 +29,7 @@ class UserRead(SQLModel):
 
 # FastAPI app
 app = FastAPI()
+
 
 # Database dependency (will be overridden in tests)
 def get_db():
@@ -99,8 +100,7 @@ def client(test_app):
 def test_create_user(client: TestClient):
     """Test creating a user via API."""
     response = client.post(
-        "/users/",
-        json={"name": "Alice", "email": "alice@example.com"}
+        "/users/", json={"name": "Alice", "email": "alice@example.com"}
     )
 
     assert response.status_code == 200
@@ -114,8 +114,7 @@ def test_get_user(client: TestClient):
     """Test getting a user via API."""
     # First create a user
     create_response = client.post(
-        "/users/",
-        json={"name": "Bob", "email": "bob@example.com"}
+        "/users/", json={"name": "Bob", "email": "bob@example.com"}
     )
     user_id = create_response.json()["id"]
 
@@ -169,8 +168,7 @@ def test_delete_user(client: TestClient):
     """Test deleting a user."""
     # First create a user
     create_response = client.post(
-        "/users/",
-        json={"name": "Eve", "email": "eve@example.com"}
+        "/users/", json={"name": "Eve", "email": "eve@example.com"}
     )
     user_id = create_response.json()["id"]
 
@@ -197,8 +195,7 @@ def test_email_uniqueness_constraint(client: TestClient):
     """Test that we can handle database constraints."""
     # Create first user
     response1 = client.post(
-        "/users/",
-        json={"name": "Frank", "email": "frank@example.com"}
+        "/users/", json={"name": "Frank", "email": "frank@example.com"}
     )
     assert response1.status_code == 200
 
@@ -206,8 +203,7 @@ def test_email_uniqueness_constraint(client: TestClient):
     # Note: This test assumes no unique constraint on email in the model
     # If you add a unique constraint, this test would need to expect a 400/422 error
     response2 = client.post(
-        "/users/",
-        json={"name": "Frank Jr", "email": "frank@example.com"}
+        "/users/", json={"name": "Frank Jr", "email": "frank@example.com"}
     )
 
     # Without unique constraint, this should succeed
@@ -240,8 +236,7 @@ def test_with_manual_db_setup(pglite_engine):
     # Test the endpoint
     with TestClient(test_app) as client:
         response = client.post(
-            "/users/",
-            json={"name": "Grace", "email": "grace@example.com"}
+            "/users/", json={"name": "Grace", "email": "grace@example.com"}
         )
 
         assert response.status_code == 200

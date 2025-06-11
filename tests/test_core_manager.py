@@ -8,6 +8,7 @@ import pytest
 from sqlalchemy import text
 
 from py_pglite import PGliteConfig, PGliteManager
+from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
 
 
 class TestPGliteConfig:
@@ -29,7 +30,7 @@ class TestPGliteConfig:
                 timeout=60,
                 log_level="DEBUG",
                 cleanup_on_exit=False,
-                work_dir=Path(temp_dir)
+                work_dir=Path(temp_dir),
             )
 
             assert config.timeout == 60
@@ -81,19 +82,19 @@ class TestPGliteManagerLifecycle:
             manager.stop()
 
 
-class TestPGliteManagerEngineCreation:
+class TestSQLAlchemyManagerEngineCreation:
     """Test SQLAlchemy engine creation and management."""
 
     def test_get_engine_requires_running_manager(self):
         """Test that get_engine() requires manager to be running."""
-        manager = PGliteManager()
+        manager = SQLAlchemyPGliteManager()
 
         with pytest.raises(RuntimeError, match="not running"):
             manager.get_engine()
 
     def test_get_engine_basic(self):
         """Test basic engine creation."""
-        with PGliteManager() as manager:
+        with SQLAlchemyPGliteManager() as manager:
             engine = manager.get_engine()
 
             # Should be able to connect and query

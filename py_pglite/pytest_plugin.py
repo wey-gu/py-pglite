@@ -94,6 +94,7 @@ if HAS_SQLALCHEMY:
             pglite_engine,
             pglite_session,
             pglite_sqlalchemy_engine,
+            pglite_sqlalchemy_manager,
             pglite_sqlalchemy_session,
         )
     except ImportError:
