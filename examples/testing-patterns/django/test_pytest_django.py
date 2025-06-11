@@ -1,15 +1,19 @@
 """
-🌟 pytest-django + py-pglite Example
-===================================
+🌟 pytest-django + py-pglite Example (Optional Integration)
+=========================================================
 
-Demonstrates pytest-django specific features with py-pglite.
+Demonstrates optional pytest-django integration with py-pglite.
 
-This shows pytest-django integration:
-• Using @pytest.mark.django_db decorator
-• pytest-django fixtures and utilities
+This shows how to use pytest-django features with py-pglite:
+• Using @pytest.mark.django_db decorator (optional)
+• pytest-django fixtures and utilities (optional)
 • Django test utilities with py-pglite
 
-This is DIFFERENT from plain Django ORM usage!
+Note: This is an OPTIONAL integration. You can use py-pglite with Django
+without pytest-django. This example is for users who specifically want
+to use pytest-django features.
+
+For basic Django testing without pytest-django, see test_django_quickstart.py
 """
 
 import pytest

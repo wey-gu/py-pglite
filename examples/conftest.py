@@ -39,19 +39,21 @@ logger = logging.getLogger(__name__)
 @pytest.fixture(scope="module")
 def pglite_manager() -> Generator[PGliteManager, None, None]:
     """Isolated PGlite manager for examples - one per test module.
-    
+
     This overrides the session-scoped fixture from the main package
     to provide better isolation when running all tests together.
     """
     # Create unique configuration to prevent socket conflicts
     config = PGliteConfig()
-    
+
     # Create a unique socket directory for this example module
     # PGlite expects socket_path to be the full path including .s.PGSQL.5432
-    socket_dir = Path(tempfile.gettempdir()) / f"py-pglite-example-{uuid.uuid4().hex[:8]}"
+    socket_dir = (
+        Path(tempfile.gettempdir()) / f"py-pglite-example-{uuid.uuid4().hex[:8]}"
+    )
     socket_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
     config.socket_path = str(socket_dir / ".s.PGSQL.5432")
-    
+
     manager = PGliteManager(config)
     manager.start()
     manager.wait_for_ready()
@@ -94,28 +96,32 @@ def pglite_session(pglite_engine: Engine) -> Generator[Any, None, None]:
                 if table_names:
                     # Disable foreign key checks for faster cleanup
                     conn.execute(text("SET session_replication_role = replica;"))
-                    
+
                     # Truncate all tables
                     for table_name in table_names:
                         logger.info(f"Truncating table: {table_name}")
                         conn.execute(
-                            text(f'TRUNCATE TABLE "{table_name}" RESTART IDENTITY CASCADE;')
+                            text(
+                                f'TRUNCATE TABLE "{table_name}" RESTART IDENTITY CASCADE;'
+                            )
                         )
 
                     # Re-enable foreign key checks
                     conn.execute(text("SET session_replication_role = DEFAULT;"))
-                    
+
                     # Commit the cleanup
                     conn.commit()
                     logger.info("Database cleanup completed successfully")
                 else:
                     logger.info("No tables found to clean")
                 break  # Success, exit retry loop
-                
+
         except Exception as e:
             logger.info(f"Database cleanup attempt {attempt + 1} failed: {e}")
             if attempt == retry_count - 1:
-                logger.warning("Database cleanup failed after all retries, continuing anyway")
+                logger.warning(
+                    "Database cleanup failed after all retries, continuing anyway"
+                )
             else:
                 time.sleep(0.5)  # Brief pause before retry
 
@@ -144,4 +150,4 @@ def pglite_session(pglite_engine: Engine) -> Generator[Any, None, None]:
         try:
             session.close()
         except Exception as e:
-            logger.warning(f"Error closing session: {e}") 
+            logger.warning(f"Error closing session: {e}")

@@ -191,9 +191,7 @@ def measure_feature_power():
                 f"      → {result[1]} events/minute, avg score: {result[2]:.1f}",
             )
 
-            total_feature_time = (
-                json_time + array_time + window_time + time_series_time
-            )
+            total_feature_time = json_time + array_time + window_time + time_series_time
 
             print(f"\n   🚀 Total advanced features: {total_feature_time:.4f}s")
             print("   💥 SQLite equivalent: IMPOSSIBLE ❌")
@@ -263,12 +261,10 @@ def measure_raw_performance():
         sqlite_insert = time.time() - start
 
         print(
-            f"   py-pglite: {pglite_insert:.3f}s "
-            f"({1000 / pglite_insert:,.0f} rec/sec)"
+            f"   py-pglite: {pglite_insert:.3f}s ({1000 / pglite_insert:,.0f} rec/sec)"
         )
         print(
-            f"   SQLite:    {sqlite_insert:.3f}s "
-            f"({1000 / sqlite_insert:,.0f} rec/sec)"
+            f"   SQLite:    {sqlite_insert:.3f}s ({1000 / sqlite_insert:,.0f} rec/sec)"
         )
 
         if sqlite_insert < pglite_insert:
@@ -322,8 +318,7 @@ def generate_final_report(boot_times, feature_time, perf_times):
     print("\n" + "🎯 THE HONEST TRUTH" + "\n" + "=" * 60)
 
     print("📊 PERFORMANCE COMPARISON:")
-    print(f"   Boot Time:    SQLite {sqlite_boot:.3f}s vs "
-          f"py-pglite {pglite_boot:.2f}s")
+    print(f"   Boot Time:    SQLite {sqlite_boot:.3f}s vs py-pglite {pglite_boot:.2f}s")
     print(
         f"   Insert Speed: SQLite {1000 / sqlite_insert:,.0f}/s vs "
         f"py-pglite {1000 / pglite_insert:,.0f}/s"
