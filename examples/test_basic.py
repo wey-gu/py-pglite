@@ -5,7 +5,7 @@ from sqlmodel import Field, Session, SQLModel, select
 
 # Example model
 class BasicUser(SQLModel, table=True):
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = {"extend_existing": True}
     id: int | None = Field(default=None, primary_key=True)
     name: str
     email: str
@@ -60,7 +60,9 @@ def test_user_update(pglite_session: Session):
     pglite_session.commit()
 
     # Verify the update
-    updated_user = pglite_session.exec(select(BasicUser).where(BasicUser.name == "David")).first()
+    updated_user = pglite_session.exec(
+        select(BasicUser).where(BasicUser.name == "David")
+    ).first()
     assert updated_user is not None
     assert updated_user.email == "david@new.com"
 
