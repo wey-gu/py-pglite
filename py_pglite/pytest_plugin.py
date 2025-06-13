@@ -119,26 +119,71 @@ if HAS_DJANGO:
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
     """Setup each test with perfect framework isolation."""
-    # Check for missing dependencies with helpful messages
-    if item.get_closest_marker("pglite_sqlalchemy") and not HAS_SQLALCHEMY:
-        pytest.skip(
-            "🚫 SQLAlchemy not available.\n"
-            "Install with: pip install 'py-pglite[sqlalchemy]'"
-        )
+    # Only skip if dependencies are missing AND test is explicitly marked
+    # (Don't skip auto-marked tests that might work with core fixtures)
 
-    if item.get_closest_marker("pglite_django") and not HAS_DJANGO:
-        pytest.skip(
-            "🚫 Django not available. Install with: pip install py-pglite[django]"
-        )
+    # Check for explicit SQLAlchemy markers only
+    explicit_sqlalchemy_markers = {"sqlalchemy", "pglite_sqlalchemy"}
+    if any(item.get_closest_marker(marker) for marker in explicit_sqlalchemy_markers):
+        if not HAS_SQLALCHEMY and _is_explicitly_marked(
+            item, explicit_sqlalchemy_markers
+        ):
+            print(f"Skipping test {item.name} because SQLAlchemy is not available")
+            pytest.skip(
+                "🚫 SQLAlchemy not available.\n"
+                "Install with: pip install 'py-pglite[sqlalchemy]'"
+            )
 
-    # Only check for pytest-django if the test is explicitly marked to use it
+    # Check for explicit Django markers only
+    explicit_django_markers = {"django", "pglite_django"}
+    if any(item.get_closest_marker(marker) for marker in explicit_django_markers):
+        if not HAS_DJANGO and _is_explicitly_marked(item, explicit_django_markers):
+            print(f"Skipping test {item.name} because Django is not available")
+            pytest.skip(
+                "🚫 Django not available. Install: pip install py-pglite[django]"
+            )
+
+    # Check for explicit pytest-django markers
     if item.get_closest_marker("pytest_django") and not HAS_PYTEST_DJANGO:
-        pytest.skip(
-            "🚫 pytest-django not available. Install with: pip install pytest-django"
-        )
+        if _is_explicitly_marked(item, {"pytest_django"}):
+            pytest.skip(
+                "🚫 pytest-django not available. Install: pip install pytest-django"
+            )
 
     # Framework isolation warnings for better DX
     _check_framework_isolation(item)
+
+
+def _is_explicitly_marked(item: pytest.Item, marker_names: set[str]) -> bool:
+    """Check if test is explicitly marked (not auto-marked by plugin)."""
+    # Simple heuristic: if the test path contains framework names, likely explicit
+    test_path = str(item.fspath)
+
+    # Framework-specific paths indicate explicit usage
+    if "sqlalchemy" in marker_names and "sqlalchemy" in test_path.lower():
+        return True
+    if "django" in marker_names and "django" in test_path.lower():
+        return True
+
+    # Check if marker has arguments (explicit markers often have config)
+    for marker_name in marker_names:
+        marker = item.get_closest_marker(marker_name)
+        if marker and (marker.args or marker.kwargs):
+            return True
+
+    # Check for module-level pytestmark (if accessible)
+    try:
+        module = getattr(item, "module", None)
+        if module and hasattr(module, "pytestmark"):
+            pytestmark = module.pytestmark
+            if isinstance(pytestmark, list):
+                return any(mark.name in marker_names for mark in pytestmark)
+            else:
+                return pytestmark.name in marker_names
+    except AttributeError:
+        pass
+
+    return False
 
 
 def _check_framework_isolation(item: pytest.Item) -> None:
@@ -192,7 +237,6 @@ def _auto_mark_test(item: pytest.Item) -> None:
         "pglite_sqlalchemy_session",
         "pglite_sqlalchemy_engine",
         "pglite_config",
-        "pglite_manager",
     }
     if fixture_names & sqlalchemy_fixtures:
         item.add_marker(pytest.mark.sqlalchemy)
