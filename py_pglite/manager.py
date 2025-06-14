@@ -404,7 +404,8 @@ startServer();"""
 
         for attempt in range(max_retries):
             try:
-                if test_connection(self.config.get_connection_string()):
+                # Use DSN format for direct psycopg connection testing
+                if test_connection(self.config.get_dsn()):
                     self.logger.info(f"Database ready after {attempt + 1} attempts")
                     time.sleep(0.2)  # Small stability delay
                     return True

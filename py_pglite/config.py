@@ -3,6 +3,7 @@
 import logging
 import os
 import tempfile
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -11,7 +12,9 @@ from .extensions import SUPPORTED_EXTENSIONS
 
 def _get_secure_socket_path() -> str:
     """Generate a secure socket path in user's temp directory."""
-    temp_dir = Path(tempfile.gettempdir()) / f"py-pglite-{os.getpid()}"
+    # Use both PID and UUID to ensure uniqueness
+    unique_id = f"{os.getpid()}-{uuid.uuid4().hex[:8]}"
+    temp_dir = Path(tempfile.gettempdir()) / f"py-pglite-{unique_id}"
     temp_dir.mkdir(mode=0o700, exist_ok=True)  # Restrict to user only
     # Use PostgreSQL's standard socket naming convention
     return str(temp_dir / ".s.PGSQL.5432")
@@ -69,8 +72,8 @@ class PGliteConfig:
         return int(level_value)
 
     def get_connection_string(self) -> str:
-        """Get PostgreSQL connection string for PGlite."""
-        # For psycopg with Unix domain sockets, we need to specify the directory
+        """Get PostgreSQL connection string for SQLAlchemy usage."""
+        # For SQLAlchemy with Unix domain sockets, we need to specify the directory
         # and use the standard PostgreSQL socket naming convention
         socket_dir = str(Path(self.socket_path).parent)
 
@@ -80,6 +83,12 @@ class PGliteConfig:
         )
 
         return connection_string
+
+    def get_psycopg_uri(self) -> str:
+        """Get PostgreSQL URI for direct psycopg usage."""
+        socket_dir = str(Path(self.socket_path).parent)
+        # Use standard PostgreSQL URI format for psycopg
+        return f"postgresql://postgres:postgres@/postgres?host={socket_dir}"
 
     def get_dsn(self) -> str:
         """Get PostgreSQL DSN connection string for direct psycopg usage."""

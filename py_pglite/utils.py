@@ -34,7 +34,7 @@ def test_connection(
     """Test if database connection is working.
 
     Args:
-        connection_string: PostgreSQL connection string
+        connection_string: PostgreSQL connection string (DSN format preferred)
         client: Database client to use (defaults to auto-detected)
 
     Returns:
