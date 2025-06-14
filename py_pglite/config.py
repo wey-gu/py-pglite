@@ -30,6 +30,7 @@ class PGliteConfig:
         node_modules_check: Whether to verify node_modules exists (default: True)
         auto_install_deps: Whether to auto-install npm dependencies (default: True)
         extensions: List of PGlite extensions to enable (e.g., ["pgvector"])
+        node_options: Custom NODE_OPTIONS for the Node.js process
     """
 
     timeout: int = 30
@@ -40,6 +41,7 @@ class PGliteConfig:
     node_modules_check: bool = True
     auto_install_deps: bool = True
     extensions: list[str] | None = None
+    node_options: str | None = None
 
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""

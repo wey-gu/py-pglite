@@ -238,6 +238,14 @@ startServer();"""
             # Install dependencies
             self._install_dependencies(self.work_dir)
 
+            # Prepare environment for Node.js process
+            env = os.environ.copy()
+            if self.config.node_options:
+                env["NODE_OPTIONS"] = self.config.node_options
+                self.logger.info(
+                    f"Using custom NODE_OPTIONS: {self.config.node_options}"
+                )
+
             # Start PGlite process with limited output buffering
             self.logger.info("Starting PGlite server...")
             # nosec B603,B607 - node with fixed script, safe for testing library
@@ -248,6 +256,7 @@ startServer();"""
                 text=True,
                 bufsize=0,  # Unbuffered for real-time monitoring
                 universal_newlines=True,
+                env=env,
             )
 
             # Wait for startup with robust monitoring
