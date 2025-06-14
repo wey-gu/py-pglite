@@ -7,9 +7,8 @@ Usage:
     python scripts/dev.py              # Full workflow (like CI)
     python scripts/dev.py --quick      # Quick checks only
     python scripts/dev.py --test       # Tests only
-    python scripts/dev.py --examples   # Examples only (stable)
+    python scripts/dev.py --examples   # Examples only
     python scripts/dev.py --lint       # Linting only
-    python scripts/dev.py --stress     # Stress/performance tests (may be unstable)
 """
 
 import argparse
@@ -164,18 +163,36 @@ class DevWorkflow:
         ):
             success = False
 
-        # Advanced patterns (excluding heavy stress tests)
+        # Advanced patterns (now including all tests)
         if not self.run_command(
-            "Advanced patterns (stable)",
+            "Advanced patterns",
             self.python_cmd
             + [
                 "-m",
                 "pytest",
                 "examples/testing-patterns/test_advanced_patterns.py",
                 "-v",
-                "-k",
-                "not test_custom_configuration_patterns",
             ],
+        ):
+            success = False
+
+        # Performance benchmarks (now part of stable examples)
+        if not self.run_command(
+            "Performance benchmarks",
+            self.python_cmd
+            + [
+                "-m",
+                "pytest",
+                "examples/testing-patterns/test_performance_benchmarks.py",
+                "-v",
+            ],
+        ):
+            success = False
+
+        # Feature examples (e.g., pgvector)
+        if not self.run_command(
+            "Feature examples (pgvector)",
+            self.python_cmd + ["-m", "pytest", "examples/features/", "-v"],
         ):
             success = False
 
@@ -206,47 +223,6 @@ class DevWorkflow:
 
         return success
 
-    def test_stress(self) -> bool:
-        """Run stress/performance tests (may be unstable under heavy load)."""
-        print("\n🔥 STRESS TESTS")
-        print("=" * 50)
-        print("⚠️  These tests may fail under heavy system load or resource constraints")
-
-        success = True
-
-        # Performance benchmarks (heavy load)
-        if not self.run_command(
-            "Performance benchmarks",
-            self.python_cmd
-            + [
-                "-m",
-                "pytest",
-                "examples/testing-patterns/test_performance_benchmarks.py",
-                "-v",
-                "--tb=short",
-            ],
-        ):
-            print("⚠️  Performance benchmarks failed - this is expected under high load")
-            success = False
-
-        # Heavy configuration tests
-        if not self.run_command(
-            "Heavy configuration tests",
-            self.python_cmd
-            + [
-                "-m",
-                "pytest",
-                "examples/testing-patterns/test_advanced_patterns.py::TestAdvancedPatterns::test_custom_configuration_patterns",
-                "-v",
-            ],
-        ):
-            print(
-                "⚠️  Heavy configuration tests failed - this is expected under resource constraints"
-            )
-            success = False
-
-        return success
-
     def package_check(self) -> bool:
         """Check package building."""
         print("\n📦 PACKAGE CHECK")
@@ -257,8 +233,8 @@ class DevWorkflow:
             # PDM installs dependencies from pyproject.toml automatically
             install_command = self.install_cmd
         else:
-            # UV and pip need the "." to install current directory
-            install_command = self.install_cmd + ["."]
+            # UV and pip need the '.[all]' to install all optional dependencies
+            install_command = self.install_cmd + [".[all]"]
         if not self.run_command("Install in dev mode", install_command):
             return False
 
@@ -268,7 +244,9 @@ class DevWorkflow:
             self.python_cmd
             + [
                 "-c",
-                "import py_pglite; from py_pglite import PGliteManager, PGliteConfig; print('✅ All imports working')",
+                "import py_pglite; from py_pglite import "
+                "PGliteManager, PGliteConfig; "
+                "print('✅ All imports working')",
             ],
         ):
             return False
@@ -300,7 +278,8 @@ class DevWorkflow:
 
             if stress_only:
                 print(
-                    "💡 Only stress/performance tests failed - this is expected under system load"
+                    "💡 Only stress/performance tests failed - "
+                    "this is expected under system load"
                 )
                 print("🎯 Core functionality is stable and production-ready!")
                 return True
@@ -317,11 +296,10 @@ class DevWorkflow:
         """Quick checks for development."""
         print("🚀 py-pglite Quick Development Checks")
 
-        success = True
         if not self.package_check():
-            success = False
+            pass
         if not self.lint_check():
-            success = False
+            pass
 
         return self.print_summary()
 
@@ -329,11 +307,10 @@ class DevWorkflow:
         """Run tests only."""
         print("🚀 py-pglite Test Suite")
 
-        success = True
         if not self.test_core():
-            success = False
+            pass
         if not self.test_examples():
-            success = False
+            pass
 
         return self.print_summary()
 
@@ -341,11 +318,10 @@ class DevWorkflow:
         """Run examples only."""
         print("🚀 py-pglite Examples")
 
-        success = True
         if not self.test_examples():
-            success = False
+            pass
         if not self.test_quickstart():
-            success = False
+            pass
 
         return self.print_summary()
 
@@ -354,17 +330,16 @@ class DevWorkflow:
         print("🚀 py-pglite Full Development Workflow")
         print("🎯 This mirrors our CI pipeline exactly")
 
-        success = True
         if not self.package_check():
-            success = False
+            pass
         if not self.lint_check():
-            success = False
+            pass
         if not self.test_core():
-            success = False
+            pass
         if not self.test_examples():
-            success = False
+            pass
         if not self.test_quickstart():
-            success = False
+            pass
 
         return self.print_summary()
 
@@ -374,15 +349,8 @@ def main():
     parser = argparse.ArgumentParser(description="py-pglite development workflow")
     parser.add_argument("--quick", action="store_true", help="Quick checks only")
     parser.add_argument("--test", action="store_true", help="Tests only")
-    parser.add_argument(
-        "--examples", action="store_true", help="Examples only (stable)"
-    )
+    parser.add_argument("--examples", action="store_true", help="Examples only")
     parser.add_argument("--lint", action="store_true", help="Linting only")
-    parser.add_argument(
-        "--stress",
-        action="store_true",
-        help="Stress/performance tests (may be unstable)",
-    )
 
     args = parser.parse_args()
 
@@ -396,8 +364,6 @@ def main():
         success = workflow.run_examples_only()
     elif args.lint:
         success = workflow.lint_check() and workflow.print_summary()
-    elif args.stress:
-        success = workflow.test_stress() and workflow.print_summary()
     else:
         success = workflow.run_full()
 

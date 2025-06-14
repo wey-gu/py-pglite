@@ -14,6 +14,8 @@ import psutil
 
 from . import __version__
 from .config import PGliteConfig
+from .extensions import SUPPORTED_EXTENSIONS
+from .utils import find_pglite_modules
 
 
 class PGliteManager:
@@ -79,12 +81,28 @@ class PGliteManager:
         # Create pglite_manager.js if it doesn't exist
         manager_js = work_dir / "pglite_manager.js"
         if not manager_js.exists():
+            # Generate JavaScript for extensions
+            ext_requires = []
+            ext_configs = []
+            if self.config.extensions:
+                for ext_name in self.config.extensions:
+                    ext_info = SUPPORTED_EXTENSIONS[ext_name]
+                    ext_requires.append(
+                        f"const {{ {ext_info['name']} }} = require('{ext_info['module']}');"
+                    )
+                    ext_configs.append(f"    {ext_name}: {ext_info['name']}")
+
+            ext_requires_str = "\n".join(ext_requires)
+            ext_configs_str = ",\n".join(ext_configs)
+            extensions_obj_str = f"{{\n{ext_configs_str}\n}}" if ext_configs else "{}"
+
             js_content = f"""const {{ PGlite }} = require('@electric-sql/pglite');
 const {{ PGLiteSocketServer }} = require('@electric-sql/pglite-socket');
 const fs = require('fs');
 const path = require('path');
 const {{ unlink }} = require('fs/promises');
 const {{ existsSync }} = require('fs');
+{ext_requires_str}
 
 const SOCKET_PATH = '{self.config.socket_path}';
 
@@ -101,8 +119,10 @@ async function cleanup() {{
 
 async function startServer() {{
     try {{
-        // Create a PGlite instance
-        const db = await PGlite.create();
+        // Create a PGlite instance with extensions
+        const db = new PGlite({{
+            extensions: {extensions_obj_str}
+        }});
 
         // Clean up any existing socket
         await cleanup();
@@ -219,6 +239,20 @@ startServer();"""
             # Install dependencies
             self._install_dependencies(self.work_dir)
 
+            # Prepare environment for Node.js process
+            env = os.environ.copy()
+            if self.config.node_options:
+                env["NODE_OPTIONS"] = self.config.node_options
+                self.logger.info(
+                    f"Using custom NODE_OPTIONS: {self.config.node_options}"
+                )
+
+            # Ensure Node.js can find the required modules
+            node_modules_path = find_pglite_modules(self.work_dir)
+            if node_modules_path:
+                env["NODE_PATH"] = str(node_modules_path)
+                self.logger.info(f"Setting NODE_PATH to: {node_modules_path}")
+
             # Start PGlite process with limited output buffering
             self.logger.info("Starting PGlite server...")
             # nosec B603,B607 - node with fixed script, safe for testing library
@@ -229,6 +263,7 @@ startServer();"""
                 text=True,
                 bufsize=0,  # Unbuffered for real-time monitoring
                 universal_newlines=True,
+                env=env,
             )
 
             # Wait for startup with robust monitoring
@@ -343,6 +378,17 @@ startServer();"""
             raise RuntimeError("PGlite server is not running. Call start() first.")
 
         return self.config.get_connection_string()
+
+    def get_dsn(self) -> str:
+        """Get the database DSN string for framework-agnostic usage.
+
+        Returns:
+            PostgreSQL DSN string
+        """
+        if not self.is_running():
+            raise RuntimeError("PGlite server is not running. Call start() first.")
+
+        return self.config.get_dsn()
 
     def wait_for_ready_basic(self, max_retries: int = 15, delay: float = 1.0) -> bool:
         """Wait for database to be ready using framework-agnostic connection test.

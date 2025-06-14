@@ -42,6 +42,19 @@ python quickstart/simple_performance.py
 
 ---
 
+## **✨ Feature Examples**
+
+### **🤖 `pgvector` for AI/RAG**
+
+Test vector similarity search for Retrieval-Augmented Generation (RAG) applications.
+
+```bash
+# Requires 'py-pglite[extensions]' to be installed
+pytest examples/features/test_pgvector_rag.py -v
+```
+
+---
+
 ## 🧪 **Testing Patterns** (Production examples)
 
 ### **📊 SQLAlchemy** - Zero config testing
@@ -81,6 +94,9 @@ examples/
 │   ├── demo_instant.py        #    ⚡ See the magic (30 seconds)
 │   ├── simple_fastapi.py      #    🌐 FastAPI + PostgreSQL API
 │   └── simple_performance.py  #    🏃 The honest performance sweet spot
+│
+├── features/                   # ✨ Feature examples
+│   └── test_pgvector_rag.py   #    🤖 pgvector for AI/RAG
 │
 ├── testing-patterns/          # 🧪 Production examples
 │   ├── sqlalchemy/            #    📊 SQLAlchemy patterns
@@ -205,9 +221,5 @@ def test_my_feature(pglite_session):
 1. **⚡ See the magic** - `python quickstart/demo_instant.py`
 2. **🌐 Try FastAPI** - `python quickstart/simple_fastapi.py`
 3. **🏃 See the value** - `python quickstart/simple_performance.py`
-4. **🧪 Run tests** - `pytest testing-patterns/ -v`
-5. **🎪 Explore advanced** - `pytest testing-patterns/test_fixtures_showcase.py -v`
-
----
-
-**py-pglite: Because PostgreSQL testing should be instant.** ⚡
+4. **🤖 Try pgvector** - `pytest examples/features/test_pgvector_rag.py -v`
+5. **🎪 Explore advanced** - `

@@ -128,7 +128,8 @@ py-pglite/
 │   │   ├── backend.py           #    Custom database backend
 │   │   ├── fixtures.py          #    Django fixtures
 │   │   └── utils.py             #    Django utilities
-│   └── pytest_plugin.py         #    Auto-discovery pytest plugin
+│   ├── pytest_plugin.py         #    Auto-discovery pytest plugin
+│   └── extensions.py            #    🆕 Extension registry (e.g., pgvector)
 │
 ├── tests/                       # 🧪 Core tests (88 tests)
 │   ├── test_core_manager.py     #    Manager lifecycle & process management
@@ -138,13 +139,16 @@ py-pglite/
 │   ├── test_reliability.py      #    🆕 Error recovery & resilience
 │   ├── test_django_backend.py   #    🆕 Django backend & decoupling
 │   ├── test_fastapi_integration.py #  FastAPI patterns
-│   └── test_framework_isolation.py # Framework isolation validation
+│   ├── test_framework_isolation.py # Framework isolation validation
+│   └── test_extensions.py       #    🆕 Extension tests (e.g., pgvector)
 │
 ├── examples/                    # 📚 Examples & demos (51 tests)
 │   ├── quickstart/              #    ⚡ Instant demos
 │   │   ├── demo_instant.py      #    5-line PostgreSQL demo
 │   │   ├── simple_fastapi.py    #    FastAPI integration
 │   │   └── simple_performance.py #   Performance comparison
+│   ├── features/                #    🆕 Advanced feature examples
+│   │   └── test_pgvector_rag.py #    pgvector RAG example
 │   └── testing-patterns/        #    🧪 Production examples
 │       ├── sqlalchemy/          #    SQLAlchemy patterns (2 tests)
 │       ├── django/              #    Django patterns (10 tests)
@@ -286,6 +290,46 @@ pytest examples/testing-patterns/new_example.py -v
 
 # Test quickstart
 python examples/quickstart/demo_instant.py
+```
+
+### 4. PostgreSQL Extensions
+
+`py-pglite` supports a growing number of PostgreSQL extensions.
+
+**1. Register the Extension:**
+Add the extension's details to `py_pglite/extensions.py`.
+
+```python
+# py_pglite/extensions.py
+SUPPORTED_EXTENSIONS = {
+    "pgvector": {"module": "@electric-sql/pglite/vector", "name": "vector"},
+    "new_extension": {"module": "npm-package-name", "name": "js_export_name"},
+}
+```
+
+**2. Add Optional Dependencies:**
+Add any necessary Python client libraries to `pyproject.toml` under the `[project.optional-dependencies]` section.
+
+```toml
+# pyproject.toml
+[project.optional-dependencies]
+extensions = [
+    "pgvector>=0.4.1",
+    "numpy>=1.0.0",
+    "new-python-dependency>=1.0.0",
+]
+```
+
+**3. Add a Test:**
+Create a new test file in `tests/` to validate the extension's functionality. Use the `@pytest.mark.extensions` marker.
+
+```python
+# tests/test_new_extension.py
+import pytest
+
+@pytest.mark.extensions
+def test_new_extension_feature():
+    # ...
 ```
 
 ---

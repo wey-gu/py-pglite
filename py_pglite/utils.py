@@ -1,6 +1,9 @@
 """Framework-agnostic utility functions for PGlite testing."""
 
 import logging
+import shutil
+import socket
+from pathlib import Path
 from typing import Any, Optional
 
 from .clients import DatabaseClient, get_default_client
@@ -170,3 +173,19 @@ def execute_sql(
     except Exception as e:
         logger.warning(f"Failed to execute SQL: {e}")
         return None
+
+
+def get_major_version(version: str) -> int:
+    """Get the major version number from a version string."""
+    return int(version.split(".")[0])
+
+
+def find_pglite_modules(start_path: Path) -> Path | None:
+    """Find the node_modules directory containing @electric-sql/pglite."""
+    current_path = start_path.resolve()
+    while current_path != current_path.parent:
+        node_modules = current_path / "node_modules"
+        if (node_modules / "@electric-sql/pglite").exists():
+            return node_modules
+        current_path = current_path.parent
+    return None

@@ -109,7 +109,7 @@ class TestConnectionLifecycle:
             )
 
     def test_multiple_manager_instances_isolation(self):
-        """Test that multiple manager instances are properly isolated (sequential usage)."""
+        """Test that multi-manager properly isolated (sequential usage)."""
         import tempfile
         import uuid
         from pathlib import Path
@@ -237,25 +237,20 @@ class TestConnectionConcurrency:
                 """Worker function for concurrent testing."""
                 try:
                     with engine.connect() as conn:
-                        # Insert data for this thread
-                        conn.execute(
-                            text(
-                                "INSERT INTO concurrent_test VALUES (:id, :thread_id)"
-                            ),
-                            {"id": thread_id, "thread_id": thread_id},
-                        )
-                        conn.commit()
-
-                        # Read back the data
+                        # Insert data and return the ID in a single atomic operation
+                        # to prevent race conditions.
                         result = conn.execute(
                             text(
-                                "SELECT id FROM concurrent_test WHERE thread_id = :thread_id"
+                                "INSERT INTO concurrent_test (id, thread_id) "
+                                "VALUES (:id, :thread_id) RETURNING id"
                             ),
-                            {"thread_id": thread_id},
+                            {"id": thread_id, "thread_id": thread_id},
                         ).scalar()
+                        conn.commit()
                         return result
                 except Exception as e:
-                    return f"Error: {e}"
+                    print(f"  ⚠️ Worker {thread_id} error: {e}")
+                    return None
 
             # Run multiple threads concurrently
             num_threads = 5
