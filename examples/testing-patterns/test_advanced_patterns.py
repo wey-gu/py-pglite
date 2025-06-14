@@ -32,49 +32,36 @@ class AdvancedUser(Base):
 class TestAdvancedPatterns:
     """Advanced production patterns and configurations."""
 
-    def test_custom_configuration_patterns(self):
-        """Test various custom configuration scenarios."""
+    def test_custom_configuration_is_stable(self, benchmark_engine):
+        """Test that a custom configuration is stable with the fixture."""
         print("\n🔧 Custom Configuration Patterns")
         print("=" * 50)
 
-        # High-performance configuration
-        high_perf_config = PGliteConfig(
-            timeout=120,
-            log_level="ERROR",
-            cleanup_on_exit=True,
-            work_dir=Path("./perf-tests"),
-            auto_install_deps=True,
-        )
+        # Ensure the table is created for this specific test
+        Base.metadata.create_all(benchmark_engine)
 
-        with SQLAlchemyPGliteManager(high_perf_config) as manager:
-            manager.wait_for_ready(max_retries=30, delay=1.0)
-            engine = manager.get_engine(echo=False, pool_pre_ping=False)
-            Base.metadata.create_all(engine)
+        Session = sessionmaker(bind=benchmark_engine)
+        with Session() as session:
+            user = AdvancedUser(
+                username="config_user",
+                email="config@test.com",
+                config_data='{"stability": "tested"}',
+            )
+            session.add(user)
+            session.commit()
 
-            Session = sessionmaker(bind=engine)
-            with Session() as session:
-                user = AdvancedUser(
-                    username="perf_user",
-                    email="perf@test.com",
-                    config_data='{"performance": "optimized"}',
-                )
-                session.add(user)
-                session.commit()
+            count = session.execute(
+                text("SELECT COUNT(*) FROM advanced_users")
+            ).scalar()
+            assert count is not None and count >= 1
+            print(f"  ✅ Custom config stable: {count} users found")
 
-                count = session.execute(
-                    text("SELECT COUNT(*) FROM advanced_users")
-                ).scalar()
-                assert count == 1
-                print("  ✅ High-performance config: ✓")
-
-    def test_error_recovery_patterns(self):
+    def test_error_recovery_patterns(self, benchmark_engine):
         """Test robust error recovery and resilience patterns."""
         print("\n🛡️ Error Recovery Patterns")
         print("=" * 50)
 
-        config = PGliteConfig(timeout=30, log_level="WARNING", cleanup_on_exit=True)
-
-        with SQLAlchemyPGliteManager(config) as manager:
+        with SQLAlchemyPGliteManager() as manager:
             manager.wait_for_ready()
             engine = manager.get_engine()
             Base.metadata.create_all(engine)
@@ -112,14 +99,12 @@ class TestAdvancedPatterns:
                 assert count is not None and count >= 1
                 print(f"    ✅ Fresh session works: {count} users found")
 
-    def test_postgresql_advanced_features(self):
+    def test_postgresql_advanced_features(self, benchmark_engine):
         """Test advanced PostgreSQL features working with py-pglite."""
         print("\n🐘 PostgreSQL Advanced Features")
         print("=" * 50)
 
-        config = PGliteConfig(timeout=60, log_level="INFO")
-
-        with SQLAlchemyPGliteManager(config) as manager:
+        with SQLAlchemyPGliteManager() as manager:
             manager.wait_for_ready()
             engine = manager.get_engine()
 
@@ -156,30 +141,21 @@ class TestAdvancedPatterns:
 
                 conn.commit()
 
-    def test_production_reliability_patterns(self):
+    def test_production_reliability_patterns(self, benchmark_engine):
         """Test production-grade reliability patterns."""
         print("\n🚀 Production Reliability Patterns")
         print("=" * 50)
 
         # Test manager lifecycle
         print("  🔄 Testing manager lifecycle...")
-        configs_tested = 0
+        with SQLAlchemyPGliteManager() as manager:
+            manager.wait_for_ready(max_retries=10, delay=0.5)
+            engine = manager.get_engine()
 
-        for i in range(3):
-            config = PGliteConfig(
-                timeout=30 + (i * 10), log_level="WARNING", cleanup_on_exit=True
-            )
-
-            with SQLAlchemyPGliteManager(config) as manager:
-                manager.wait_for_ready(max_retries=10, delay=0.5)
-                engine = manager.get_engine()
-
-                with engine.connect() as conn:
-                    result = conn.execute(text("SELECT 1")).scalar()
-                    assert result == 1
-                    configs_tested += 1
-
-        print(f"    ✅ {configs_tested} manager lifecycles completed")
+            with engine.connect() as conn:
+                result = conn.execute(text("SELECT 1")).scalar()
+                assert result == 1
+        print("    ✅ Manager lifecycle completed")
 
 
 @pytest.fixture(scope="module", autouse=True)

@@ -15,6 +15,7 @@ import psutil
 from . import __version__
 from .config import PGliteConfig
 from .extensions import SUPPORTED_EXTENSIONS
+from .utils import find_pglite_modules
 
 
 class PGliteManager:
@@ -245,6 +246,12 @@ startServer();"""
                 self.logger.info(
                     f"Using custom NODE_OPTIONS: {self.config.node_options}"
                 )
+
+            # Ensure Node.js can find the required modules
+            node_modules_path = find_pglite_modules(self.work_dir)
+            if node_modules_path:
+                env["NODE_PATH"] = str(node_modules_path)
+                self.logger.info(f"Setting NODE_PATH to: {node_modules_path}")
 
             # Start PGlite process with limited output buffering
             self.logger.info("Starting PGlite server...")

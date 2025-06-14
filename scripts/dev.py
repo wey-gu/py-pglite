@@ -7,9 +7,8 @@ Usage:
     python scripts/dev.py              # Full workflow (like CI)
     python scripts/dev.py --quick      # Quick checks only
     python scripts/dev.py --test       # Tests only
-    python scripts/dev.py --examples   # Examples only (stable)
+    python scripts/dev.py --examples   # Examples only
     python scripts/dev.py --lint       # Linting only
-    python scripts/dev.py --stress     # Stress/performance tests (may be unstable)
 """
 
 import argparse
@@ -164,17 +163,28 @@ class DevWorkflow:
         ):
             success = False
 
-        # Advanced patterns (excluding heavy stress tests)
+        # Advanced patterns (now including all tests)
         if not self.run_command(
-            "Advanced patterns (stable)",
+            "Advanced patterns",
             self.python_cmd
             + [
                 "-m",
                 "pytest",
                 "examples/testing-patterns/test_advanced_patterns.py",
                 "-v",
-                "-k",
-                "not test_custom_configuration_patterns",
+            ],
+        ):
+            success = False
+
+        # Performance benchmarks (now part of stable examples)
+        if not self.run_command(
+            "Performance benchmarks",
+            self.python_cmd
+            + [
+                "-m",
+                "pytest",
+                "examples/testing-patterns/test_performance_benchmarks.py",
+                "-v",
             ],
         ):
             success = False
@@ -209,48 +219,6 @@ class DevWorkflow:
             self.python_cmd + ["examples/quickstart/simple_performance.py"],
             cwd=self.root_dir,
         ):
-            success = False
-
-        return success
-
-    def test_stress(self) -> bool:
-        """Run stress/performance tests (may be unstable under heavy load)."""
-        print("\n🔥 STRESS TESTS")
-        print("=" * 50)
-        print("⚠️  These tests may fail under heavy system load or resource constraints")
-
-        success = True
-
-        # Performance benchmarks (heavy load)
-        if not self.run_command(
-            "Performance benchmarks",
-            self.python_cmd
-            + [
-                "-m",
-                "pytest",
-                "examples/testing-patterns/test_performance_benchmarks.py",
-                "-v",
-                "--tb=short",
-            ],
-        ):
-            print("⚠️  Performance benchmarks failed - this is expected under high load")
-            success = False
-
-        # Heavy configuration tests
-        if not self.run_command(
-            "Heavy configuration tests",
-            self.python_cmd
-            + [
-                "-m",
-                "pytest",
-                "examples/testing-patterns/test_advanced_patterns.py::TestAdvancedPatterns::test_custom_configuration_patterns",
-                "-v",
-            ],
-        ):
-            print(
-                "⚠️  Heavy configuration tests failed - "
-                "this is expected under resource constraints"
-            )
             success = False
 
         return success
@@ -381,15 +349,8 @@ def main():
     parser = argparse.ArgumentParser(description="py-pglite development workflow")
     parser.add_argument("--quick", action="store_true", help="Quick checks only")
     parser.add_argument("--test", action="store_true", help="Tests only")
-    parser.add_argument(
-        "--examples", action="store_true", help="Examples only (stable)"
-    )
+    parser.add_argument("--examples", action="store_true", help="Examples only")
     parser.add_argument("--lint", action="store_true", help="Linting only")
-    parser.add_argument(
-        "--stress",
-        action="store_true",
-        help="Stress/performance tests (may be unstable)",
-    )
 
     args = parser.parse_args()
 
@@ -403,8 +364,6 @@ def main():
         success = workflow.run_examples_only()
     elif args.lint:
         success = workflow.lint_check() and workflow.print_summary()
-    elif args.stress:
-        success = workflow.test_stress() and workflow.print_summary()
     else:
         success = workflow.run_full()
 
