@@ -179,6 +179,13 @@ class DevWorkflow:
         ):
             success = False
 
+        # Feature examples (e.g., pgvector)
+        if not self.run_command(
+            "Feature examples (pgvector)",
+            self.python_cmd + ["-m", "pytest", "examples/features/", "-v"],
+        ):
+            success = False
+
         return success
 
     def test_quickstart(self) -> bool:
@@ -241,7 +248,8 @@ class DevWorkflow:
             ],
         ):
             print(
-                "⚠️  Heavy configuration tests failed - this is expected under resource constraints"
+                "⚠️  Heavy configuration tests failed - "
+                "this is expected under resource constraints"
             )
             success = False
 
@@ -257,8 +265,8 @@ class DevWorkflow:
             # PDM installs dependencies from pyproject.toml automatically
             install_command = self.install_cmd
         else:
-            # UV and pip need the "." to install current directory
-            install_command = self.install_cmd + ["."]
+            # UV and pip need the '.[all]' to install all optional dependencies
+            install_command = self.install_cmd + [".[all]"]
         if not self.run_command("Install in dev mode", install_command):
             return False
 
@@ -268,7 +276,9 @@ class DevWorkflow:
             self.python_cmd
             + [
                 "-c",
-                "import py_pglite; from py_pglite import PGliteManager, PGliteConfig; print('✅ All imports working')",
+                "import py_pglite; from py_pglite import "
+                "PGliteManager, PGliteConfig; "
+                "print('✅ All imports working')",
             ],
         ):
             return False
@@ -300,7 +310,8 @@ class DevWorkflow:
 
             if stress_only:
                 print(
-                    "💡 Only stress/performance tests failed - this is expected under system load"
+                    "💡 Only stress/performance tests failed - "
+                    "this is expected under system load"
                 )
                 print("🎯 Core functionality is stable and production-ready!")
                 return True
@@ -317,11 +328,10 @@ class DevWorkflow:
         """Quick checks for development."""
         print("🚀 py-pglite Quick Development Checks")
 
-        success = True
         if not self.package_check():
-            success = False
+            pass
         if not self.lint_check():
-            success = False
+            pass
 
         return self.print_summary()
 
@@ -329,11 +339,10 @@ class DevWorkflow:
         """Run tests only."""
         print("🚀 py-pglite Test Suite")
 
-        success = True
         if not self.test_core():
-            success = False
+            pass
         if not self.test_examples():
-            success = False
+            pass
 
         return self.print_summary()
 
@@ -341,11 +350,10 @@ class DevWorkflow:
         """Run examples only."""
         print("🚀 py-pglite Examples")
 
-        success = True
         if not self.test_examples():
-            success = False
+            pass
         if not self.test_quickstart():
-            success = False
+            pass
 
         return self.print_summary()
 
@@ -354,17 +362,16 @@ class DevWorkflow:
         print("🚀 py-pglite Full Development Workflow")
         print("🎯 This mirrors our CI pipeline exactly")
 
-        success = True
         if not self.package_check():
-            success = False
+            pass
         if not self.lint_check():
-            success = False
+            pass
         if not self.test_core():
-            success = False
+            pass
         if not self.test_examples():
-            success = False
+            pass
         if not self.test_quickstart():
-            success = False
+            pass
 
         return self.print_summary()
 
