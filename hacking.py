@@ -15,11 +15,7 @@ def run_command(description: str, command: list[str], cwd: Path | None = None) -
 
     try:
         result = subprocess.run(
-            command,
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=True
+            command, cwd=cwd, capture_output=True, text=True, check=True
         )
         print(f"✅ {description} completed successfully")
         if result.stdout.strip():
@@ -70,15 +66,34 @@ def main():
 
     # Commands to run
     commands = [
-        ("Installing package in development mode", install_cmd + ([] if use_pdm else ["."])),
+        (
+            "Installing package in development mode",
+            install_cmd + ([] if use_pdm else ["."]),
+        ),
         ("Running ruff check (linting)", ruff_cmd + ["check", "py_pglite/"]),
         ("Running ruff format check", ruff_cmd + ["format", "--check", "py_pglite/"]),
         ("Running type checker (mypy)", mypy_cmd + ["py_pglite/"]),
-        ("Running basic tests", python_cmd + ["-m", "pytest", "examples/test_basic.py", "-v"]),
-        ("Running advanced tests", python_cmd + ["-m", "pytest", "examples/test_advanced.py", "-v"]),
-        ("Running utils tests", python_cmd + ["-m", "pytest", "examples/test_utils.py", "-v"]),
-        ("Running FastAPI integration tests", python_cmd + ["-m", "pytest", "examples/test_fastapi_integration.py", "-v"]),
-        ("Running FastAPI auth example tests", python_cmd + ["-m", "pytest", "examples/test_fastapi_auth_example.py", "-v"]),
+        (
+            "Running basic tests",
+            python_cmd + ["-m", "pytest", "examples/test_basic.py", "-v"],
+        ),
+        (
+            "Running advanced tests",
+            python_cmd + ["-m", "pytest", "examples/test_advanced.py", "-v"],
+        ),
+        (
+            "Running utils tests",
+            python_cmd + ["-m", "pytest", "examples/test_utils.py", "-v"],
+        ),
+        (
+            "Running FastAPI integration tests",
+            python_cmd + ["-m", "pytest", "examples/test_fastapi_integration.py", "-v"],
+        ),
+        (
+            "Running FastAPI auth example tests",
+            python_cmd
+            + ["-m", "pytest", "examples/test_fastapi_auth_example.py", "-v"],
+        ),
     ]
 
     # Track success/failure

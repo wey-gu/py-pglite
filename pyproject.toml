@@ -89,6 +89,13 @@ fastapi = [
     "fastapi>=0.115.12",
     "sqlmodel>=0.0.24",
 ]
+extensions = [
+    "pgvector>=0.4.1",
+    "numpy>=1.0.0"
+]
+test-extensions = [
+    "py-pglite[extensions]",
+]
 all = [
     "psycopg>=3.0.0",
     "asyncpg>=0.29.0",
@@ -98,6 +105,7 @@ all = [
     "pytest-django>=4.5.0",
     "fastapi>=0.115.12",
     "pytest-asyncio>=0.21.0",
+    "py-pglite[extensions]",
 ]
 
 [project.urls]

@@ -2,7 +2,9 @@
 
 <img src="https://github.com/user-attachments/assets/3c6ef886-5075-4d82-a180-a6b1dafe792b" alt="py-pglite Logo" width="60" align="left" style="margin-right: 16px;"/>
 
-**Instant PostgreSQL for Python testing** ⚡
+**A Pythonic interface for PGlite - the instant, zero-config PostgreSQL.** ⚡️
+
+`py-pglite` brings the magic of [PGlite](https://github.com/electric-sql/pglite) to Python with a high-level, developer-friendly API. Real PostgreSQL, instant testing.
 
 `pip install py-pglite`
 
@@ -62,6 +64,9 @@ pip install py-pglite[sqlalchemy]  # SQLAlchemy + SQLModel
 pip install py-pglite[django]      # Django + pytest-django  
 pip install py-pglite[asyncpg]     # Pure async client
 pip install py-pglite[all]         # Everything
+
+# Extra Features
+pip install py-pglite[extensions]  # pglite extensions, like pgvector, fuzzystrmatch etc.
 ```
 
 ---
@@ -146,6 +151,48 @@ def test_postgresql_power(pglite_session):
     assert result.clicks == '100'
 ```
 
+### **PostgreSQL Extensions**
+
+`py-pglite` supports PostgreSQL extensions, allowing you to test advanced features like vector similarity search for AI/RAG applications.
+
+### **🚀 `pgvector` for RAG Applications**
+
+Enable `pgvector` to test vector embeddings and similarity search directly in your test suite.
+
+**1. Install with the `[extensions]` extra:**
+
+```bash
+pip install 'py-pglite[extensions]'
+```
+
+**2. Enable `pgvector` in the configuration:**
+
+```python
+from py_pglite import PGliteConfig, PGliteManager
+from pgvector.psycopg import register_vector
+import psycopg
+import numpy as np
+
+# Enable the extension
+config = PGliteConfig(extensions=["pgvector"])
+
+with PGliteManager(config=config) as db:
+    with psycopg.connect(db.get_dsn(), autocommit=True) as conn:
+        # Create the extension and register the type
+        conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        register_vector(conn)
+
+        # Create a table and insert a vector
+        conn.execute("CREATE TABLE items (embedding vector(3))")
+        conn.execute("INSERT INTO items (embedding) VALUES (%s)", (np.array([1, 2, 3]),))
+        
+        # Perform a similarity search
+        result = conn.execute("SELECT * FROM items ORDER BY embedding <-> %s LIMIT 1", (np.array([1, 1, 1]),)).fetchone()
+        assert np.array_equal(result[0], np.array([1, 2, 3]))
+```
+
+`py-pglite` can support many other extensions available in the underlying [PGlite extensions](https://pglite.dev/extensions/) ♥️.
+
 ---
 
 ## **Advanced**
@@ -225,3 +272,5 @@ pytest tests/sqlalchemy/              # Directory isolation
 ---
 
 *py-pglite: Because testing should be simple.* ⚡
+
+Powered by the 🚀 amazing and ♥️ beloved [PGlite](https://github.com/electric-sql/pglite).

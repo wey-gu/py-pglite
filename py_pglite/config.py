@@ -6,6 +6,8 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .extensions import SUPPORTED_EXTENSIONS
+
 
 def _get_secure_socket_path() -> str:
     """Generate a secure socket path in user's temp directory."""
@@ -27,6 +29,7 @@ class PGliteConfig:
         work_dir: Working directory for PGlite files (default: None, uses temp)
         node_modules_check: Whether to verify node_modules exists (default: True)
         auto_install_deps: Whether to auto-install npm dependencies (default: True)
+        extensions: List of PGlite extensions to enable (e.g., ["pgvector"])
     """
 
     timeout: int = 30
@@ -36,6 +39,7 @@ class PGliteConfig:
     work_dir: Path | None = None
     node_modules_check: bool = True
     auto_install_deps: bool = True
+    extensions: list[str] | None = None
 
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""
@@ -44,6 +48,14 @@ class PGliteConfig:
 
         if self.log_level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
             raise ValueError(f"Invalid log_level: {self.log_level}")
+
+        if self.extensions:
+            for ext in self.extensions:
+                if ext not in SUPPORTED_EXTENSIONS:
+                    raise ValueError(
+                        f"Unsupported extension: '{ext}'. "
+                        f"Available extensions: {list(SUPPORTED_EXTENSIONS.keys())}"
+                    )
 
         if self.work_dir is not None:
             self.work_dir = Path(self.work_dir).resolve()
@@ -66,3 +78,9 @@ class PGliteConfig:
         )
 
         return connection_string
+
+    def get_dsn(self) -> str:
+        """Get PostgreSQL DSN connection string for direct psycopg usage."""
+        socket_dir = str(Path(self.socket_path).parent)
+        # Use key-value format for psycopg DSN, including password
+        return f"host={socket_dir} dbname=postgres user=postgres password=postgres"
