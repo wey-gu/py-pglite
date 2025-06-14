@@ -8,19 +8,15 @@ and sophisticated testing techniques with py-pglite.
 Run with: pytest examples/testing-patterns/test_advanced_patterns.py -v -s
 """
 
-import json
-import time
 from pathlib import Path
 
 import pytest
 from sqlalchemy import Column, Integer, String, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
 
-# Simple SQLAlchemy models to avoid typing issues
 Base = declarative_base()
 
 
@@ -141,7 +137,7 @@ class TestAdvancedPatterns:
 
                 conn.execute(
                     text("""
-                    INSERT INTO json_test (data) VALUES 
+                    INSERT INTO json_test (data) VALUES
                     ('{"name": "Alice", "skills": ["Python", "SQL"]}'),
                     ('{"name": "Bob", "skills": ["JavaScript", "React"]}')
                 """)
@@ -150,7 +146,7 @@ class TestAdvancedPatterns:
                 result = conn.execute(
                     text("""
                     SELECT data->>'name' as name
-                    FROM json_test 
+                    FROM json_test
                     WHERE data @> '{"skills": ["Python"]}'
                 """)
                 ).fetchall()
