@@ -235,6 +235,8 @@ class PGliteDatabaseWrapper(base.DatabaseWrapper):  # type: ignore
         # Ensure we use the PGlite creation class
         settings_dict = settings_dict.copy()
 
+        # Set up parent class
+        self.settings_dict = settings_dict
         super().__init__(settings_dict, alias)  # type: ignore
         self.creation = PGliteDatabaseCreation(self)  # type: ignore
 
@@ -266,6 +268,7 @@ class PGliteDatabaseWrapper(base.DatabaseWrapper):  # type: ignore
                             }
                         )
 
+        # Call parent class's method using super()
         return super().get_new_connection(conn_params)  # type: ignore
 
     def get_database_version(self):
