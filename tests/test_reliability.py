@@ -110,7 +110,6 @@ class TestProcessReliability:
 
     def test_resource_cleanup_on_process_exit(self):
         """Test that resources are cleaned up when process exits."""
-        import tempfile
         import uuid
 
         # Create a unique socket path for this test
@@ -187,7 +186,6 @@ class TestResourceManagement:
 
     def test_socket_cleanup_on_exit(self):
         """Test that socket files are cleaned up properly."""
-        import tempfile
         import uuid
 
         temp_dir = (
@@ -224,7 +222,6 @@ class TestResourceManagement:
 
     def test_work_dir_handling(self):
         """Test work directory handling and cleanup."""
-        import tempfile
         import uuid
 
         work_dir = (
@@ -357,7 +354,8 @@ class TestErrorRecovery:
             # Should still be functional after stress
             with engine.connect() as conn:
                 count = conn.execute(text("SELECT COUNT(*) FROM stress_test")).scalar()
-                # Should have at least some data (exact count depends on stress tolerance)
+                # Should have at least some data
+                # (exact count depends on stress tolerance)
                 assert count > 0
 
                 result = conn.execute(text("SELECT 'stress_survived'")).scalar()

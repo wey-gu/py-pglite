@@ -188,16 +188,24 @@ startServer();"""
                 self.logger.warning(f"Failed to clean up socket: {e}")
 
     def _kill_existing_processes(self) -> None:
-        """Kill any existing PGlite processes."""
+        """Kill any existing PGlite processes that might conflict with this socket."""
         try:
-            for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+            my_socket_dir = str(Path(self.config.socket_path).parent)
+            for proc in psutil.process_iter(["pid", "name", "cmdline", "cwd"]):
                 if proc.info["cmdline"] and any(
                     "pglite_manager.js" in cmd for cmd in proc.info["cmdline"]
                 ):
-                    pid = proc.info["pid"]
-                    self.logger.info(f"Killing existing PGlite process: {pid}")
-                    proc.kill()
-                    proc.wait(timeout=5)
+                    # Only kill processes in the same socket directory to avoid killing other instances
+                    try:
+                        proc_cwd = proc.info.get("cwd", "")
+                        if my_socket_dir in proc_cwd or proc_cwd in my_socket_dir:
+                            pid = proc.info["pid"]
+                            self.logger.info(f"Killing existing PGlite process: {pid}")
+                            proc.kill()
+                            proc.wait(timeout=5)
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        # Process already gone or can't access it
+                        continue
         except Exception as e:
             self.logger.warning(f"Error killing existing PGlite processes: {e}")
 
@@ -400,11 +408,12 @@ startServer();"""
         Returns:
             True if database becomes ready, False otherwise
         """
-        from .utils import test_connection
+        from .utils import check_connection
 
         for attempt in range(max_retries):
             try:
-                if test_connection(self.config.get_connection_string()):
+                # Use DSN format for direct psycopg connection testing
+                if check_connection(self.config.get_dsn()):
                     self.logger.info(f"Database ready after {attempt + 1} attempts")
                     time.sleep(0.2)  # Small stability delay
                     return True
@@ -436,3 +445,26 @@ startServer();"""
             True if database becomes ready, False otherwise
         """
         return self.wait_for_ready_basic(max_retries=max_retries, delay=delay)
+
+    def restart(self) -> None:
+        """Restart the PGlite server.
+
+        Stops the current server if running and starts a new one.
+        """
+        if self.is_running():
+            self.stop()
+        self.start()
+
+    def get_psycopg_uri(self) -> str:
+        """Get the database URI for psycopg usage.
+
+        Returns:
+            PostgreSQL URI string compatible with psycopg
+
+        Raises:
+            RuntimeError: If PGlite server is not running
+        """
+        if not self.is_running():
+            raise RuntimeError("PGlite server is not running. Call start() first.")
+
+        return self.config.get_psycopg_uri()

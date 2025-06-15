@@ -105,8 +105,14 @@ class TestClientCompatibilityPrinciples:
 
         # Show how these would be used with different clients
         connection_examples = {
-            "psycopg": f"psycopg.connect(host='{host}', port={port}, dbname='{database}', user='{username}')",
-            "asyncpg": f"await asyncpg.connect(host='{host}', port={port}, database='{database}', user='{username}')",
+            "psycopg": (
+                f"psycopg.connect(host='{host}', port={port}, dbname='{database}', "
+                f"user='{username}')"
+            ),
+            "asyncpg": (
+                f"await asyncpg.connect(host='{host}', port={port}, "
+                f"database='{database}', user='{username}')"
+            ),
             "SQLAlchemy": f"create_engine('{url}')",
         }
 
@@ -124,30 +130,30 @@ class TestClientCompatibilityPrinciples:
         try:
             import psycopg
 
-            psycopg_available = True
+            # psycopg_available = True
             print("  ✅ psycopg available")
         except ImportError:
-            psycopg_available = False
+            # psycopg_available = False
             print("  ⚠️  psycopg not available (optional)")
 
         # Test asyncpg availability
         try:
             import asyncpg
 
-            asyncpg_available = True
+            # asyncpg_available = True
             print("  ✅ asyncpg available")
         except ImportError:
-            asyncpg_available = False
+            # asyncpg_available = False
             print("  ⚠️  asyncpg not available (optional)")
 
         # Test pytest-asyncio availability
         try:
             import pytest_asyncio
 
-            async_testing_available = True
+            # async_testing_available = True
             print("  ✅ pytest-asyncio available")
         except ImportError:
-            async_testing_available = False
+            # async_testing_available = False
             print("  ⚠️  pytest-asyncio not available (optional)")
 
         # Core functionality should always work
@@ -175,7 +181,7 @@ class TestClientCompatibilityPrinciples:
             # Test advanced PostgreSQL features
             result = conn.execute(
                 text("""
-                SELECT 
+                SELECT
                     '{"test": "json", "array": [1,2,3]}'::jsonb ->> 'test' as json_test,
                     ARRAY['a', 'b', 'c'] as array_test,
                     CURRENT_TIMESTAMP as timestamp_test
@@ -220,12 +226,18 @@ class TestClientCompatibilityDocumentation:
             (
                 "psycopg (sync)",
                 "✅ Direct",
-                f"conn = psycopg.connect(host='{host}', port={port}, dbname='{database}')",
+                (
+                    f"conn = psycopg.connect(host='{host}', port={port}, "
+                    f"dbname='{database}')"
+                ),
             ),
             (
                 "asyncpg (async)",
                 "✅ Direct",
-                f"conn = await asyncpg.connect(host='{host}', port={port}, database='{database}')",
+                (
+                    f"conn = await asyncpg.connect(host='{host}', port={port}, "
+                    f"database='{database}')"
+                ),
             ),
             ("Django ORM", "✅ Backend", "Uses custom py-pglite Django backend"),
             ("SQLModel", "✅ Via SQLAlchemy", "Works through SQLAlchemy integration"),

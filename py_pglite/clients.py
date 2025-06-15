@@ -129,26 +129,35 @@ class AsyncpgClient(DatabaseClient):
     ) -> list[tuple]:
         """Execute query using asyncpg (sync wrapper)."""
         loop = self._get_event_loop()
-        return loop.run_until_complete(
-            self._async_execute_query(connection, query, params)
-        )
+        try:
+            return loop.run_until_complete(
+                self._async_execute_query(connection, query, params)
+            )
+        except Exception as e:
+            # Ensure we don't leave any coroutines hanging
+            logger.warning(f"AsyncpgClient execute_query failed: {e}")
+            raise
 
     async def _async_execute_query(
         self, connection: Any, query: str, params: Any = None
     ) -> list[tuple]:
         """Execute query using asyncpg (async)."""
-        if params:
-            if isinstance(params, list | tuple) and len(params) == 1:
-                # Single parameter
-                result = await connection.fetch(query, params[0])
+        try:
+            if params:
+                if isinstance(params, list | tuple) and len(params) == 1:
+                    # Single parameter
+                    result = await connection.fetch(query, params[0])
+                else:
+                    # Multiple parameters
+                    result = await connection.fetch(query, *params)
             else:
-                # Multiple parameters
-                result = await connection.fetch(query, *params)
-        else:
-            result = await connection.fetch(query)
+                result = await connection.fetch(query)
 
-        # Convert asyncpg Records to tuples
-        return [tuple(row) for row in result]
+            # Convert asyncpg Records to tuples
+            return [tuple(row) for row in result]
+        except Exception as e:
+            logger.warning(f"AsyncpgClient async query execution failed: {e}")
+            raise
 
     def test_connection(self, connection_string: str) -> bool:
         """Test asyncpg connection."""
@@ -185,7 +194,18 @@ class AsyncpgClient(DatabaseClient):
     def _get_event_loop(self):
         """Get or create event loop."""
         try:
-            return self._asyncio.get_event_loop()
+            # Try to get the current event loop
+            loop = self._asyncio.get_event_loop()
+            # Check if loop is running - if so, we need a new thread
+            if loop.is_running():
+                # If we're in a running loop (like in pytest), we can't use
+                # run_until_complete
+                # This is a potential source of the warning - let's handle it better
+                logger.warning(
+                    "AsyncpgClient: Event loop is already running. "
+                    "Consider using psycopg client for synchronous usage."
+                )
+            return loop
         except RuntimeError:
             # No event loop in current thread, create a new one
             loop = self._asyncio.new_event_loop()

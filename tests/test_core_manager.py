@@ -1,9 +1,11 @@
 """Core PGliteManager functionality tests."""
 
 import os
+import subprocess
 import tempfile
 from pathlib import Path
 
+import psutil
 import pytest
 from sqlalchemy import text
 
@@ -102,3 +104,37 @@ class TestSQLAlchemyManagerEngineCreation:
                 result = conn.execute(text("SELECT version()"))
                 version = result.fetchone()[0]
                 assert "PostgreSQL" in version
+
+
+class TestPGliteManagerErrorHandling:
+    """Test the error handling capabilities of the PGliteManager."""
+
+    def test_socket_cleanup_failure(self, mocker):
+        """Test that the manager handles a failure to clean up the socket."""
+        mocker.patch("pathlib.Path.unlink", side_effect=OSError("Permission denied"))
+        with PGliteManager():
+            # The context manager should still exit cleanly
+            pass
+        # The test passes if no unhandled exception is raised
+
+    def test_kill_process_failure(self, mocker):
+        """Test that the manager handles a failure to kill an existing process."""
+        mocker.patch("psutil.Process.kill", side_effect=psutil.NoSuchProcess(pid=12345))
+        # The test passes if the manager starts without raising an unhandled exception
+        with PGliteManager():
+            pass
+
+    def test_npm_install_timeout(self, mocker):
+        """Test that the manager handles a timeout during npm install."""
+        mocker.patch(
+            "subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="npm install", timeout=1),
+        )
+        config = PGliteConfig(auto_install_deps=True, node_modules_check=True)
+
+        # Create a dummy work_dir that is missing node_modules to trigger install
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config.work_dir = Path(temp_dir)
+            with pytest.raises(subprocess.TimeoutExpired):
+                with PGliteManager(config=config):
+                    pass

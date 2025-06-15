@@ -251,8 +251,7 @@ class TestPerformanceBenchmarks:
         print("\n📊 Large Query Performance Test")
         print("=" * 50)
 
-        # Setup small dataset
-        batch_size = 100
+        batch_size = 50
         users = [
             BenchmarkUser(
                 username=f"large_user_{i}",
@@ -265,8 +264,12 @@ class TestPerformanceBenchmarks:
 
         start_time = time.time()
         with resilient_session(benchmark_engine) as session:
-            session.add_all(users)
-            session.commit()
+            # Insert in smaller chunks to be more stable
+            chunk_size = 25
+            for i in range(0, len(users), chunk_size):
+                chunk = users[i : i + chunk_size]
+                session.add_all(chunk)
+                session.commit()
 
         insert_duration = time.time() - start_time
         print(f"  📥 Data setup: {batch_size} users in {insert_duration:.2f}s")

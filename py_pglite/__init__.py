@@ -4,7 +4,7 @@ Provides seamless integration between PGlite (in-memory PostgreSQL)
 and Python test suites with support for SQLAlchemy, SQLModel, and Django.
 """
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 # Core exports (always available)
 # Database client exports (choose your preferred client)

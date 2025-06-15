@@ -28,13 +28,13 @@ def get_connection_from_string(
     return client.connect(connection_string)
 
 
-def test_connection(
+def check_connection(
     connection_string: str, client: DatabaseClient | None = None
 ) -> bool:
     """Test if database connection is working.
 
     Args:
-        connection_string: PostgreSQL connection string
+        connection_string: PostgreSQL connection string (DSN format preferred)
         client: Database client to use (defaults to auto-detected)
 
     Returns:
@@ -43,6 +43,10 @@ def test_connection(
     if client is None:
         client = get_default_client()
     return client.test_connection(connection_string)
+
+
+# Backward compatibility alias
+test_connection = check_connection
 
 
 def get_database_version(

@@ -60,7 +60,7 @@ class TestDjangoBackendDecoupling:
             assert result is True
 
     def test_wait_for_ready_parameters(self):
-        """Test that wait_for_ready accepts the same parameters as wait_for_ready_basic."""
+        """Test that wait_for_ready accepts same parameters as wait_for_ready_basic."""
         manager = PGliteManager()
 
         # Test with different parameter combinations

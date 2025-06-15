@@ -89,12 +89,10 @@ class DevWorkflow:
         print("=" * 50)
 
         success = True
-        if not self.run_command(
-            "Ruff linting", self.ruff_cmd + ["check", "py_pglite/"]
-        ):
+        if not self.run_command("Ruff linting", self.ruff_cmd + ["check", "."]):
             success = False
         if not self.run_command(
-            "Ruff formatting", self.ruff_cmd + ["format", "--check", "py_pglite/"]
+            "Ruff formatting", self.ruff_cmd + ["format", "--check", "."]
         ):
             success = False
         if not self.run_command("MyPy type checking", self.mypy_cmd + ["py_pglite/"]):
@@ -128,7 +126,7 @@ class DevWorkflow:
                 "pytest",
                 "examples/test_basic.py",
                 "examples/test_fastapi_auth_example.py",
-                "examples/test_utils.py",
+                "examples/test_example_utils.py",
                 "-v",
             ],
         ):
