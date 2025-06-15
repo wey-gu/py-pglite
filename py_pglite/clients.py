@@ -130,9 +130,32 @@ class AsyncpgClient(DatabaseClient):
         """Execute query using asyncpg (sync wrapper)."""
         loop = self._get_event_loop()
         try:
-            return loop.run_until_complete(
-                self._async_execute_query(connection, query, params)
-            )
+            # Check if we can use run_until_complete
+            if loop.is_running():
+                # If the loop is already running, we need to handle this differently
+                # This can happen in testing environments like pytest
+                import warnings
+
+                warnings.warn(
+                    "AsyncpgClient used in running event loop context. "
+                    "Consider using PsycopgClient for synchronous operations.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                # For now, we'll try to execute synchronously by creating a new loop
+                # in a thread, but this is not ideal
+                import concurrent.futures
+
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        self._asyncio.run,
+                        self._async_execute_query(connection, query, params),
+                    )
+                    return future.result()
+            else:
+                return loop.run_until_complete(
+                    self._async_execute_query(connection, query, params)
+                )
         except Exception as e:
             # Ensure we don't leave any coroutines hanging
             logger.warning(f"AsyncpgClient execute_query failed: {e}")

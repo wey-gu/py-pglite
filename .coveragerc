@@ -1,0 +1,11 @@
+[run]
+source = py_pglite
+
+[report]
+# Exclude files that are not meant to be tested directly
+# We indeed cannot pytest pytest fixtures
+# because they are not meant to be tested directly.
+omit =
+    py_pglite/fixtures.py
+    py_pglite/django/fixtures.py
+    py_pglite/sqlalchemy/fixtures.py
