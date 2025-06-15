@@ -11,7 +11,7 @@ from py_pglite.fixtures import (
 class TestPGliteFixtures:
     """Test core PGlite fixtures."""
 
-    def test_pglite_config_fixture(self, pglite_config):
+    def test_pglite_config_fixture(self, pglite_config):  # noqa: F811
         """Test pglite_config fixture provides valid configuration."""
         assert isinstance(pglite_config, PGliteConfig)
         assert pglite_config.timeout > 0
@@ -19,7 +19,7 @@ class TestPGliteFixtures:
         assert pglite_config.cleanup_on_exit is True
         assert pglite_config.socket_path is not None
 
-    def test_pglite_config_fixture_isolation(self, pglite_config):
+    def test_pglite_config_fixture_isolation(self, pglite_config):  # noqa: F811
         """Test that pglite_config fixture provides isolated instances."""
         # Get another instance
         config2 = pglite_config
@@ -30,7 +30,7 @@ class TestPGliteFixtures:
         # But should have unique socket paths for isolation
         assert pglite_config.socket_path is not None
 
-    def test_pglite_manager_fixture(self, pglite_manager):
+    def test_pglite_manager_fixture(self, pglite_manager):  # noqa: F811
         """Test pglite_manager fixture provides running manager."""
         assert isinstance(pglite_manager, PGliteManager)
         assert pglite_manager.is_running()
@@ -41,7 +41,7 @@ class TestPGliteFixtures:
         assert conn_str is not None
         assert "postgresql" in conn_str
 
-    def test_pglite_manager_fixture_cleanup(self, pglite_manager):
+    def test_pglite_manager_fixture_cleanup(self, pglite_manager):  # noqa: F811
         """Test that pglite_manager fixture handles cleanup."""
         # Manager should be running during test
         assert pglite_manager.is_running()
@@ -52,7 +52,7 @@ class TestPGliteFixtures:
 
         # Fixture should handle cleanup automatically after test
 
-    def test_pglite_manager_custom_fixture(self):
+    def test_pglite_manager_custom_fixture(self):  # noqa: F811
         """Test custom manager creation with custom config."""
         custom_config = PGliteConfig(timeout=60, log_level="DEBUG")
 
@@ -80,7 +80,7 @@ class TestPGliteFixtures:
         # Should be stopped after context
         assert not manager.is_running()
 
-    def test_multiple_pglite_managers_isolation(self, pglite_manager):
+    def test_multiple_pglite_managers_isolation(self, pglite_manager):  # noqa: F811
         """Test isolation between multiple manager instances."""
         # Get the fixture manager
         manager1 = pglite_manager
@@ -103,7 +103,7 @@ class TestPGliteFixtures:
         finally:
             manager2.stop()
 
-    def test_fixture_configuration_defaults(self, pglite_config):
+    def test_fixture_configuration_defaults(self, pglite_config):  # noqa: F811
         """Test that fixture provides reasonable defaults."""
         # Should have reasonable timeout
         assert 1 <= pglite_config.timeout <= 300
@@ -136,7 +136,7 @@ class TestPGliteFixtures:
         assert pid in config1.socket_path
         assert pid in config2.socket_path
 
-    def test_fixture_work_dir_handling(self, pglite_config):
+    def test_fixture_work_dir_handling(self, pglite_config):  # noqa: F811
         """Test fixture work directory handling."""
         # Default should be None (uses temp dir)
         assert pglite_config.work_dir is None
@@ -161,7 +161,7 @@ class TestPGliteFixtures:
         # Should still work
         assert manager.config.timeout == 1
 
-    def test_fixture_connection_string_generation(self, pglite_manager):
+    def test_fixture_connection_string_generation(self, pglite_manager):  # noqa: F811
         """Test connection string generation from fixtures."""
         # Should generate valid connection strings
         conn_str = pglite_manager.get_connection_string()
@@ -185,7 +185,7 @@ class TestPGliteFixtures:
         assert "postgresql://" in uri
         assert "+psycopg" not in uri
 
-    def test_fixture_manager_lifecycle(self, pglite_manager):
+    def test_fixture_manager_lifecycle(self, pglite_manager):  # noqa: F811
         """Test manager lifecycle through fixtures."""
         # Should be running
         assert pglite_manager.is_running()
@@ -198,7 +198,7 @@ class TestPGliteFixtures:
         ready = pglite_manager.wait_for_ready(max_retries=5, delay=0.1)
         assert isinstance(ready, bool)
 
-    def test_fixture_configuration_immutability(self, pglite_config):
+    def test_fixture_configuration_immutability(self, pglite_config):  # noqa: F811
         """Test that fixture configuration is properly set."""
         original_timeout = pglite_config.timeout
         original_log_level = pglite_config.log_level
@@ -209,7 +209,7 @@ class TestPGliteFixtures:
         assert pglite_config.log_level == original_log_level
         assert pglite_config.socket_path == original_socket_path
 
-    def test_fixture_manager_process_management(self, pglite_manager):
+    def test_fixture_manager_process_management(self, pglite_manager):  # noqa: F811
         """Test process management in fixture managers."""
         # Should have a running process
         assert pglite_manager.process is not None
@@ -224,7 +224,7 @@ class TestPGliteFixtures:
 class TestFixtureIntegration:
     """Test fixture integration scenarios."""
 
-    def test_fixture_with_real_operations(self, pglite_manager):
+    def test_fixture_with_real_operations(self, pglite_manager):  # noqa: F811
         """Test fixtures with real database operations."""
         # Wait for manager to be ready
         ready = pglite_manager.wait_for_ready(max_retries=10, delay=0.5)
@@ -249,7 +249,7 @@ class TestFixtureIntegration:
             assert pglite_manager.is_running()
             assert pglite_manager.config is not None
 
-    def test_fixture_performance_characteristics(self, pglite_manager):
+    def test_fixture_performance_characteristics(self, pglite_manager):  # noqa: F811
         """Test fixture performance characteristics."""
         import time
 
@@ -264,7 +264,7 @@ class TestFixtureIntegration:
         assert elapsed < 1.0
         assert conn_str is not None
 
-    def test_fixture_memory_efficiency(self, pglite_config):
+    def test_fixture_memory_efficiency(self, pglite_config):  # noqa: F811
         """Test fixture memory efficiency."""
         # Multiple config accesses should return same instance
         config1 = pglite_config
@@ -273,7 +273,7 @@ class TestFixtureIntegration:
         # Should be the same object (fixture scope)
         assert config1 is config2
 
-    def test_fixture_error_resilience(self, pglite_manager):
+    def test_fixture_error_resilience(self, pglite_manager):  # noqa: F811
         """Test fixture resilience to errors."""
         # Manager should handle various operations without crashing
         try:
@@ -293,7 +293,7 @@ class TestFixtureIntegration:
                 e, OSError | ConnectionError | TimeoutError | RuntimeError
             )
 
-    def test_fixture_cleanup_behavior(self, pglite_manager):
+    def test_fixture_cleanup_behavior(self, pglite_manager):  # noqa: F811
         """Test fixture cleanup behavior."""
         # Store references to check cleanup
         process = pglite_manager.process
@@ -307,7 +307,7 @@ class TestFixtureIntegration:
         # Fixture should handle cleanup automatically
         # (This is tested by the fixture teardown, not directly verifiable here)
 
-    def test_fixture_concurrent_usage(self, pglite_manager):
+    def test_fixture_concurrent_usage(self, pglite_manager):  # noqa: F811
         """Test fixture behavior with concurrent operations."""
         import threading
         import time
@@ -390,7 +390,7 @@ class TestFixtureEdgeCases:
             assert "PGlite process died during startup" in str(e)
             assert "Cannot find module" in str(e)
 
-    def test_fixture_socket_path_validation(self, pglite_config):
+    def test_fixture_socket_path_validation(self, pglite_config):  # noqa: F811
         """Test fixture socket path validation."""
         socket_path = pglite_config.socket_path
 

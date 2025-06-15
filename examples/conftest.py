@@ -102,7 +102,8 @@ def pglite_session(pglite_engine: Engine) -> Generator[Any, None, None]:
                         logger.info(f"Truncating table: {table_name}")
                         conn.execute(
                             text(
-                                f'TRUNCATE TABLE "{table_name}" RESTART IDENTITY CASCADE;'
+                                f'TRUNCATE TABLE "{table_name}" '
+                                "RESTART IDENTITY CASCADE;"
                             )
                         )
 

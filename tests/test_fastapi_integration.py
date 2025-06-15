@@ -72,7 +72,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
 
 # Test fixtures
 @pytest.fixture(scope="module")
-def test_app(pglite_engine):
+def test_app(pglite_engine):  # noqa: F811
     """Create FastAPI test app with PGlite database."""
     # Create tables
     SQLModel.metadata.create_all(pglite_engine)
@@ -216,7 +216,7 @@ def test_email_uniqueness_constraint(client: TestClient):
 
 
 # Example of testing with manual database setup
-def test_with_manual_db_setup(pglite_engine):
+def test_with_manual_db_setup(pglite_engine):  # noqa: F811
     """Test using PGlite engine directly for more control."""
     # Create tables
     SQLModel.metadata.create_all(pglite_engine)

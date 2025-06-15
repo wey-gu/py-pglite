@@ -1,9 +1,10 @@
 """Advanced example showing manual PGlite management and custom configuration."""
 
+from typing import TYPE_CHECKING
+
 import pytest
 from sqlalchemy import text
 from sqlmodel import Field, Session, SQLModel, select
-from typing import TYPE_CHECKING
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
@@ -59,7 +60,8 @@ def test_manual_lifecycle_management():
         manager.start()
         assert manager.is_running()
 
-        # Get engine and use it (readiness is checked in fixture, no need to check again)
+        # Get engine and use it (readiness is checked in fixture, no need to check
+        # again)
         engine = manager.get_engine(echo=True)  # Enable SQL logging
         SQLModel.metadata.create_all(engine)
 
@@ -94,9 +96,9 @@ def test_manual_lifecycle_management():
             with session.connection() as conn:
                 result = conn.execute(
                     text("""
-                        SELECT p.name, o.quantity, o.total 
-                        FROM product p 
-                        JOIN "order" o ON p.id = o.product_id 
+                        SELECT p.name, o.quantity, o.total
+                        FROM product p
+                        JOIN "order" o ON p.id = o.product_id
                         WHERE p.category = :category
                     """),
                     {"category": "Electronics"},
@@ -180,7 +182,8 @@ def test_multiple_sessions():
             all_products = final_session.exec(select(Product)).all()
             assert len(all_products) == 4  # 1 original + 3 new
             print(
-                f"All sessions completed successfully, total products: {len(all_products)}"
+                f"All sessions completed successfully, total products: "
+                f"{len(all_products)}"
             )
         finally:
             final_session.close()
