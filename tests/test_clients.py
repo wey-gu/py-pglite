@@ -1,7 +1,7 @@
 """Tests for py_pglite.clients module."""
 
 import sys  # type: ignore[reportUnusedImport]
-from unittest.mock import (  # , MagicMock, AsyncMock  # type: ignore[reportUnusedImport]
+from unittest.mock import (
     Mock,
     patch,
 )
