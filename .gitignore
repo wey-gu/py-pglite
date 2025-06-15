@@ -196,3 +196,7 @@ cython_debug/
 # tests
 
 perf-tests/
+
+# macOS
+
+.DS_Store

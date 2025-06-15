@@ -65,16 +65,42 @@ pytest testing-patterns/sqlalchemy/ -v
 
 Perfect SQLAlchemy integration with automatic cleanup.
 
-### **🌟 Django** - Auto-configured testing  
+### **🌟 Django** - Two integration patterns  
+
+**🔹 Lightweight/Socket Pattern** (Minimal setup)
 
 ```bash
-# Basic Django test, without pytest-django
-pytest testing-patterns/django/ -v
-
-# Django test with pytest-django (requires pytest-django)
-pip install pytest-django
-pytest testing-patterns/django/test_pytest_django.py -v
+# Standard PostgreSQL backend with socket connection
+pytest testing-patterns/django/lightweight/ -v
 ```
+
+**🔸 Full Integration/Backend Pattern** (Enhanced features)
+
+```bash  
+# Custom py-pglite backend with advanced capabilities
+pytest testing-patterns/django/full-integration/ -v
+```
+
+**🔄 Pattern Comparison & Migration Guide**
+
+```bash
+# Side-by-side comparison and migration guidance
+pytest testing-patterns/django/comparison/ -v -s
+```
+
+**📚 Complete Django Guide**
+
+```bash
+# All Django patterns (26 comprehensive tests)
+pytest testing-patterns/django/ -v
+```
+
+**Choose your pattern:**
+
+- **Lightweight**: Fast startup, minimal dependencies, standard Django patterns
+- **Full Integration**: Advanced JSON features, backend optimization, production-like setup
+
+👉 **See [Django patterns guide](testing-patterns/django/README.md)** for detailed documentation!
 
 ### **🎪 Comprehensive** - All fixtures
 
@@ -102,12 +128,20 @@ examples/
 │   ├── sqlalchemy/            #    📊 SQLAlchemy patterns
 │   │   ├── test_sqlalchemy_quickstart.py
 │   │   └── conftest.py
-│   ├── django/                #    🌟 Django patterns
-│   │   ├── test_django_quickstart.py
-│   │   ├── test_django_fixtures.py
-│   │   ├── test_pytest_django.py
-│   │   └── conftest.py
-│   └── test_fixtures_showcase.py # 🎪 Advanced patterns
+│   ├── django/                #    🌟 Two Django integration patterns
+│   │   ├── conftest.py        #        Dual-pattern fixtures
+│   │   ├── README.md          #        📚 Comprehensive Django guide
+│   │   ├── lightweight/       #        🔹 Socket pattern (minimal setup)
+│   │   │   ├── test_socket_basic.py
+│   │   │   ├── test_socket_advanced.py
+│   │   │   └── test_socket_pytest_django.py
+│   │   ├── full-integration/  #        🔸 Backend pattern (enhanced features)
+│   │   │   ├── test_backend_basic.py
+│   │   │   ├── test_backend_advanced.py
+│   │   │   └── test_backend_pytest_django.py
+│   │   └── comparison/        #        🔄 Pattern comparison
+│   │       └── test_both_patterns.py
+│   └── test_fixtures_showcase.py #  Advanced patterns
 │
 └── README.md                  # 📚 This guide
 ```
@@ -135,15 +169,20 @@ def test_users(pglite_session):
     pglite_session.commit()
     assert user.id == 1  # Real PostgreSQL!
 
-# Django tests without pytest-django
-def test_models(pglite_django_db):
+# Django tests - Lightweight/Socket pattern
+def test_django_socket(configured_django):
     Post.objects.create(title="Hello World")
-    assert Post.objects.count() == 1  # Zero config!
+    assert Post.objects.count() == 1  # Standard backend + socket!
 
-# Django tests with pytest-django
+# Django tests - Full Integration/Backend pattern  
+def test_django_backend(django_pglite_db):
+    Post.objects.create(title="Hello", metadata={"tags": ["test"]})
+    assert Post.objects.count() == 1  # Custom backend + JSON support!
+
+# Django with pytest-django (both patterns supported)
 @pytest.mark.django_db
-def test_with_pytest_django(pglite_django_db):
-    Post.objects.create(title="Hello World")
+def test_with_pytest_django(django_pglite_db):
+    Post.objects.create(title="pytest-django works!")
     assert Post.objects.count() == 1
 ```
 
@@ -187,7 +226,7 @@ def test_bulk_operations(pglite_session):
 
 ```bash
 pytest testing-patterns/sqlalchemy/ -p no:django  # Pure SQLAlchemy
-pytest testing-patterns/django/                   # Pure Django
+pytest testing-patterns/django/                   # Pure Django patterns
 ```
 
 ---
@@ -222,4 +261,5 @@ def test_my_feature(pglite_session):
 2. **🌐 Try FastAPI** - `python quickstart/simple_fastapi.py`
 3. **🏃 See the value** - `python quickstart/simple_performance.py`
 4. **🤖 Try pgvector** - `pytest examples/features/test_pgvector_rag.py -v`
-5. **🎪 Explore advanced** - `
+5. **🎪 Explore Django patterns** - `pytest testing-patterns/django/ -v`
+6. **📚 Read the Django guide** - [Django patterns documentation](testing-patterns/django/README.md)

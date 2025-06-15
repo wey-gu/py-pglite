@@ -125,7 +125,6 @@ py-pglite/
 │   │   ├── fixtures.py          #    Pytest fixtures
 │   │   └── utils.py             #    SQLAlchemy utilities
 │   ├── django/                  #    Django integration  
-│   │   ├── backend.py           #    Custom database backend
 │   │   ├── fixtures.py          #    Django fixtures
 │   │   └── utils.py             #    Django utilities
 │   ├── pytest_plugin.py         #    Auto-discovery pytest plugin

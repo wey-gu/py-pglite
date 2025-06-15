@@ -1,19 +1,28 @@
 """
-🌟 pytest-django + py-pglite Example (Optional Integration)
-=========================================================
+🌟 pytest-django + py-pglite: Lightweight/Socket Pattern
+========================================================
 
-Demonstrates optional pytest-django integration with py-pglite.
+Pattern 1: pytest-django integration with socket connection.
 
-This shows how to use pytest-django features with py-pglite:
-• Using @pytest.mark.django_db decorator (optional)
-• pytest-django fixtures and utilities (optional)
+This shows how to use pytest-django features with the lightweight approach:
+• Using @pytest.mark.django_db decorator with socket connection
+• pytest-django fixtures and utilities with standard backend
 • Django test utilities with py-pglite
+• Direct socket connection to PGlite
+
+📋 Pattern Details:
+• Backend: django.db.backends.postgresql (standard)
+• Connection: Direct socket to PGlite
+• Framework: pytest-django integration
+• Use case: pytest-django users who want socket-based testing
+
+Compare with: ../full-integration/ for custom backend pattern
 
 Note: This is an OPTIONAL integration. You can use py-pglite with Django
 without pytest-django. This example is for users who specifically want
-to use pytest-django features.
+to use pytest-django features with the lightweight socket approach.
 
-For basic Django testing without pytest-django, see test_django_quickstart.py
+For basic Django testing without pytest-django, see test_socket_basic.py
 """
 
 import pytest
