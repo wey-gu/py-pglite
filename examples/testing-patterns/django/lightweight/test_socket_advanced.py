@@ -1,14 +1,25 @@
 """
-🌟 Django Fixtures + py-pglite Examples
-======================================
+🌟 Django + py-pglite: Advanced Lightweight/Socket Pattern
+=========================================================
 
-Demonstrates different Django testing patterns with proper abstraction:
-• Pure Django ORM testing
-• Advanced Django features (relationships, constraints)
-• Reusable fixtures and utilities
-• Clean separation of concerns
+Pattern 1: Advanced Django features with socket connection.
 
-This complements test_pytest_django.py by showing Django-focused patterns.
+This example demonstrates advanced Django patterns with the lightweight approach:
+• Advanced Django ORM features with standard PostgreSQL backend
+• Complex queries, relationships, and constraints
+• Bulk operations and transactions
+• Direct socket connection to PGlite
+• Production-ready patterns with minimal setup
+
+📋 Pattern Details:
+• Backend: django.db.backends.postgresql (standard)
+• Connection: Direct socket to PGlite
+• Features: Full Django ORM capabilities
+• Use case: Advanced Django testing, complex applications
+
+Compare with: ../full-integration/ for custom backend pattern
+
+This complements test_socket_basic.py by showing advanced Django-focused patterns.
 """
 
 import django

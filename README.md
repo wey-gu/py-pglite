@@ -85,13 +85,30 @@ def test_sqlalchemy_just_works(pglite_session):
     assert User.query.count() == 1  # Real PostgreSQL!
 ```
 
-### **Django** (Auto-configured)
+### **Django**
+
+**🔹 Lightweight/Socket** (Minimal setup)
 
 ```python  
-def test_django_just_works(db):
+def test_django_socket_pattern(configured_django):
     Post.objects.create(title="Hello", content="World")
-    assert Post.objects.count() == 1  # Real PostgreSQL!
+    assert Post.objects.count() == 1  # Real PostgreSQL via socket!
 ```
+
+**🔸 Full Integration/Backend** (Enhanced features)
+
+```python  
+def test_django_backend_pattern(django_pglite_db):
+    Post.objects.create(title="Hello", content="World", metadata={"tags": ["test"]})
+    assert Post.objects.count() == 1  # Custom backend with JSON support!
+```
+
+**Choose your pattern:**
+
+- **Lightweight**: Fast, minimal dependencies, standard PostgreSQL backend
+- **Full Integration**: Advanced features, custom backend, enhanced JSON support
+
+👉 [**See Django patterns guide**](examples/testing-patterns/django/) for detailed examples and migration guide.
 
 ### **Any PostgreSQL client**
 
