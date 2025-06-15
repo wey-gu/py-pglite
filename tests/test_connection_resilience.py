@@ -4,7 +4,7 @@ import pytest
 
 from py_pglite import PGliteManager
 from py_pglite.config import PGliteConfig
-from py_pglite.utils import test_connection
+from py_pglite.utils import check_connection
 
 
 class TestConnectionStringFormats:
@@ -79,7 +79,7 @@ class TestConnectionResilience:
 
         for invalid_format in invalid_formats:
             # Should return False, not crash
-            assert not test_connection(invalid_format)
+            assert not check_connection(invalid_format)
 
     def test_manager_wait_for_ready_uses_correct_format(self):
         """Test that manager uses correct connection format for readiness check."""

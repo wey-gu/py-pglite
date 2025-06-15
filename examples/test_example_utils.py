@@ -170,7 +170,8 @@ def test_schema_operations(pglite_engine):
         with session.connection() as conn:
             result = conn.execute(
                 text(
-                    "SELECT schema_name FROM information_schema.schemata WHERE schema_name = :name"
+                    "SELECT schema_name FROM information_schema.schemata "
+                    "WHERE schema_name = :name"
                 ),
                 {"name": test_schema},
             )
@@ -185,7 +186,8 @@ def test_schema_operations(pglite_engine):
         with session.connection() as conn:
             result = conn.execute(
                 text(
-                    "SELECT schema_name FROM information_schema.schemata WHERE schema_name = :name"
+                    "SELECT schema_name FROM information_schema.schemata "
+                    "WHERE schema_name = :name"
                 ),
                 {"name": test_schema},
             )
