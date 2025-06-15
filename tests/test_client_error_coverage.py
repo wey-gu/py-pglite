@@ -5,7 +5,7 @@ to significantly improve coverage from 43% to 70%+.
 """
 
 import logging
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, call, patch
 
 import pytest
 
@@ -16,6 +16,13 @@ from py_pglite.clients import (
     get_client,
     get_default_client,
 )
+
+# Filter expected warnings for specific test cases
+pytestmark = [
+    pytest.mark.filterwarnings(
+        "ignore:AsyncpgClient used in running event loop context:RuntimeWarning"
+    )
+]
 
 
 class TestDatabaseClientAbstract:
@@ -181,23 +188,17 @@ class TestAsyncpgClientErrorHandling:
 
         # Test the async method directly
         import asyncio
+        from unittest.mock import AsyncMock
 
         async def test_async():
-            mock_conn = Mock()
+            mock_conn = AsyncMock()
             mock_conn.fetch.side_effect = Exception("Async test error")
 
             with pytest.raises(Exception, match="Async test error"):
                 await client._async_execute_query(mock_conn, "SELECT 1")
 
         # Run the async test
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                pytest.skip("Cannot run async test in running loop")
-            loop.run_until_complete(test_async())
-        except RuntimeError:
-            # No event loop, create one
-            asyncio.run(test_async())
+        asyncio.run(test_async())
 
     def test_asyncpg_test_connection_failure(self):
         """Test AsyncpgClient test_connection failure handling."""
@@ -218,8 +219,18 @@ class TestAsyncpgClientErrorHandling:
             pytest.skip("asyncpg not available")
 
         # Test with invalid connection string
-        result = client.get_database_version("invalid://connection/string")
-        assert result is None
+        import asyncio
+
+        async def test_async():
+            result = await client._async_execute_query(None, "SELECT version()")
+            return result
+
+        # Mock _async_execute_query to raise exception
+        with patch.object(
+            client, "_async_execute_query", side_effect=Exception("Test error")
+        ):
+            result = client.get_database_version("invalid://connection/string")
+            assert result is None
 
     def test_asyncpg_close_connection_already_closed(self):
         """Test AsyncpgClient close_connection with already closed connection."""
@@ -288,6 +299,28 @@ class TestAsyncpgClientErrorHandling:
                     mock_new_loop.assert_called_once()
                     mock_set_loop.assert_called_once_with(mock_loop)
                     assert result_loop == mock_loop
+
+    def test_asyncpg_execute_query_in_running_loop_warning(self):
+        """Test AsyncpgClient warns when used in running event loop."""
+        try:
+            client = AsyncpgClient()
+        except ImportError:
+            pytest.skip("asyncpg not available")
+
+        mock_conn = Mock()
+        mock_conn.fetch = AsyncMock(return_value=[])
+
+        # Mock a running event loop
+        mock_loop = Mock()
+        mock_loop.is_running.return_value = True
+        mock_loop.run_until_complete.side_effect = lambda coro: []
+
+        with patch.object(client, "_get_event_loop", return_value=mock_loop):
+            with pytest.warns(
+                RuntimeWarning,
+                match="Consider using PsycopgClient for synchronous operations",
+            ):
+                client.execute_query(mock_conn, "SELECT 1")
 
 
 class TestClientFactoryFunctions:
@@ -547,6 +580,7 @@ class TestClientLogging:
             pytest.skip("asyncpg not available")
 
         mock_conn = Mock()
+        mock_conn.fetch = AsyncMock(side_effect=Exception("Test error"))
 
         with patch.object(client, "_get_event_loop") as mock_get_loop:
             mock_loop = Mock()
@@ -557,10 +591,16 @@ class TestClientLogging:
                 with pytest.raises(Exception, match="Test error"):
                     client.execute_query(mock_conn, "SELECT 1")
 
-                # Should log warning
-                mock_logger.warning.assert_called_once()
-                warning_msg = mock_logger.warning.call_args[0][0]
-                assert "AsyncpgClient execute_query failed" in warning_msg
+                # Should log warnings for both async and sync failures
+                assert mock_logger.warning.call_count == 2
+                assert (
+                    "async query execution failed"
+                    in mock_logger.warning.call_args_list[0][0][0]
+                )
+                assert (
+                    "execute_query failed"
+                    in mock_logger.warning.call_args_list[1][0][0]
+                )
 
     def test_psycopg_test_connection_logs_warning_on_failure(self):
         """Test PsycopgClient logs warning when test_connection fails."""

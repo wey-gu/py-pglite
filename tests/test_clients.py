@@ -1,7 +1,9 @@
 """Tests for py_pglite.clients module."""
 
+import asyncio
 import sys  # type: ignore[reportUnusedImport]
 from unittest.mock import (
+    AsyncMock,
     Mock,
     patch,
 )
@@ -15,6 +17,20 @@ from py_pglite.clients import (
     get_client,
     get_default_client,
 )
+
+
+@pytest.fixture(autouse=True)
+def cleanup_asyncio():
+    """Clean up any pending coroutines after each test."""
+    yield
+    # Clean up any pending coroutines
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(asyncio.sleep(0))
+    finally:
+        loop.close()
+        asyncio.set_event_loop(None)
 
 
 class TestDatabaseClient:
@@ -161,7 +177,7 @@ class TestPsycopgClient:
         with patch.dict("sys.modules", {"psycopg": mock_psycopg}):
             client = PsycopgClient()
 
-            # Mock the connect method
+            # Mock the connect method to return a synchronous connection
             with patch.object(client, "connect", return_value=mock_connection):
                 result = client.get_database_version("test_dsn")
 
@@ -296,18 +312,38 @@ class TestAsyncpgClient:
         mock_asyncio = Mock()
         mock_asyncpg = Mock()
         mock_connection = Mock()
+        mock_connection.close = AsyncMock()
+        mock_connection.is_closed = Mock(return_value=False)
         mock_loop = Mock()
-
         mock_asyncio.get_event_loop.return_value = mock_loop
-        mock_connection.is_closed.return_value = False
+
+        # Create a coroutine for run_until_complete to run
+        async def mock_coro():
+            await mock_connection.close()
+            return None  # Ensure we return something
 
         with patch.dict(
             "sys.modules", {"asyncio": mock_asyncio, "asyncpg": mock_asyncpg}
         ):
             client = AsyncpgClient()
+
+            # Mock run_until_complete to properly handle the coroutine
+            def run_coro(coro):
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    return loop.run_until_complete(mock_coro())
+                finally:
+                    loop.close()
+                    asyncio.set_event_loop(None)
+
+            mock_loop.run_until_complete.side_effect = run_coro
+
             client.close_connection(mock_connection)
 
-            mock_loop.run_until_complete.assert_called_once()
+            # Verify the async close was run through the event loop
+            assert mock_loop.run_until_complete.call_count == 1
+            mock_connection.close.assert_awaited_once()
 
 
 class TestClientFactory:
@@ -335,16 +371,18 @@ class TestClientFactory:
         assert result is mock_instance
         mock_psycopg_client.assert_called_once()
 
+    @pytest.mark.asyncio
     @patch("py_pglite.clients.AsyncpgClient")
-    def test_get_client_asyncpg(self, mock_asyncpg_client):
+    async def test_get_client_asyncpg(self, mock_asyncpg_client):
         """Test get_client returns AsyncpgClient for 'asyncpg'."""
-        mock_instance = Mock()
+        mock_instance = AsyncMock()  # Use AsyncMock instead of Mock
         mock_asyncpg_client.return_value = mock_instance
 
         result = get_client("asyncpg")
 
         assert result is mock_instance
         mock_asyncpg_client.assert_called_once()
+        # No need to explicitly await close() since it's handled by AsyncMock
 
     def test_get_client_invalid(self):
         """Test get_client raises ValueError for invalid client."""
