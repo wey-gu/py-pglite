@@ -106,6 +106,13 @@ all = [
     "pytest-asyncio>=0.21.0",
 ]
 
+[dependency-groups]
+test = [
+    "pytest",
+    "pytest-xdist",
+    "py-pglite[all]"
+]
+
 [project.urls]
 Homepage = "https://github.com/wey-gu/py-pglite"
 Documentation = "https://github.com/wey-gu/py-pglite#readme"
@@ -259,18 +266,40 @@ directory = "htmlcov"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
+asyncio_mode = "auto"
+testpaths = ["tests", "examples"]
+python_files = ["test_*.py", "*_test.py"]
 addopts = [
+    "-n",
+    "logical",
     "-ra",
     "--strict-markers",
     "--strict-config",
-    "--disable-warnings",
 ]
-testpaths = ["tests", "examples"]
-pythonpath = ["."]
 markers = [
-    "slow: marks tests as slow",
+    "sqlalchemy: marks tests as requiring SQLAlchemy (deselect with '-m \"not sqlalchemy\"')",
+    "django: marks tests as requiring Django (deselect with '-m \"not django\"')",
+    "pytest_django: pytest-django specific tests",
+    "extensions: marks tests as requiring extension dependencies like pgvector",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
+    "database: Database tests",
+    "performance: Performance benchmarks",
+    "unit: marks tests as unit tests",
+    "stress: marks tests as stress/load tests",
+    "core: Core functionality tests",
+    "fixtures: Fixture pattern tests",
+    "isolation: Framework isolation tests",
+
 ]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    # Only suppress specific AsyncpgClient warnings during test execution
+    # These occur because AsyncpgClient uses sync-over-async pattern with mocking
+    "ignore:coroutine 'AsyncpgClient._async_execute_query' was never awaited:RuntimeWarning",
+]
+
 # Disable pytest-django for examples to prevent interference
 # Users can run: pytest examples/ -p no:django
 # Or the examples will work with our zero-config approach 
