@@ -24,7 +24,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         run-tests: true
-        coverage: ${{ matrix.python-version != '3.11' }}
+        coverage: ${{ matrix.python-version == '3.11' }}
 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.11'
