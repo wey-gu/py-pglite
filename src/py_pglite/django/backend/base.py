@@ -4,10 +4,12 @@
 import threading
 import time
 import uuid
+
 from typing import Any
 
 from py_pglite.config import PGliteConfig
 from py_pglite.manager import PGliteManager
+
 
 # Import Django components with error handling
 try:
@@ -155,6 +157,7 @@ class PGliteDatabaseCreation(DatabaseCreation):  # type: ignore
                 # Create unique socket directory for this database
                 config = PGliteConfig()
                 import tempfile
+
                 from pathlib import Path
 
                 # Create unique socket directory but use standard socket name

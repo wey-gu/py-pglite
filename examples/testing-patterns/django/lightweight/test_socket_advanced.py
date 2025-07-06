@@ -24,9 +24,13 @@ This complements test_socket_basic.py by showing advanced Django-focused pattern
 
 import django
 import pytest
+
 from django.conf import settings
-from django.db import IntegrityError, connection, models
-from django.db.models import Count, Q
+from django.db import IntegrityError
+from django.db import connection
+from django.db import models
+from django.db.models import Count
+from django.db.models import Q
 
 
 def configure_django_for_testing(pglite_manager):

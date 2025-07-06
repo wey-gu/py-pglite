@@ -2,8 +2,11 @@
 
 import subprocess
 import tempfile
+
 from pathlib import Path
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock
+from unittest.mock import call
+from unittest.mock import patch
 
 import psutil
 import pytest

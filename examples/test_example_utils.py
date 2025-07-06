@@ -1,7 +1,10 @@
 """Example showing how to use py-pglite utils for advanced database operations."""
 
 from sqlalchemy import text
-from sqlmodel import Field, Session, SQLModel, select
+from sqlmodel import Field
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import select
 
 from py_pglite.sqlalchemy import utils
 

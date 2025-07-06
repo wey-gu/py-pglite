@@ -6,13 +6,18 @@ and Python test suites with support for SQLAlchemy, SQLModel, and Django.
 
 import importlib.metadata
 
+
 __version__ = importlib.metadata.version(__name__)
 
 # Core exports (always available)
 # Database client exports (choose your preferred client)
-from .clients import AsyncpgClient, PsycopgClient, get_client, get_default_client
+from .clients import AsyncpgClient
+from .clients import PsycopgClient
+from .clients import get_client
+from .clients import get_default_client
 from .config import PGliteConfig
 from .manager import PGliteManager
+
 
 # Core public API - framework agnostic
 __all__ = [

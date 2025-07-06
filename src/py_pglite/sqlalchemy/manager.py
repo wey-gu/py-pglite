@@ -4,6 +4,7 @@ Extends the core PGliteManager with SQLAlchemy-specific functionality.
 """
 
 import time
+
 from typing import Any
 
 from ..manager import PGliteManager
@@ -51,7 +52,8 @@ class SQLAlchemyPGliteManager(PGliteManager):
 
         try:
             from sqlalchemy import create_engine
-            from sqlalchemy.pool import NullPool, StaticPool
+            from sqlalchemy.pool import NullPool
+            from sqlalchemy.pool import StaticPool
         except ImportError as e:
             raise ImportError(
                 "SQLAlchemy is required for get_engine(). "

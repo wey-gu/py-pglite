@@ -9,8 +9,10 @@ All fixtures are module-scoped to avoid conflicts with other test modules.
 from collections.abc import Generator
 
 import pytest
+
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from py_pglite import PGliteConfig

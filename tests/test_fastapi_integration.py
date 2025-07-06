@@ -1,9 +1,16 @@
 """Example showing how to integrate py-pglite with FastAPI testing."""
 
 import pytest
-from fastapi import Depends, FastAPI, HTTPException
+
+from fastapi import Depends
+from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import create_engine
+from sqlmodel import select
 
 from py_pglite.sqlalchemy import pglite_engine
 

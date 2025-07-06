@@ -23,8 +23,14 @@ This complements test_backend_basic.py by showing advanced backend-focused patte
 """
 
 import pytest
-from django.db import IntegrityError, connection, models, transaction
-from django.db.models import Count, Q
+
+from django.db import IntegrityError
+from django.db import connection
+from django.db import models
+from django.db import transaction
+from django.db.models import Count
+from django.db.models import Q
+
 
 # Mark as Django test
 pytestmark = pytest.mark.django

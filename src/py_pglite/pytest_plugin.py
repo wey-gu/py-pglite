@@ -8,6 +8,7 @@ import warnings
 
 import pytest
 
+
 # Framework availability detection
 HAS_SQLALCHEMY = False
 HAS_DJANGO = False
@@ -81,38 +82,33 @@ def _should_disable_django_plugin(config: pytest.Config) -> bool:
 
 
 # Core fixtures (always available)
-from .fixtures import (  # noqa: F401
-    pglite_manager,
-    pglite_manager_custom,
-)
+from .fixtures import pglite_manager  # noqa: F401
+from .fixtures import pglite_manager_custom  # noqa: F401
+
 
 # Smart fixture loading with perfect isolation
 if HAS_SQLALCHEMY:
     try:
-        from .sqlalchemy.fixtures import (  # noqa: F401
-            pglite_config,
-            pglite_engine,
-            pglite_session,
-            pglite_sqlalchemy_engine,
-            pglite_sqlalchemy_manager,
-            pglite_sqlalchemy_session,
-        )
+        from .sqlalchemy.fixtures import pglite_config  # noqa: F401
+        from .sqlalchemy.fixtures import pglite_engine  # noqa: F401
+        from .sqlalchemy.fixtures import pglite_session  # noqa: F401
+        from .sqlalchemy.fixtures import pglite_sqlalchemy_engine  # noqa: F401
+        from .sqlalchemy.fixtures import pglite_sqlalchemy_manager  # noqa: F401
+        from .sqlalchemy.fixtures import pglite_sqlalchemy_session  # noqa: F401
     except ImportError:
         pass
 
 if HAS_DJANGO:
     try:
-        from .django.fixtures import (  # noqa: F401
-            db,
-            django_admin_user,
-            django_client,
-            django_pglite_db,
-            django_pglite_settings,
-            django_pglite_transactional_db,
-            django_user_model,
-            pglite_django_manager,
-            transactional_db,
-        )
+        from .django.fixtures import db  # noqa: F401
+        from .django.fixtures import django_admin_user  # noqa: F401
+        from .django.fixtures import django_client  # noqa: F401
+        from .django.fixtures import django_pglite_db  # noqa: F401
+        from .django.fixtures import django_pglite_settings  # noqa: F401
+        from .django.fixtures import django_pglite_transactional_db  # noqa: F401
+        from .django.fixtures import django_user_model  # noqa: F401
+        from .django.fixtures import pglite_django_manager  # noqa: F401
+        from .django.fixtures import transactional_db  # noqa: F401
     except ImportError:
         pass
 

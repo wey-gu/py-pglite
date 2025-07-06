@@ -2,10 +2,12 @@
 
 from typing import Any
 
-from sqlalchemy import MetaData, text
+from sqlalchemy import MetaData
+from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Session as SQLAlchemySession
+
 
 # Try to import SQLAlchemy Session types
 try:

@@ -3,13 +3,16 @@
 import os
 import subprocess
 import tempfile
+
 from pathlib import Path
 
 import psutil
 import pytest
+
 from sqlalchemy import text
 
-from py_pglite import PGliteConfig, PGliteManager
+from py_pglite import PGliteConfig
+from py_pglite import PGliteManager
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
 
 

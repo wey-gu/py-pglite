@@ -5,12 +5,17 @@ to ensure robust connection handling under various scenarios.
 """
 
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 
 import pytest
+
 from sqlalchemy import text
-from sqlalchemy.exc import DisconnectionError, ProgrammingError
-from sqlalchemy.pool import NullPool, StaticPool
+from sqlalchemy.exc import DisconnectionError
+from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import StaticPool
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
@@ -112,6 +117,7 @@ class TestConnectionLifecycle:
         """Test that multi-manager properly isolated (sequential usage)."""
         import tempfile
         import uuid
+
         from pathlib import Path
 
         # Create unique socket paths for each manager to avoid conflicts

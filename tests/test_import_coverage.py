@@ -10,14 +10,12 @@ import pytest
 def test_main_package_imports():
     """Test main package imports work correctly."""
     # Test all imports from py_pglite/__init__.py (lines 7-16)
-    from py_pglite import (
-        AsyncpgClient,
-        PGliteConfig,
-        PGliteManager,
-        PsycopgClient,
-        get_client,
-        get_default_client,
-    )
+    from py_pglite import AsyncpgClient
+    from py_pglite import PGliteConfig
+    from py_pglite import PGliteManager
+    from py_pglite import PsycopgClient
+    from py_pglite import get_client
+    from py_pglite import get_default_client
 
     # Verify classes can be instantiated (basic smoke test)
     config = PGliteConfig()
@@ -38,14 +36,12 @@ def test_main_package_imports():
 def test_django_package_imports():
     """Test Django package imports work correctly."""
     # Test all imports from py_pglite/django/__init__.py (lines 7-18)
-    from py_pglite.django import (
-        configure_django_for_pglite,
-        create_django_superuser,
-        db,
-        django_pglite_db,
-        django_pglite_transactional_db,
-        transactional_db,
-    )
+    from py_pglite.django import configure_django_for_pglite
+    from py_pglite.django import create_django_superuser
+    from py_pglite.django import db
+    from py_pglite.django import django_pglite_db
+    from py_pglite.django import django_pglite_transactional_db
+    from py_pglite.django import transactional_db
 
     # Verify these are callable/importable
     assert callable(configure_django_for_pglite)
@@ -56,16 +52,14 @@ def test_django_package_imports():
 def test_sqlalchemy_package_imports():
     """Test SQLAlchemy package imports work correctly."""
     # Test all imports from py_pglite/sqlalchemy/__init__.py (lines 7-20)
-    from py_pglite.sqlalchemy import (
-        SQLAlchemyPGliteManager,
-        create_all_tables,
-        drop_all_tables,
-        get_session_class,
-        pglite_engine,
-        pglite_session,
-        pglite_sqlalchemy_engine,
-        pglite_sqlalchemy_session,
-    )
+    from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
+    from py_pglite.sqlalchemy import create_all_tables
+    from py_pglite.sqlalchemy import drop_all_tables
+    from py_pglite.sqlalchemy import get_session_class
+    from py_pglite.sqlalchemy import pglite_engine
+    from py_pglite.sqlalchemy import pglite_session
+    from py_pglite.sqlalchemy import pglite_sqlalchemy_engine
+    from py_pglite.sqlalchemy import pglite_sqlalchemy_session
 
     # Verify manager class can be imported
     assert SQLAlchemyPGliteManager is not None

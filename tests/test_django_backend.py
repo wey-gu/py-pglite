@@ -20,11 +20,9 @@ class TestDjangoBackendDecoupling:
             import django  # noqa: F401
 
             # Should be able to import Django backend components
-            from py_pglite.django.backend import (
-                PGliteDatabaseCreation,
-                PGliteDatabaseWrapper,
-                get_pglite_manager,
-            )
+            from py_pglite.django.backend import PGliteDatabaseCreation
+            from py_pglite.django.backend import PGliteDatabaseWrapper
+            from py_pglite.django.backend import get_pglite_manager
 
             assert PGliteDatabaseCreation is not None
             assert PGliteDatabaseWrapper is not None

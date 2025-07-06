@@ -1,11 +1,10 @@
 """Tests for pytest fixtures functionality."""
 
-from py_pglite import PGliteConfig, PGliteManager
-from py_pglite.fixtures import (
-    pglite_config,
-    pglite_manager,
-    pglite_manager_custom,
-)
+from py_pglite import PGliteConfig
+from py_pglite import PGliteManager
+from py_pglite.fixtures import pglite_config
+from py_pglite.fixtures import pglite_manager
+from py_pglite.fixtures import pglite_manager_custom
 
 
 class TestPGliteFixtures:

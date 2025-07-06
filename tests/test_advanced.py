@@ -3,12 +3,17 @@
 from typing import TYPE_CHECKING
 
 import pytest
+
 from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
-from sqlmodel import Field, Session, SQLModel, select
+from sqlmodel import Field
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import select
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
+
 
 if TYPE_CHECKING:
     from py_pglite.sqlalchemy import (

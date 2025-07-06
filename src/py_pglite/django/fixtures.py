@@ -2,10 +2,12 @@
 
 import os
 import secrets
+
 from collections.abc import Generator
 from typing import Any
 
 import pytest
+
 
 # Import Django components with proper error handling
 HAS_DJANGO = False
@@ -21,15 +23,16 @@ TransactionTestCase: Any = object
 
 try:
     import django  # type: ignore
+
     from django.apps import apps
     from django.conf import settings  # type: ignore
     from django.core.management import call_command  # type: ignore
-    from django.db import connection, connections  # type: ignore
-    from django.test import TestCase, TransactionTestCase  # type: ignore
-    from django.test.utils import (  # type: ignore
-        setup_test_environment,
-        teardown_test_environment,
-    )
+    from django.db import connection  # type: ignore
+    from django.db import connections  # type: ignore
+    from django.test import TestCase  # type: ignore
+    from django.test import TransactionTestCase  # type: ignore
+    from django.test.utils import setup_test_environment  # type: ignore
+    from django.test.utils import teardown_test_environment  # type: ignore
 
     HAS_DJANGO = True
 except ImportError:

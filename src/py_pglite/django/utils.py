@@ -3,8 +3,10 @@
 import os
 import secrets
 import tempfile
+
 from pathlib import Path
 from typing import Any
+
 
 HAS_DJANGO = False
 django: Any | None = None
@@ -14,6 +16,7 @@ connection: Any | None = None
 
 try:
     import django  # type: ignore
+
     from django.conf import settings  # type: ignore
     from django.core.management import call_command  # type: ignore
     from django.db import connection  # type: ignore

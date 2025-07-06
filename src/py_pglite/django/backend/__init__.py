@@ -1,11 +1,10 @@
 """Django backend package for py-pglite integration."""
 
-from .base import (
-    DatabaseWrapper,
-    PGliteDatabaseCreation,
-    PGliteDatabaseWrapper,
-    get_pglite_manager,
-)
+from .base import DatabaseWrapper
+from .base import PGliteDatabaseCreation
+from .base import PGliteDatabaseWrapper
+from .base import get_pglite_manager
+
 
 # Expose both names for compatibility
 __all__ = [

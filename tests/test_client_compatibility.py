@@ -13,6 +13,7 @@ Shows:
 """
 
 import pytest
+
 from sqlalchemy import text
 
 from py_pglite import PGliteConfig

@@ -1,23 +1,24 @@
 """Comprehensive tests for pytest_plugin module - targeting 33.61% coverage gap."""
 
 import warnings
-from unittest.mock import Mock, call, patch
+
+from unittest.mock import Mock
+from unittest.mock import call
+from unittest.mock import patch
 
 import pytest
 
-from py_pglite.pytest_plugin import (
-    HAS_DJANGO,
-    HAS_PYTEST_DJANGO,
-    HAS_SQLALCHEMY,
-    _auto_mark_test,
-    _check_framework_isolation,
-    _is_explicitly_marked,
-    _should_disable_django_plugin,
-    pytest_collection_modifyitems,
-    pytest_configure,
-    pytest_runtest_setup,
-    pytest_terminal_summary,
-)
+from py_pglite.pytest_plugin import HAS_DJANGO
+from py_pglite.pytest_plugin import HAS_PYTEST_DJANGO
+from py_pglite.pytest_plugin import HAS_SQLALCHEMY
+from py_pglite.pytest_plugin import _auto_mark_test
+from py_pglite.pytest_plugin import _check_framework_isolation
+from py_pglite.pytest_plugin import _is_explicitly_marked
+from py_pglite.pytest_plugin import _should_disable_django_plugin
+from py_pglite.pytest_plugin import pytest_collection_modifyitems
+from py_pglite.pytest_plugin import pytest_configure
+from py_pglite.pytest_plugin import pytest_runtest_setup
+from py_pglite.pytest_plugin import pytest_terminal_summary
 
 
 class TestFrameworkAvailabilityDetection:

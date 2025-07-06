@@ -3,12 +3,14 @@
 import logging
 import os
 import tempfile
+
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-from py_pglite.config import PGliteConfig, _get_secure_socket_path
+from py_pglite.config import PGliteConfig
+from py_pglite.config import _get_secure_socket_path
 
 
 class TestSecureSocketPathGeneration:
@@ -406,7 +408,8 @@ class TestPGliteConfigImports:
     def test_config_module_imports(self):
         """Test that all necessary imports are working."""
         # Test that we can import all the components
-        from py_pglite.config import PGliteConfig, _get_secure_socket_path
+        from py_pglite.config import PGliteConfig
+        from py_pglite.config import _get_secure_socket_path
 
         # Test that the function works
         socket_path = _get_secure_socket_path()

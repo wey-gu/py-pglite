@@ -1,10 +1,13 @@
 """Framework-agnostic utility functions for PGlite testing."""
 
 import logging
+
 from pathlib import Path
 from typing import Any
 
-from .clients import DatabaseClient, get_default_client
+from .clients import DatabaseClient
+from .clients import get_default_client
+
 
 logger = logging.getLogger(__name__)
 

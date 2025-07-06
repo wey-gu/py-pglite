@@ -11,11 +11,17 @@ Run with: pytest examples/testing-patterns/test_advanced_patterns.py -v -s
 from pathlib import Path
 
 import pytest
-from sqlalchemy import Column, Integer, String, text
-from sqlalchemy.orm import declarative_base, sessionmaker
+
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import text
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
+
 
 Base = declarative_base()
 

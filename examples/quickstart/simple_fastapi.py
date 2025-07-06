@@ -13,10 +13,15 @@ Usage:
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import Session, declarative_base, sessionmaker
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
+
 
 # ⚡ ONE LINE SETUP - Real PostgreSQL ready!
 manager = SQLAlchemyPGliteManager()

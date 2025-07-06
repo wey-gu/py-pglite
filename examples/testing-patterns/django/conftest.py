@@ -11,9 +11,11 @@ Shows proper abstraction for different testing approaches.
 
 import django
 import pytest
+
 from django.conf import settings
 
-from py_pglite import PGliteConfig, PGliteManager
+from py_pglite import PGliteConfig
+from py_pglite import PGliteManager
 
 
 @pytest.fixture(scope="function")

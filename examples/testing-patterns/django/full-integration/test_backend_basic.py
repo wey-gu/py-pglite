@@ -22,7 +22,10 @@ Addresses community request: https://github.com/wey-gu/py-pglite/issues/5
 """
 
 import pytest
-from django.db import connection, models
+
+from django.db import connection
+from django.db import models
+
 
 # Mark as Django test
 pytestmark = pytest.mark.django

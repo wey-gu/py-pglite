@@ -1,11 +1,9 @@
 """Comprehensive tests for SQLAlchemy utils module."""
 
 from pathlib import Path  # type: ignore[reportUnusedImport]
-from unittest.mock import (
-    MagicMock,
-    Mock,
-    patch,
-)
+from unittest.mock import MagicMock
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 

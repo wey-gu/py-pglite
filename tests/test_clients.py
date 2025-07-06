@@ -2,21 +2,18 @@
 
 import asyncio
 import sys  # type: ignore[reportUnusedImport]
-from unittest.mock import (
-    AsyncMock,
-    Mock,
-    patch,
-)
+
+from unittest.mock import AsyncMock
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
-from py_pglite.clients import (
-    AsyncpgClient,
-    DatabaseClient,
-    PsycopgClient,
-    get_client,
-    get_default_client,
-)
+from py_pglite.clients import AsyncpgClient
+from py_pglite.clients import DatabaseClient
+from py_pglite.clients import PsycopgClient
+from py_pglite.clients import get_client
+from py_pglite.clients import get_default_client
 
 
 @pytest.fixture(autouse=True)

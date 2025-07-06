@@ -26,8 +26,11 @@ For basic Django testing without pytest-django, see test_socket_basic.py
 """
 
 import pytest
-from django.db import connection, models
+
+from django.db import connection
+from django.db import models
 from django.test import TestCase
+
 
 # pytest-django specific markers
 pytestmark = pytest.mark.django

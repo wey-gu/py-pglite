@@ -26,8 +26,13 @@ For basic Django testing with custom backend, see test_backend_basic.py
 """
 
 import pytest
-from django.db import connection, models, transaction
-from django.test import Client, TestCase
+
+from django.db import connection
+from django.db import models
+from django.db import transaction
+from django.test import Client
+from django.test import TestCase
+
 
 # pytest-django specific markers
 pytestmark = pytest.mark.django

@@ -1,21 +1,22 @@
 """Comprehensive tests for py_pglite utils module."""
 
 import logging
+
 from pathlib import Path
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock
+from unittest.mock import call
+from unittest.mock import patch
 
 import pytest
 
-from py_pglite.utils import (
-    check_connection,
-    execute_sql,
-    find_pglite_modules,
-    get_connection_from_string,
-    get_database_version,
-    get_major_version,
-    get_table_names,
-    table_exists,
-)
+from py_pglite.utils import check_connection
+from py_pglite.utils import execute_sql
+from py_pglite.utils import find_pglite_modules
+from py_pglite.utils import get_connection_from_string
+from py_pglite.utils import get_database_version
+from py_pglite.utils import get_major_version
+from py_pglite.utils import get_table_names
+from py_pglite.utils import table_exists
 
 
 class TestConnectionUtilities:

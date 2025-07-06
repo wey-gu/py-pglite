@@ -9,12 +9,20 @@ This shows how py-pglite makes testing with real PostgreSQL effortless.
 import time
 
 import pytest
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, text
+
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
 
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
+
 
 Base = declarative_base()
 

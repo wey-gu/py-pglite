@@ -10,13 +10,20 @@ Run with: pytest examples/testing-patterns/test_performance_benchmarks.py -v -s
 
 import statistics
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 from typing import Any
 
 import pytest
+
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import create_engine
+from sqlmodel import select
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager

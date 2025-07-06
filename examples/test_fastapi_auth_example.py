@@ -15,20 +15,31 @@ Key patterns shown:
 """
 
 import logging
+
 from collections.abc import Generator
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 
 import bcrypt
 import pytest
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import (
-    HTTPAuthorizationCredentials,
-    HTTPBearer,
-)
+
+from fastapi import Depends
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import status
+from fastapi.security import HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from fastapi.testclient import TestClient
-from jose import JWTError, jwt
+from jose import JWTError
+from jose import jwt
 from pydantic import BaseModel
-from sqlmodel import Field, Session, SQLModel, delete, select
+from sqlmodel import Field
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import delete
+from sqlmodel import select
+
 
 # Configuration
 SECRET_KEY = "test-secret-key-for-pytest"

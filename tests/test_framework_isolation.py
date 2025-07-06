@@ -9,6 +9,7 @@ Ensures that py-pglite maintains proper framework isolation:
 """
 
 import sys
+
 from unittest.mock import patch
 
 import pytest
@@ -18,7 +19,8 @@ def test_core_imports_without_frameworks():
     """Test that core py-pglite functionality works without optional frameworks."""
 
     # Test core imports work
-    from py_pglite import PGliteConfig, PGliteManager
+    from py_pglite import PGliteConfig
+    from py_pglite import PGliteManager
     from py_pglite.config import PGliteConfig as DirectConfig
     from py_pglite.manager import PGliteManager as DirectManager
 
@@ -103,7 +105,8 @@ def test_optional_dependency_handling():
     # Test that core works even if optional deps are missing
     with patch.dict(sys.modules, {"sqlalchemy": None, "django": None}):
         # Core should still work
-        from py_pglite import PGliteConfig, PGliteManager
+        from py_pglite import PGliteConfig
+        from py_pglite import PGliteManager
 
         config = PGliteConfig()
         manager = PGliteManager(config)
@@ -128,7 +131,8 @@ def test_sequential_framework_usage():
 
     # This simulates what happens when tests run sequentially
     # First, use core functionality
-    from py_pglite import PGliteConfig, PGliteManager
+    from py_pglite import PGliteConfig
+    from py_pglite import PGliteManager
 
     config = PGliteConfig()
     manager = PGliteManager(config)

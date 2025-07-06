@@ -17,14 +17,17 @@ import pytest
 from py_pglite import PGliteManager
 from py_pglite.config import PGliteConfig
 
+
 if TYPE_CHECKING:
     import numpy as np
+
     from numpy.typing import NDArray
     from pgvector.psycopg import register_vector
 
 # Try to import optional dependencies, or skip tests
 try:
     import numpy as np
+
     from pgvector.psycopg import register_vector
 except ImportError:
     np = None

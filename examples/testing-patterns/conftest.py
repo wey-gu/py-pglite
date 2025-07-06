@@ -1,6 +1,7 @@
 """Pytest configuration for advanced testing patterns."""
 
 import pytest
+
 from sqlmodel import SQLModel
 
 from py_pglite import PGliteConfig

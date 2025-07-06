@@ -202,8 +202,9 @@ ignore = [
 #]
 
 [tool.ruff.lint.isort]
-# Configure import sorting to be compatible with our structure
-force-single-line = false
+force-single-line = true
+lines-between-types = 1
+lines-after-imports = 2
 known-first-party = ["py_pglite"]
 
 [tool.ruff.lint.flake8-tidy-imports]

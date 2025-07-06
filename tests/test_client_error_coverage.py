@@ -6,17 +6,21 @@ to significantly improve coverage from 43% to 70%+.
 
 import asyncio
 import logging
-from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
+
+from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
+from unittest.mock import Mock
+from unittest.mock import call
+from unittest.mock import patch
 
 import pytest
 
-from py_pglite.clients import (
-    AsyncpgClient,
-    DatabaseClient,
-    PsycopgClient,
-    get_client,
-    get_default_client,
-)
+from py_pglite.clients import AsyncpgClient
+from py_pglite.clients import DatabaseClient
+from py_pglite.clients import PsycopgClient
+from py_pglite.clients import get_client
+from py_pglite.clients import get_default_client
+
 
 # Filter expected warnings for specific test cases
 pytestmark = [
