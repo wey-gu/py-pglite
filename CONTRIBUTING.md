@@ -514,6 +514,55 @@ CI automatically:
 
 ---
 
+## 🔄 **GitHub Actions**
+
+py-pglite provides a reusable GitHub Action to standardize the setup of Python, Node.js, and uv in workflows.
+
+### **Setup Environment Action**
+
+Located in `.github/actions/setup-environment`, this action abstracts the common setup steps used across workflows:
+
+```yaml
+- name: Setup Environment
+  uses: ./.github/actions/setup-environment
+  with:
+    python-version: '3.11'  # Default, can be configured
+    node-version: '22'      # Default, can be configured
+    run-tests: true         # Optional, runs pytest
+    coverage: true          # Optional, generates coverage report
+```
+
+**Inputs:**
+
+- `python-version` - Python version to use (default: '3.11')
+- `node-version` - Node.js version to use (default: '22')
+- `run-tests` - Whether to run tests after setup (default: false)
+- `coverage` - Whether to generate coverage report (default: false)
+
+**Example Usage:**
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          python-version: '3.12'
+          run-tests: true
+
+      # Additional steps...
+```
+
+**Test Workflow:**
+
+A test workflow is available at `.github/workflows/test-setup-action.yml` that demonstrates how to use this action with different configurations.
+
+---
+
 ## 💝 **Community**
 
 ### **Getting Help**
