@@ -130,6 +130,9 @@ Issues = "https://github.com/wey-gu/py-pglite/issues"
 [project.entry-points.pytest11]
 py_pglite = "py_pglite.pytest_plugin"
 
+[tool.uv]
+default-groups = ["dev"]
+
 [tool.uv.build-backend]
 module-name = "py_pglite"
 module-root = "src"
