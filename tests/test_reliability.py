@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
@@ -300,7 +301,7 @@ class TestErrorRecovery:
 
             # Test recovery after syntax error
             with engine.connect() as conn:
-                with pytest.raises(Exception):
+                with pytest.raises(ProgrammingError):
                     conn.execute(text("INVALID SQL SYNTAX ERROR"))
 
             # Should still work after error
@@ -317,7 +318,7 @@ class TestErrorRecovery:
                 conn.commit()
 
                 # Try to insert duplicate primary key
-                with pytest.raises(Exception):
+                with pytest.raises(IntegrityError):
                     conn.execute(text("INSERT INTO test_recovery VALUES (1)"))
                     conn.commit()
 

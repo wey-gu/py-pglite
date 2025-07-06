@@ -163,7 +163,7 @@ def test_extension_validation_error_messages():
     """Test that extension validation provides helpful error messages."""
     try:
         PGliteConfig(extensions=["nonexistent"])
-        assert False, "Should have raised ValueError"
+        raise AssertionError("Should have raised ValueError")
     except ValueError as e:
         error_msg = str(e)
         assert "Unsupported extension: 'nonexistent'" in error_msg

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError
 from sqlmodel import Field, Session, SQLModel, select
 
 from py_pglite import PGliteConfig
@@ -207,7 +208,7 @@ def test_error_handling():
 
         # Test invalid SQL using connection
         with Session(engine) as session:
-            with pytest.raises(Exception):  # Should raise some SQL error
+            with pytest.raises(ProgrammingError):  # Should raise SQL syntax error
                 with session.connection() as conn:
                     conn.execute(text("SELECT invalid_syntax FROM nonexistent_table"))
 

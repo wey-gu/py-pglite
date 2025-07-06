@@ -250,7 +250,7 @@ def get_default_client() -> DatabaseClient:
             raise ImportError(
                 "No supported database client found. "
                 "Install either: pip install psycopg[binary] OR pip install asyncpg"
-            )
+            ) from None
 
 
 def get_client(client_type: str = "auto") -> DatabaseClient:

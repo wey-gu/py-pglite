@@ -37,8 +37,12 @@ def get_db():
     raise NotImplementedError("Database dependency should be overridden in tests")
 
 
+# Create dependency singleton to avoid B008 (function call in argument defaults)
+db_dependency = Depends(get_db)
+
+
 @app.post("/users/", response_model=UserRead)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
+def create_user(user: UserCreate, db: Session = db_dependency):
     db_user = APIUser(name=user.name, email=user.email)
     db.add(db_user)
     db.commit()
@@ -47,7 +51,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/users/{user_id}", response_model=UserRead)
-def get_user(user_id: int, db: Session = Depends(get_db)):
+def get_user(user_id: int, db: Session = db_dependency):
     user = db.exec(select(APIUser).where(APIUser.id == user_id)).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -55,13 +59,13 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
 
 
 @app.get("/users/", response_model=list[UserRead])
-def list_users(db: Session = Depends(get_db)):
+def list_users(db: Session = db_dependency):
     users = db.exec(select(APIUser)).all()
     return users
 
 
 @app.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db)):
+def delete_user(user_id: int, db: Session = db_dependency):
     user = db.exec(select(APIUser).where(APIUser.id == user_id)).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

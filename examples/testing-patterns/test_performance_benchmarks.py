@@ -194,7 +194,7 @@ class TestPerformanceBenchmarks:
             try:
                 with resilient_session(benchmark_engine) as session:
                     for i in range(10):  # Minimal read operations
-                        result = session.exec(
+                        session.exec(
                             select(BenchmarkUser).where(BenchmarkUser.score > (i % 20))
                         ).all()
                         operations += 1
@@ -307,7 +307,7 @@ class TestPerformanceBenchmarks:
             successful_operations = 0
             errors = 0
 
-            for i in range(5):  # Minimal cycles
+            for _i in range(5):  # Minimal cycles
                 try:
                     with resilient_session(benchmark_engine) as session:
                         session.execute(text("SELECT 1"))

@@ -267,7 +267,7 @@ def test_django_transactions(configured_django):
 
     # Test successful transaction
     with transaction.atomic():
-        order = Order.objects.create(amount=100.00, processed=True)
+        Order.objects.create(amount=100.00, processed=True)
 
     assert Order.objects.count() == 1
 

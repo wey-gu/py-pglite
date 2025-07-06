@@ -150,9 +150,13 @@ def create_app() -> FastAPI:
         raise NotImplementedError("Database dependency should be overridden in tests")
 
     # Authentication dependency
+    # Create dependency singletons to avoid B008 (function call in argument defaults)
+    security_dependency = Depends(security)
+    db_dependency = Depends(get_db)
+
     def get_current_user(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
-        db: Session = Depends(get_db),
+        credentials: HTTPAuthorizationCredentials = security_dependency,
+        db: Session = db_dependency,
     ) -> User:
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -167,24 +171,30 @@ def create_app() -> FastAPI:
             email = payload.get("sub")
             if not isinstance(email, str) or email is None:
                 raise credentials_exception
-        except JWTError:
-            raise credentials_exception
+        except JWTError as err:
+            raise credentials_exception from err
 
         user = get_user_by_email(db, email)
         if user is None:
             raise credentials_exception
         return user
 
-    def get_current_superuser(current_user: User = Depends(get_current_user)) -> User:
+    # Create user dependency singleton
+    current_user_dependency = Depends(get_current_user)
+
+    def get_current_superuser(current_user: User = current_user_dependency) -> User:
         if not current_user.is_superuser:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
             )
         return current_user
 
+    # Create superuser dependency singleton
+    current_superuser_dependency = Depends(get_current_superuser)
+
     # Routes
     @app.post("/auth/login", response_model=Token)
-    def login(email: str, password: str, db: Session = Depends(get_db)):
+    def login(email: str, password: str, db: Session = db_dependency):
         user = authenticate_user(db, email, password)
         if not user:
             raise HTTPException(
@@ -200,8 +210,8 @@ def create_app() -> FastAPI:
     @app.post("/users/", response_model=UserRead)
     def create_user_endpoint(
         user: UserCreate,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_superuser),
+        db: Session = db_dependency,
+        current_user: User = current_superuser_dependency,
     ):
         db_user = get_user_by_email(db, user.email)
         if db_user:
@@ -209,15 +219,15 @@ def create_app() -> FastAPI:
         return create_user(db, user)
 
     @app.get("/users/me", response_model=UserRead)
-    def read_users_me(current_user: User = Depends(get_current_user)):
+    def read_users_me(current_user: User = current_user_dependency):
         return current_user
 
     @app.get("/users/", response_model=list[UserRead])
     def read_users(
         skip: int = 0,
         limit: int = 100,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_superuser),
+        db: Session = db_dependency,
+        current_user: User = current_superuser_dependency,
     ):
         users = db.exec(statement=select(User).offset(skip).limit(limit)).all()
         return users
@@ -225,8 +235,8 @@ def create_app() -> FastAPI:
     @app.post("/projects/", response_model=ProjectRead)
     def create_project(
         project: ProjectCreate,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user),
+        db: Session = db_dependency,
+        current_user: User = current_user_dependency,
     ):
         db_project = Project(
             name=project.name,
@@ -244,8 +254,8 @@ def create_app() -> FastAPI:
     def read_projects(
         skip: int = 0,
         limit: int = 100,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user),
+        db: Session = db_dependency,
+        current_user: User = current_user_dependency,
     ):
         projects = db.exec(select(Project).offset(skip).limit(limit)).all()
         return projects
@@ -253,8 +263,8 @@ def create_app() -> FastAPI:
     @app.get("/projects/{project_id}", response_model=ProjectRead)
     def read_project(
         project_id: int,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user),
+        db: Session = db_dependency,
+        current_user: User = current_user_dependency,
     ):
         project = db.exec(select(Project).where(Project.id == project_id)).first()
         if not project:

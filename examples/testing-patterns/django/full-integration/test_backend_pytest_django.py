@@ -147,7 +147,7 @@ def test_backend_advanced_features(django_pglite_db):
         schema_editor.create_model(Product)
 
     # Test backend-enhanced JSON operations
-    product = Product.objects.create(
+    Product.objects.create(
         name="Advanced Widget",
         specifications={
             "weight": "2.5kg",
@@ -200,7 +200,7 @@ def test_django_testing_utilities_with_backend(django_pglite_db):
     )
 
     # Test with Django test client
-    client = Client()
+    Client()
 
     # Verify the test environment is working with backend
     assert TestModel.objects.count() == 1

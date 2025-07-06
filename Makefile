@@ -31,29 +31,29 @@ help:
 	@echo "  make test        # Just run the test suite"
 
 # Full development workflow (mirrors CI exactly)
-dev: | install lint test
-	@echo "🚀 Running full development workflow..."
-	$(PYTHON_CMD) scripts/dev.py
+dev: | install lint examples test
 
 # Run tests only
 test:
 	@echo "🧪 Running test suite..."
-	$(PYTHON_CMD) scripts/dev.py --test
+	uv run pytest tests/
 
 # Run examples only
 examples:
 	@echo "📚 Running examples..."
-	$(PYTHON_CMD) scripts/dev.py --examples
+	uv run pytest examples/
 
 # Run linting only
 lint:
 	@echo "🎨 Running linting checks..."
-	$(PYTHON_CMD) scripts/dev.py --lint
+	uv run pre-commit run --all-files
 
 # Quick checks for development
-quick:
+quick: | install lint
 	@echo "⚡ Running quick development checks..."
-	$(PYTHON_CMD) scripts/dev.py --quick
+	$(PYTHON_CMD) -c "import py_pglite"
+	$(PYTHON_CMD) -c "from py_pglite import PGliteManager, PGliteConfig"
+	$(PYTHON_CMD) -c "print('✅ All imports working')"
 
 # Install in development mode
 install:

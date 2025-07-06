@@ -150,7 +150,7 @@ class TestPGliteFixtures:
         # Test with invalid config
         try:
             PGliteConfig(timeout=-1)
-            assert False, "Should have raised ValueError"
+            raise AssertionError("Should have raised ValueError")
         except ValueError:
             pass  # Expected
 

@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pytest
 from sqlalchemy import text
-from sqlalchemy.exc import DisconnectionError
+from sqlalchemy.exc import DisconnectionError, ProgrammingError
 from sqlalchemy.pool import NullPool, StaticPool
 
 from py_pglite import PGliteConfig
@@ -179,7 +179,9 @@ class TestConnectionLifecycle:
                 assert result == "manager2_data"
 
                 # Should not see manager1's table (different database)
-                with pytest.raises(Exception):  # Table doesn't exist in this database
+                with pytest.raises(
+                    ProgrammingError
+                ):  # Table doesn't exist in this database
                     conn.execute(text("SELECT value FROM manager1_test WHERE id = 1"))
 
         finally:
@@ -353,7 +355,7 @@ class TestConnectionErrorHandling:
 
             # Execute invalid SQL
             with engine.connect() as conn:
-                with pytest.raises(Exception):  # Should raise some SQL error
+                with pytest.raises(ProgrammingError):  # Should raise SQL syntax error
                     conn.execute(text("INVALID SQL STATEMENT"))
 
             # Connection pool should still work after error
@@ -374,7 +376,7 @@ class TestConnectionErrorHandling:
                 "SELECT NOW()",  # Function case
             ]
 
-            for i, sql in enumerate(test_cases):
+            for _i, sql in enumerate(test_cases):
                 with engine.connect() as conn:
                     result = conn.execute(text(sql)).scalar()
                     assert result is not None
@@ -396,7 +398,7 @@ class TestConnectionPerformance:
             start_time = time.time()
 
             # Create multiple connections quickly
-            for i in range(10):
+            for _i in range(10):
                 with engine.connect() as conn:
                     result = conn.execute(text("SELECT 1")).scalar()
                     assert result == 1
@@ -416,7 +418,7 @@ class TestConnectionPerformance:
             start_time = time.time()
 
             engines = []
-            for i in range(20):
+            for _i in range(20):
                 engine = manager.get_engine()
                 engines.append(engine)
 

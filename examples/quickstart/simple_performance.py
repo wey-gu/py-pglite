@@ -280,7 +280,7 @@ def measure_raw_performance():
         # py-pglite
         start = time.time()
         with engine.connect() as conn:
-            result = conn.execute(
+            conn.execute(
                 text("""
                 SELECT
                     COUNT(*) as total,
@@ -294,12 +294,10 @@ def measure_raw_performance():
 
         # SQLite (simplified - no FILTER clause)
         start = time.time()
-        total = sqlite_conn.execute(
+        sqlite_conn.execute(
             "SELECT COUNT(*) FROM users",
         ).fetchone()[0]
-        even = sqlite_conn.execute(
-            "SELECT COUNT(*) FROM users WHERE id % 2 = 0"
-        ).fetchone()[0]
+        sqlite_conn.execute("SELECT COUNT(*) FROM users WHERE id % 2 = 0").fetchone()[0]
         sqlite_query = time.time() - start
 
         print(f"   py-pglite: {pglite_query:.4f}s (advanced aggregation)")

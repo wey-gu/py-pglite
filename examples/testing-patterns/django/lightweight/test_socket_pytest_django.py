@@ -87,9 +87,7 @@ def test_with_db_access(configured_django):
         schema_editor.create_model(Comment)
 
     # Test database operations
-    comment = Comment.objects.create(
-        text="pytest-django db access works great!", approved=True
-    )
+    Comment.objects.create(text="pytest-django db access works great!", approved=True)
 
     assert Comment.objects.filter(approved=True).count() == 1
 

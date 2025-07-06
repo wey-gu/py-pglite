@@ -73,7 +73,7 @@ class TestAdvancedPatterns:
             with Session() as session:
                 try:
                     session.execute(text("SELECT * FROM nonexistent_table"))
-                    assert False, "Should have raised an exception"
+                    raise AssertionError("Should have raised an exception")
                 except Exception:
                     # Rollback the failed transaction
                     session.rollback()

@@ -10,6 +10,7 @@ import time
 
 import pytest
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, declarative_base
 from sqlalchemy.sql import func
 
@@ -256,7 +257,7 @@ def test_database_constraints_and_errors(clean_db):
         user2 = User(username="unique_user", email="different@example.com")
         session.add(user2)
 
-        with pytest.raises(Exception):  # Should raise integrity error
+        with pytest.raises(IntegrityError):  # Should raise integrity error
             session.commit()
 
         # Session should still be usable after rollback
