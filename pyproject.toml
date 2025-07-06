@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.7.19,<0.8.0"]
+build-backend = "uv_build"
 
 [project]
 name = "py-pglite"
-dynamic = ["version"]
+version = "0.5.0"
 description = "Python testing library for PGlite - in-memory PostgreSQL for tests"
 readme = "README.md"
 license = "Apache-2.0"
@@ -115,11 +115,9 @@ Issues = "https://github.com/wey-gu/py-pglite/issues"
 [project.entry-points.pytest11]
 py_pglite = "py_pglite.pytest_plugin"
 
-[tool.hatch.version]
-path = "src/py_pglite/__init__.py"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/py_pglite"]
+[tool.uv.build-backend]
+module-name = "py_pglite"
+module-root = "src"
 
 [tool.mypy]
 python_version = "3.10"
