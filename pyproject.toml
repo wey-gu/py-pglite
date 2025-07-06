@@ -107,10 +107,18 @@ all = [
 ]
 
 [dependency-groups]
+dev = [
+    "py-pglite[all]",
+    "ruff",
+    {include-group = "test"},
+    {include-group = "typing"},
+]
 test = [
     "pytest",
     "pytest-xdist",
-    "py-pglite[all]"
+]
+typing = [
+    "mypy"
 ]
 
 [project.urls]
