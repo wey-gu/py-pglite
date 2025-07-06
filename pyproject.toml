@@ -116,10 +116,10 @@ Issues = "https://github.com/wey-gu/py-pglite/issues"
 py_pglite = "py_pglite.pytest_plugin"
 
 [tool.hatch.version]
-path = "py_pglite/__init__.py"
+path = "src/py_pglite/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["py_pglite"]
+packages = ["src/py_pglite"]
 
 [tool.mypy]
 python_version = "3.10"
