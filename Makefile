@@ -75,8 +75,8 @@ clean:
 	rm -rf .pytest_cache/
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
-	find . -type d -name __pycache__ -delete
-	find . -type f -name "*.pyc" -delete
+	find src/ tests/ examples/ -type d -name __pycache__ -exec rm -rf {} +
+	find src/ tests/ examples/ -type f -name "*.pyc" -exec rm -rf {} +
 	@echo "✅ Cleanup complete!"
 
 # Show project status
