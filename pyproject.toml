@@ -41,19 +41,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=6.1.1",
-    "pytest-mock>=3.0.0",
-    "mypy>=1.16.0",
-    "ruff>=0.11.12",
-    "build>=1.2.2.post1",
-    "twine>=6.1.0",
-    "bandit[toml]>=1.8.3",
-    "safety>=3.5.2",
-    "types-psutil>=7.0.0",
-]
 psycopg = [
     "psycopg>=3.0.0",
 ]
@@ -109,16 +96,22 @@ all = [
 [dependency-groups]
 dev = [
     "py-pglite[all]",
-    "ruff",
+    "ruff>=0.11.12",
+    "bandit[toml]>=1.8.3",
+    "safety>=3.5.2",
     {include-group = "test"},
     {include-group = "typing"},
 ]
 test = [
-    "pytest",
-    "pytest-xdist",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=6.1.1",
+    "pytest-mock>=3.0.0",
+    "pytest-xdist>=3.8.0",
 ]
 typing = [
-    "mypy"
+    "mypy>=1.16.0",
+    "types-psutil>=7.0.0",
 ]
 
 [project.urls]
