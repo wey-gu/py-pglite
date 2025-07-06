@@ -274,6 +274,12 @@ filterwarnings = [
     "ignore:coroutine 'AsyncpgClient._async_execute_query' was never awaited:RuntimeWarning",
 ]
 
-# Disable pytest-django for examples to prevent interference
-# Users can run: pytest examples/ -p no:django
-# Or the examples will work with our zero-config approach
+[tool.bandit]
+exclude_dirs = ["tests", "path/to/file"]
+tests = ["B201", "B301"]
+skips = ["B603", "B607"]
+exclude_dires = [
+    "examples",
+    "tests",
+    "dist",
+]
