@@ -219,7 +219,7 @@ line-ending = "auto"
 [tool.coverage.run]
 source = ["src/py_pglite"]
 omit = [
-    "src/*/fixtures.py",
+    "src/**/fixtures.py",
     "*/tests/*",
     "*/test_*",
     "examples/*",
