@@ -64,7 +64,7 @@ def clean_db():
 @pytest.fixture
 def db_with_sample_data(clean_db):
     """Database pre-loaded with sample data for testing queries."""
-    Session_local = Session(clean_db)
+    session_local = Session(clean_db)
 
     # Create sample users
     users = [
@@ -80,9 +80,9 @@ def db_with_sample_data(clean_db):
         BlogPost(title="Published Post", content="Live content!", published=True),
     ]
 
-    Session_local.add_all(users + posts)
-    Session_local.commit()
-    Session_local.close()
+    session_local.add_all(users + posts)
+    session_local.commit()
+    session_local.close()
 
     return clean_db
 
@@ -246,11 +246,6 @@ def test_bulk_operations_performance(clean_db):
         # Performance assertion (should be fast with py-pglite)
         assert insert_time < 10.0  # Should complete reasonably fast
 
-        print(
-            f"✅ Inserted 50 users in {insert_time:.2f}s "
-            f"({50 / insert_time:.0f} users/sec)"
-        )
-
 
 # ✅ Test 6: Error handling patterns
 def test_database_constraints_and_errors(clean_db):
@@ -316,5 +311,4 @@ pytestmark = [
 ]
 
 if __name__ == "__main__":
-    print("🧪 py-pglite Testing Patterns Showcase")
-    print("Run with: pytest examples/testing-patterns/test_fixtures_showcase.py -v")
+    pass

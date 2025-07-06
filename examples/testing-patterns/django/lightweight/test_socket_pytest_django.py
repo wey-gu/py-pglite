@@ -162,9 +162,6 @@ def test_django_testing_utilities(configured_django):
     # Test that we can create client and it's available
     assert client is not None
 
-    print("✅ Django testing utilities available with py-pglite")
-
 
 if __name__ == "__main__":
-    print("🌟 pytest-django + py-pglite Example")
-    print("Run with: pytest testing-patterns/django/test_pytest_django.py -v")
+    pass

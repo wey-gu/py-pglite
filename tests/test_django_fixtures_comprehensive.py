@@ -359,13 +359,13 @@ class TestDjangoUtilsFunctionality:
         from py_pglite.django.utils import create_django_superuser
 
         # Create a proper DoesNotExist exception class
-        class DoesNotExist(Exception):
+        class DoesNotExistError(Exception):
             pass
 
         mock_user_model = Mock()
-        mock_user_model.DoesNotExist = DoesNotExist
+        mock_user_model.DoesNotExist = DoesNotExistError
         mock_user = Mock()
-        mock_user_model.objects.get.side_effect = DoesNotExist()
+        mock_user_model.objects.get.side_effect = DoesNotExistError()
         mock_user_model.objects.create_superuser.return_value = mock_user
         mock_get_user_model = Mock(return_value=mock_user_model)
 
@@ -412,13 +412,13 @@ class TestDjangoUtilsFunctionality:
         from py_pglite.django.utils import create_django_superuser
 
         # Create a proper DoesNotExist exception class
-        class DoesNotExist(Exception):
+        class DoesNotExistError(Exception):
             pass
 
         mock_user_model = Mock()
-        mock_user_model.DoesNotExist = DoesNotExist
+        mock_user_model.DoesNotExist = DoesNotExistError
         mock_user = Mock()
-        mock_user_model.objects.get.side_effect = DoesNotExist()
+        mock_user_model.objects.get.side_effect = DoesNotExistError()
         mock_user_model.objects.create_superuser.return_value = mock_user
         mock_get_user_model = Mock(return_value=mock_user_model)
         test_password = "env-admin-password"

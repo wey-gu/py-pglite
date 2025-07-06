@@ -1,15 +1,15 @@
 """Django backend package for py-pglite integration."""
 
-from .base import DatabaseWrapper
-from .base import PGliteDatabaseCreation
-from .base import PGliteDatabaseWrapper
-from .base import get_pglite_manager
+from py_pglite.django.backend.base import DatabaseWrapper
+from py_pglite.django.backend.base import PGliteDatabaseCreation
+from py_pglite.django.backend.base import PGliteDatabaseWrapper
+from py_pglite.django.backend.base import get_pglite_manager
 
 
 # Expose both names for compatibility
 __all__ = [
     "DatabaseWrapper",
-    "PGliteDatabaseWrapper",
     "PGliteDatabaseCreation",
+    "PGliteDatabaseWrapper",
     "get_pglite_manager",
 ]

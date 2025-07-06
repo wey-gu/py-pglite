@@ -35,8 +35,6 @@ class TestClientCompatibilityPrinciples:
 
     def test_sqlalchemy_native_integration(self, client_demo_manager):
         """Test native SQLAlchemy integration."""
-        print("\n🔄 Testing SQLAlchemy Native Integration")
-        print("=" * 50)
 
         engine = client_demo_manager.get_engine()
 
@@ -46,7 +44,6 @@ class TestClientCompatibilityPrinciples:
             row = result.fetchone()
             assert row is not None
             assert row.message == "SQLAlchemy works!"
-            print("  ✅ SQLAlchemy basic query: ✓")
 
             # Test table creation and data operations
             conn.execute(
@@ -78,12 +75,9 @@ class TestClientCompatibilityPrinciples:
             rows = result.fetchall()
             assert len(rows) == 3
             assert rows[0].client_name == "SQLAlchemy"
-            print(f"  ✅ Data operations: {len(rows)} client types ✓")
 
     def test_connection_parameter_extraction(self, client_demo_manager):
         """Test extracting connection parameters for other clients."""
-        print("\n🔄 Testing Connection Parameter Extraction")
-        print("=" * 50)
 
         engine = client_demo_manager.get_engine()
         url = engine.url
@@ -94,15 +88,9 @@ class TestClientCompatibilityPrinciples:
         database = url.database or "postgres"
         username = url.username or "postgres"
 
-        print(f"  📋 Host: {host[:50]}...")
-        print(f"  📋 Port: {port}")
-        print(f"  📋 Database: {database}")
-        print(f"  📋 Username: {username}")
-
         # Verify components are valid
         assert port is not None
         assert database is not None
-        print("  ✅ Connection parameters extracted: ✓")
 
         # Show how these would be used with different clients
         connection_examples = {
@@ -117,45 +105,38 @@ class TestClientCompatibilityPrinciples:
             "SQLAlchemy": f"create_engine('{url}')",
         }
 
-        for client, example in connection_examples.items():
-            print(f"  💡 {client}: {example[:60]}...")
-
-        print("  ✅ Client connection patterns documented: ✓")
+        for _client, _example in connection_examples.items():
+            pass
 
     def test_optional_dependency_handling(self, client_demo_manager):
         """Test graceful handling of optional dependencies."""
-        print("\n🔄 Testing Optional Dependency Handling")
-        print("=" * 50)
 
         # Test psycopg availability
         try:
             import psycopg
 
             # psycopg_available = True
-            print("  ✅ psycopg available")
         except ImportError:
             # psycopg_available = False
-            print("  ⚠️  psycopg not available (optional)")
+            pass
 
         # Test asyncpg availability
         try:
             import asyncpg
 
             # asyncpg_available = True
-            print("  ✅ asyncpg available")
         except ImportError:
             # asyncpg_available = False
-            print("  ⚠️  asyncpg not available (optional)")
+            pass
 
         # Test pytest-asyncio availability
         try:
             import pytest_asyncio
 
             # async_testing_available = True
-            print("  ✅ pytest-asyncio available")
         except ImportError:
             # async_testing_available = False
-            print("  ⚠️  pytest-asyncio not available (optional)")
+            pass
 
         # Core functionality should always work
         engine = client_demo_manager.get_engine()
@@ -163,12 +144,9 @@ class TestClientCompatibilityPrinciples:
             result = conn.execute(text("SELECT 'Core always works!' as status"))
             status = result.scalar()
             assert status == "Core always works!"
-            print("  ✅ Core functionality independent of optional deps: ✓")
 
     def test_real_postgresql_server_principle(self, client_demo_manager):
         """Demonstrate that py-pglite provides a real PostgreSQL server."""
-        print("\n🔄 Testing Real PostgreSQL Server Principle")
-        print("=" * 50)
 
         engine = client_demo_manager.get_engine()
 
@@ -177,7 +155,6 @@ class TestClientCompatibilityPrinciples:
             result = conn.execute(text("SELECT version()"))
             version = result.scalar()
             assert "PostgreSQL" in version
-            print(f"  ✅ PostgreSQL version: {version[:50]}...")
 
             # Test advanced PostgreSQL features
             result = conn.execute(
@@ -192,15 +169,11 @@ class TestClientCompatibilityPrinciples:
             assert row is not None
             assert row.json_test == "json"
             assert len(row.array_test) == 3
-            print("  ✅ JSON operations: ✓")
-            print("  ✅ Array operations: ✓")
-            print("  ✅ Timestamp functions: ✓")
 
             # Test that it's a real server, not SQLite
             result = conn.execute(text("SELECT 'Real PostgreSQL Server!' WHERE 1=1"))
             message = result.scalar()
             assert message == "Real PostgreSQL Server!"
-            print("  ✅ Real PostgreSQL server confirmed: ✓")
 
 
 class TestClientCompatibilityDocumentation:
@@ -208,8 +181,6 @@ class TestClientCompatibilityDocumentation:
 
     def test_client_usage_patterns(self, client_demo_manager):
         """Document how different clients would connect."""
-        print("\n🔄 Testing Client Usage Patterns")
-        print("=" * 50)
 
         engine = client_demo_manager.get_engine()
         url = engine.url
@@ -218,9 +189,6 @@ class TestClientCompatibilityDocumentation:
         host = str(url.host) if url.host else "localhost"
         port = url.port
         database = url.database or "postgres"
-
-        print("  📚 Client Library Usage Patterns:")
-        print("  " + "=" * 40)
 
         patterns = [
             ("SQLAlchemy (sync)", "✅ Native", "engine = manager.get_engine()"),
@@ -249,18 +217,11 @@ class TestClientCompatibilityDocumentation:
             ),
         ]
 
-        for client, support, example in patterns:
-            print(f"  {support} {client:20s}: {example[:50]}...")
-
-        print("  ✅ All major PostgreSQL clients supported: ✓")
+        for _client, _support, _example in patterns:
+            pass
 
     def test_installation_patterns(self, client_demo_manager):
         """Document installation patterns for different clients."""
-        print("\n🔄 Testing Installation Patterns")
-        print("=" * 50)
-
-        print("  📦 Installation Options:")
-        print("  " + "=" * 25)
 
         install_patterns = [
             ("Core only", "pip install py-pglite"),
@@ -272,32 +233,17 @@ class TestClientCompatibilityDocumentation:
             ("Everything", "pip install py-pglite[all]"),
         ]
 
-        for description, command in install_patterns:
-            print(f"  📋 {description:20s}: {command}")
-
-        print("  ✅ Flexible installation options documented: ✓")
+        for _description, _command in install_patterns:
+            pass
 
 
 # Summary fixture
 @pytest.fixture(scope="module", autouse=True)
 def client_compatibility_summary():
     """Print client compatibility summary."""
-    print("\n" + "🔄 py-pglite Client Compatibility Demo" + "\n" + "=" * 50)
-    print("Demonstrating universal PostgreSQL client compatibility...")
 
     yield
 
-    print("\n" + "📊 Client Compatibility Summary" + "\n" + "=" * 35)
-    print("✅ Client compatibility principles validated!")
-    print("🎯 Key achievements:")
-    print("   • Core framework now dependency-agnostic")
-    print("   • Optional dependencies for all clients")
-    print("   • Real PostgreSQL server = universal compatibility")
-    print("   • Clear installation and usage patterns")
-    print("   • Graceful handling of missing dependencies")
-    print("\n🔄 Any PostgreSQL client library can connect! 🔄")
-
 
 if __name__ == "__main__":
-    print("🔄 py-pglite Client Compatibility Demo")
-    print("Run with: pytest tests/test_client_compatibility.py -v")
+    pass

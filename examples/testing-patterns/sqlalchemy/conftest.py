@@ -39,8 +39,8 @@ def sqlalchemy_session(
     sqlalchemy_pglite_engine: Engine,
 ) -> Generator[Session, None, None]:  # type: ignore
     """Function-scoped session for clean test isolation."""
-    SessionLocal = sessionmaker(bind=sqlalchemy_pglite_engine)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=sqlalchemy_pglite_engine)
+    session = session_local()
     try:
         yield session
     finally:
@@ -55,8 +55,8 @@ def sqlalchemy_transaction(
     connection = sqlalchemy_pglite_engine.connect()
     transaction = connection.begin()
 
-    SessionLocal = sessionmaker(bind=connection)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=connection)
+    session = session_local()
 
     try:
         yield session

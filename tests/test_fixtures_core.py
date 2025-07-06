@@ -51,7 +51,7 @@ class TestPGliteFixtures:
 
         # Fixture should handle cleanup automatically after test
 
-    def test_pglite_manager_custom_fixture(self):  # noqa: F811
+    def test_pglite_manager_custom_fixture(self):
         """Test custom manager creation with custom config."""
         custom_config = PGliteConfig(timeout=60, log_level="DEBUG")
 

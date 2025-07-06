@@ -5,8 +5,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from .clients import DatabaseClient
-from .clients import get_default_client
+from py_pglite.clients import DatabaseClient
+from py_pglite.clients import get_default_client
 
 
 logger = logging.getLogger(__name__)

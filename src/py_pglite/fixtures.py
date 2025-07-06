@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from .config import PGliteConfig
-from .manager import PGliteManager
+from py_pglite.config import PGliteConfig
+from py_pglite.manager import PGliteManager
 
 
 @pytest.fixture(scope="session")

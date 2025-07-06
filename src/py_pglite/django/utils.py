@@ -46,7 +46,7 @@ def create_django_test_database(manager: PGliteManager, verbosity: int = 1) -> s
         )
 
     if verbosity >= 1:
-        print("Creating Django test database with PGlite...")
+        pass
 
     # Start PGlite if not running
     if not manager.is_running():
@@ -67,7 +67,7 @@ def destroy_django_test_database(manager: PGliteManager, verbosity: int = 1) -> 
         verbosity: Verbosity level for output
     """
     if verbosity >= 1:
-        print("Destroying Django test database...")
+        pass
 
     # Stop PGlite
     manager.stop()
@@ -93,9 +93,9 @@ def migrate_django_database(verbosity: int = 1) -> None:
                 interactive=False,
                 run_syncdb=True,
             )
-        except Exception as e:
+        except Exception:
             if verbosity >= 1:
-                print(f"Migration warning: {e}")
+                pass
 
 
 def flush_django_database(verbosity: int = 0) -> None:
@@ -113,9 +113,9 @@ def flush_django_database(verbosity: int = 0) -> None:
     if call_command:
         try:
             call_command("flush", verbosity=verbosity, interactive=False)
-        except Exception as e:
+        except Exception:
             if verbosity >= 1:
-                print(f"Flush warning: {e}")
+                pass
 
 
 def configure_django_for_pglite(
@@ -273,7 +273,7 @@ def create_django_superuser(
 
     from django.contrib.auth import get_user_model
 
-    User = get_user_model()
+    User = get_user_model()  # noqa: N806
 
     # Generate secure password if not provided
     if password is None:

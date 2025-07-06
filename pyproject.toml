@@ -187,6 +187,15 @@ select = [
     "B",  # flake8-bugbear
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
+    # "ERA", # flake8-eradicate/eradicate
+    "N",   # pep8-naming
+    "PIE", # flake8-pie
+    # "PGH", # pygrep
+    "RUF", # ruff checks
+    # "SIM", # flake8-simplify
+    "T20", # flake8-print
+    "TC",  # flake8-type-checking
+    "TID", # flake8-tidy-imports
 ]
 # Exclude specific rules that might interfere with pytest fixtures
 ignore = [
@@ -194,12 +203,12 @@ ignore = [
     "E402",  # Module level import not at top of file (needed for conditional imports)
     "E501",
 ]
-
-# Preserve critical imports for pytest plugin functionality
-[tool.ruff.lint.per-file-ignores]
-#"examples/*.py" = [
-#    "F841",  # Unused variable
-#]
+extend-safe-fixes = [
+    "TC",   # move import from and to TYPE_CHECKING blocks
+]
+unfixable = [
+    "ERA", # do not autoremove commented out code
+]
 
 [tool.ruff.lint.isort]
 force-single-line = true

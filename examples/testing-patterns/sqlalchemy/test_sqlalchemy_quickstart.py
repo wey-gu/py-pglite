@@ -55,8 +55,8 @@ def sqlalchemy_session(
     sqlalchemy_pglite_engine: Engine,
 ) -> Generator[Session, None, None]:  # type: ignore
     """Function-scoped session for clean test isolation."""
-    SessionLocal = sessionmaker(bind=sqlalchemy_pglite_engine)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=sqlalchemy_pglite_engine)
+    session = session_local()
     try:
         yield session
     finally:
@@ -115,4 +115,4 @@ def test_multiple_users(sqlalchemy_session: Session):
 
 
 if __name__ == "__main__":
-    print("SQLAlchemy + py-pglite Real Usage Example")
+    pass

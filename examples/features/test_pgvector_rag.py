@@ -113,9 +113,5 @@ def test_pgvector_rag_example():
 
             # --- 6. Verification ---
 
-            print(f"\nQuestion: {question}")
-            print(f"Retrieved Context: '{retrieved_context}'")
-            print(f"Answer: {answer}")
-
             assert "The sky is blue" in retrieved_context
             assert "the sky is blue" in answer.lower()

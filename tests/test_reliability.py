@@ -4,6 +4,7 @@ Tests process recovery, timeout handling, resource cleanup, and edge cases
 to ensure robust behavior under adverse conditions.
 """
 
+import contextlib
 import os
 import signal
 import tempfile
@@ -219,10 +220,8 @@ class TestResourceManagement:
         # Clean up test directory
         import shutil
 
-        try:
+        with contextlib.suppress(Exception):
             shutil.rmtree(temp_dir, ignore_errors=True)
-        except Exception:
-            pass
 
     def test_work_dir_handling(self):
         """Test work directory handling and cleanup."""
@@ -246,10 +245,8 @@ class TestResourceManagement:
         # Clean up test directory
         import shutil
 
-        try:
+        with contextlib.suppress(Exception):
             shutil.rmtree(work_dir, ignore_errors=True)
-        except Exception:
-            pass
 
     def test_memory_usage_stability(self):
         """Test that memory usage remains stable over multiple operations."""
@@ -303,9 +300,8 @@ class TestErrorRecovery:
             engine = manager.get_engine()
 
             # Test recovery after syntax error
-            with engine.connect() as conn:
-                with pytest.raises(ProgrammingError):
-                    conn.execute(text("INVALID SQL SYNTAX ERROR"))
+            with engine.connect() as conn, pytest.raises(ProgrammingError):
+                conn.execute(text("INVALID SQL SYNTAX ERROR"))
 
             # Should still work after error
             with engine.connect() as conn:

@@ -38,20 +38,20 @@ except ImportError:
     HAS_SQLMODEL = False
 
 __all__ = [
-    "create_all_tables",
-    "drop_all_tables",
-    "get_session_class",
-    "reflect_tables",
-    "clear_all_data",
-    "get_table_names",
     # Database maintenance utilities
     "clean_database_data",
-    "reset_sequences",
-    "get_table_row_counts",
-    "verify_database_empty",
+    "clear_all_data",
+    "create_all_tables",
     "create_test_schema",
+    "drop_all_tables",
     "drop_test_schema",
     "execute_sql_file",
+    "get_session_class",
+    "get_table_names",
+    "get_table_row_counts",
+    "reflect_tables",
+    "reset_sequences",
+    "verify_database_empty",
 ]
 
 

@@ -256,8 +256,7 @@ class TestConnectionConcurrency:
                         ).scalar()
                         conn.commit()
                         return result
-                except Exception as e:
-                    print(f"  ⚠️ Worker {thread_id} error: {e}")
+                except Exception:
                     return None
 
             # Run multiple threads concurrently

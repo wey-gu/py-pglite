@@ -13,8 +13,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
 
-from ..config import PGliteConfig
-from .manager import SQLAlchemyPGliteManager
+from py_pglite.config import PGliteConfig
+from py_pglite.sqlalchemy.manager import SQLAlchemyPGliteManager
 
 
 # Try to import SQLModel
@@ -148,8 +148,8 @@ def pglite_session(pglite_engine: Engine) -> Generator[Any, None, None]:
                         raise
                     time.sleep(0.5)
     else:
-        SessionLocal = sessionmaker(bind=pglite_engine)
-        session = SessionLocal()  # type: ignore[assignment]
+        session_local = sessionmaker(bind=pglite_engine)
+        session = session_local()  # type: ignore[assignment]
 
     try:
         yield session

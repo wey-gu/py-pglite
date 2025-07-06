@@ -327,5 +327,4 @@ def test_bulk_operations(configured_django):
 
 
 if __name__ == "__main__":
-    print("🌟 Django Fixtures + py-pglite Examples")
-    print("Run with: pytest testing-patterns/django/test_django_fixtures.py -v")
+    pass

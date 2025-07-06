@@ -98,7 +98,7 @@ class TestPytestConfigure:
 
     def test_pytest_configure_does_not_disable_django_when_should_disable_returns_false(
         self,
-    ):  # noqa: E501
+    ):
         """Test pytest_configure doesn't disable Django when not needed."""
         mock_config = Mock()
 
@@ -112,7 +112,7 @@ class TestPytestConfigure:
             assert (
                 not hasattr(mock_config, "pluginmanager")
                 or not mock_config.pluginmanager.set_blocked.called
-            )  # noqa: E501
+            )
 
     def test_pytest_configure_handles_missing_plugin_manager(self):
         """Test pytest_configure handles missing plugin manager gracefully."""

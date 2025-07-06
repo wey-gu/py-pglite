@@ -15,21 +15,21 @@ HAS_DJANGO = False
 HAS_PYTEST_DJANGO = False
 
 try:
-    import sqlalchemy  # noqa: F401
+    import sqlalchemy
 
     HAS_SQLALCHEMY = True
 except ImportError:
     pass
 
 try:
-    import django  # noqa: F401
+    import django
 
     HAS_DJANGO = True
 except ImportError:
     pass
 
 try:
-    import pytest_django  # noqa: F401
+    import pytest_django
 
     HAS_PYTEST_DJANGO = True
 except ImportError:
@@ -82,33 +82,33 @@ def _should_disable_django_plugin(config: pytest.Config) -> bool:
 
 
 # Core fixtures (always available)
-from .fixtures import pglite_manager  # noqa: F401
-from .fixtures import pglite_manager_custom  # noqa: F401
+from py_pglite.fixtures import pglite_manager
+from py_pglite.fixtures import pglite_manager_custom
 
 
 # Smart fixture loading with perfect isolation
 if HAS_SQLALCHEMY:
     try:
-        from .sqlalchemy.fixtures import pglite_config  # noqa: F401
-        from .sqlalchemy.fixtures import pglite_engine  # noqa: F401
-        from .sqlalchemy.fixtures import pglite_session  # noqa: F401
-        from .sqlalchemy.fixtures import pglite_sqlalchemy_engine  # noqa: F401
-        from .sqlalchemy.fixtures import pglite_sqlalchemy_manager  # noqa: F401
-        from .sqlalchemy.fixtures import pglite_sqlalchemy_session  # noqa: F401
+        from py_pglite.sqlalchemy.fixtures import pglite_config
+        from py_pglite.sqlalchemy.fixtures import pglite_engine
+        from py_pglite.sqlalchemy.fixtures import pglite_session
+        from py_pglite.sqlalchemy.fixtures import pglite_sqlalchemy_engine
+        from py_pglite.sqlalchemy.fixtures import pglite_sqlalchemy_manager
+        from py_pglite.sqlalchemy.fixtures import pglite_sqlalchemy_session
     except ImportError:
         pass
 
 if HAS_DJANGO:
     try:
-        from .django.fixtures import db  # noqa: F401
-        from .django.fixtures import django_admin_user  # noqa: F401
-        from .django.fixtures import django_client  # noqa: F401
-        from .django.fixtures import django_pglite_db  # noqa: F401
-        from .django.fixtures import django_pglite_settings  # noqa: F401
-        from .django.fixtures import django_pglite_transactional_db  # noqa: F401
-        from .django.fixtures import django_user_model  # noqa: F401
-        from .django.fixtures import pglite_django_manager  # noqa: F401
-        from .django.fixtures import transactional_db  # noqa: F401
+        from py_pglite.django.fixtures import db
+        from py_pglite.django.fixtures import django_admin_user
+        from py_pglite.django.fixtures import django_client
+        from py_pglite.django.fixtures import django_pglite_db
+        from py_pglite.django.fixtures import django_pglite_settings
+        from py_pglite.django.fixtures import django_pglite_transactional_db
+        from py_pglite.django.fixtures import django_user_model
+        from py_pglite.django.fixtures import pglite_django_manager
+        from py_pglite.django.fixtures import transactional_db
     except ImportError:
         pass
 
@@ -124,7 +124,6 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
         if not HAS_SQLALCHEMY and _is_explicitly_marked(
             item, explicit_sqlalchemy_markers
         ):
-            print(f"Skipping test {item.name} because SQLAlchemy is not available")
             pytest.skip(
                 "🚫 SQLAlchemy not available.\n"
                 "Install with: pip install 'py-pglite[sqlalchemy]'"
@@ -134,7 +133,6 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
     explicit_django_markers = {"django", "pglite_django"}
     if any(item.get_closest_marker(marker) for marker in explicit_django_markers):
         if not HAS_DJANGO and _is_explicitly_marked(item, explicit_django_markers):
-            print(f"Skipping test {item.name} because Django is not available")
             pytest.skip(
                 "🚫 Django not available. Install: pip install py-pglite[django]"
             )
@@ -285,8 +283,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
 # Make plugin discoverable
 __all__ = [
+    "pytest_collection_modifyitems",
     "pytest_configure",
     "pytest_runtest_setup",
-    "pytest_collection_modifyitems",
     "pytest_terminal_summary",
 ]

@@ -104,18 +104,9 @@ def get_user(user_id: int):
 
 
 if __name__ == "__main__":
-    print("🚀 Starting FastAPI with instant PostgreSQL...")
-    print("📊 Real PostgreSQL database ready (zero config!)")
-    print("🌐 API docs: http://localhost:8000/docs")
-    print("🎯 Try these endpoints:")
-    print("   POST /users/  - Create user")
-    print("   GET  /users/  - List users")
-    print("   GET  /users/1 - Get user by ID")
-
     import uvicorn
 
     try:
         uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
     finally:
         manager.stop()
-        print("🔌 py-pglite cleaned up!")

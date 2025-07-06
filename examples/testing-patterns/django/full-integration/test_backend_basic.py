@@ -76,8 +76,6 @@ def test_django_blog_with_backend_pattern(django_pglite_db):
     # Test advanced features available with custom backend
     assert BlogPost.objects.filter(created_at__isnull=False).count() == 1
 
-    print("✅ Django Full Integration pattern example passed!")
-
 
 def test_backend_specific_features(django_pglite_db):
     """
@@ -113,12 +111,6 @@ def test_backend_specific_features(django_pglite_db):
     json_results = AdvancedModel.objects.filter(data__features__contains=["json"])
     assert json_results.count() == 1
 
-    print("✅ Custom backend specific features working!")
-
 
 if __name__ == "__main__":
-    print("🌟 Django + py-pglite: Full Integration Pattern")
-    print(
-        "Run with: pytest testing-patterns/django/"
-        "full-integration/test_backend_basic.py -v"
-    )
+    pass

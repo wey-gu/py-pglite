@@ -71,11 +71,6 @@ def test_django_blog_with_socket_pattern(configured_django):
     found_post = BlogPost.objects.get(title__icontains="Lightweight")
     assert found_post.content == "Socket-based PostgreSQL testing is amazing!"
 
-    print("✅ Django Lightweight/Socket pattern example passed!")
-
 
 if __name__ == "__main__":
-    print("🌟 Django + py-pglite: Lightweight/Socket Pattern")
-    print(
-        "Run with: pytest testing-patterns/django/lightweight/test_socket_basic.py -v"
-    )
+    pass

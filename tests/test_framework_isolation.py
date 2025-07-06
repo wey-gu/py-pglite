@@ -8,6 +8,7 @@ Ensures that py-pglite maintains proper framework isolation:
 - Optional dependencies are truly optional
 """
 
+import contextlib
 import sys
 
 from unittest.mock import patch
@@ -91,8 +92,8 @@ def test_framework_coexistence():
     # If both are available, they should coexist
     if sqlalchemy_available and django_available:
         # Re-import to ensure they're bound in this scope
-        from py_pglite.django import fixtures as django_fixtures  # noqa: F401
-        from py_pglite.sqlalchemy import fixtures as sqlalchemy_fixtures  # noqa: F401
+        from py_pglite.django import fixtures as django_fixtures
+        from py_pglite.sqlalchemy import fixtures as sqlalchemy_fixtures
 
         # Both should work without conflicts
         assert hasattr(sqlalchemy_fixtures, "pglite_engine")
@@ -117,7 +118,7 @@ def test_pytest_plugin_isolation():
     """Test that the pytest plugin maintains framework isolation."""
 
     try:
-        import py_pglite.pytest_plugin  # noqa: F401
+        import py_pglite.pytest_plugin
 
         # Plugin module should be importable without errors
         assert True  # Basic import test
@@ -139,7 +140,7 @@ def test_sequential_framework_usage():
 
     # Then try SQLAlchemy (if available)
     try:
-        from py_pglite.sqlalchemy import fixtures  # noqa: F401
+        from py_pglite.sqlalchemy import fixtures
 
         # Should not interfere with core
         assert manager.config == config
@@ -159,21 +160,11 @@ def test_sequential_framework_usage():
 if __name__ == "__main__":
     # Run basic isolation tests
     test_core_imports_without_frameworks()
-    print("✅ Core imports work without frameworks")
 
-    try:
+    with contextlib.suppress(Exception):
         test_sqlalchemy_isolation()
-        print("✅ SQLAlchemy isolation verified")
-    except Exception as e:
-        print(f"⚠️  SQLAlchemy test skipped: {e}")
 
-    try:
+    with contextlib.suppress(Exception):
         test_django_isolation()
-        print("✅ Django isolation verified")
-    except Exception as e:
-        print(f"⚠️  Django test skipped: {e}")
 
     test_framework_coexistence()
-    print("✅ Framework coexistence verified")
-
-    print("\n🎉 All framework isolation tests passed!")

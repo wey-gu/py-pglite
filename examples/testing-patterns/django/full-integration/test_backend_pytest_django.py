@@ -214,8 +214,6 @@ def test_django_testing_utilities_with_backend(django_pglite_db):
     assert test_record.data["api_version"] == "v1"
     assert "backend" in test_record.data["features"]
 
-    print("✅ Django testing utilities with custom backend working!")
-
 
 def test_backend_performance_features(django_pglite_db):
     """
@@ -260,13 +258,6 @@ def test_backend_performance_features(django_pglite_db):
     )
     assert high_value_records.count() == 50
 
-    print("✅ Backend performance features working!")
-
 
 if __name__ == "__main__":
-    print("🌟 pytest-django + py-pglite: Full Integration Pattern")
-    print(
-        "Run with: "
-        "pytest testing-patterns/django/full-integration/"
-        "test_backend_pytest_django.py -v"
-    )
+    pass

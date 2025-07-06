@@ -7,7 +7,7 @@ import time
 
 from typing import Any
 
-from ..manager import PGliteManager
+from py_pglite.manager import PGliteManager
 
 
 class SQLAlchemyPGliteManager(PGliteManager):

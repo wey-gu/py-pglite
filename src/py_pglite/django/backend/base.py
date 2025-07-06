@@ -24,7 +24,7 @@ except ImportError:
     HAS_DJANGO = False
 
     # Create dummy classes for type hints when Django is not available
-    class base:  # type: ignore
+    class base:  # noqa: N801
         DatabaseWrapper = object
 
     class DatabaseCreation:  # type: ignore
@@ -49,7 +49,7 @@ class PGliteDatabaseCreation(DatabaseCreation):  # type: ignore
         test_database_name = self._get_test_db_name()  # type: ignore
 
         if verbosity >= 1:
-            print(f"Creating test schema '{test_database_name}' using PGlite...")
+            pass
 
         # Get or create PGlite manager for this database
         manager = self._get_pglite_manager(test_database_name)
@@ -84,7 +84,7 @@ class PGliteDatabaseCreation(DatabaseCreation):  # type: ignore
                     return
 
             # Use framework-agnostic utilities instead of SQLAlchemy
-            from ...utils import execute_sql
+            from py_pglite.utils import execute_sql
 
             conn_str = manager.config.get_connection_string()
 
@@ -94,14 +94,14 @@ class PGliteDatabaseCreation(DatabaseCreation):  # type: ignore
             )
             if result is not None:
                 if verbosity >= 1:
-                    print(f"✅ Created test schema: {schema_name}")
+                    pass
             else:
                 if verbosity >= 1:
-                    print(f"Schema creation warning for {schema_name}")
+                    pass
 
-        except Exception as e:
+        except Exception:
             if verbosity >= 1:
-                print(f"Schema setup failed: {e}")
+                pass
             # Continue anyway - we'll use the default schema
 
     def _destroy_test_db(
@@ -109,7 +109,7 @@ class PGliteDatabaseCreation(DatabaseCreation):  # type: ignore
     ) -> None:
         """Destroy the test database."""
         if verbosity >= 1:
-            print(f"Destroying test schema '{test_database_name}'...")
+            pass
 
         # Clean up the schema first
         self._destroy_test_schema(test_database_name, verbosity)
@@ -130,7 +130,7 @@ class PGliteDatabaseCreation(DatabaseCreation):  # type: ignore
                     return
 
             # Use framework-agnostic utilities instead of SQLAlchemy
-            from ...utils import execute_sql
+            from py_pglite.utils import execute_sql
 
             conn_str = manager.config.get_connection_string()
 
@@ -140,14 +140,14 @@ class PGliteDatabaseCreation(DatabaseCreation):  # type: ignore
             )
             if result is not None:
                 if verbosity >= 1:
-                    print(f"✅ Destroyed test schema: {schema_name}")
+                    pass
             else:
                 if verbosity >= 1:
-                    print(f"Schema cleanup warning for {schema_name}")
+                    pass
 
-        except Exception as e:
+        except Exception:
             if verbosity >= 1:
-                print(f"Schema cleanup failed: {e}")
+                pass
             # Continue anyway
 
     def _get_pglite_manager(self, db_name: str) -> PGliteManager:
@@ -218,9 +218,9 @@ class PGliteDatabaseCreation(DatabaseCreation):  # type: ignore
                 database=self.connection.alias,  # type: ignore
                 run_syncdb=True,
             )
-        except Exception as e:
+        except Exception:
             if verbosity >= 1:
-                print(f"Migration warning: {e}")
+                pass
             # Continue anyway - migrations might fail but tables might still be created
 
 
