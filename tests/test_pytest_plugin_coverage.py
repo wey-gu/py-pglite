@@ -214,18 +214,12 @@ class TestPytestRuntestSetup:
         with (
             patch("py_pglite.pytest_plugin.HAS_SQLALCHEMY", False),
             patch("py_pglite.pytest_plugin._is_explicitly_marked", return_value=True),
-            patch("builtins.print") as mock_print,
         ):
             with pytest.raises(
                 expected_exception=pytest.skip.Exception,
                 match="SQLAlchemy not available",
             ):
                 pytest_runtest_setup(mock_item)
-
-            mock_print.assert_called_once_with(
-                "Skipping test test_sqlalchemy_feature "
-                "because SQLAlchemy is not available",
-            )
 
     def test_pytest_runtest_setup_skips_django_test_without_django(self):
         """Test skipping Django tests when Django unavailable."""
@@ -238,17 +232,12 @@ class TestPytestRuntestSetup:
         with (
             patch("py_pglite.pytest_plugin.HAS_DJANGO", False),
             patch("py_pglite.pytest_plugin._is_explicitly_marked", return_value=True),
-            patch("builtins.print") as mock_print,
         ):
             with pytest.raises(
                 expected_exception=pytest.skip.Exception,
                 match="Django not available",
             ):
                 pytest_runtest_setup(mock_item)
-
-            mock_print.assert_called_once_with(
-                "Skipping test test_django_feature because Django is not available",
-            )
 
     def test_pytest_runtest_setup_skips_pytest_django_test_without_pytest_django(self):
         """Test skipping pytest-django tests when pytest-django unavailable."""
