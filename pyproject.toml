@@ -212,8 +212,9 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.coverage.run]
-source = ["py_pglite"]
+source = ["src/py_pglite"]
 omit = [
+    "src/*/fixtures.py",
     "*/tests/*",
     "*/test_*",
     "examples/*",
