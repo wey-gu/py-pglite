@@ -1,6 +1,5 @@
 """Pytest fixtures for PGlite integration - Framework Agnostic Core."""
 
-import os
 import tempfile
 import uuid
 from collections.abc import Generator

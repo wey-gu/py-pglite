@@ -3,6 +3,7 @@
 Provides seamless integration between PGlite (in-memory PostgreSQL)
 and Python test suites with support for SQLAlchemy, SQLModel, and Django.
 """
+
 import importlib.metadata
 
 __version__ = importlib.metadata.version(__name__)

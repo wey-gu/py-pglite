@@ -1,10 +1,8 @@
 """Framework-agnostic utility functions for PGlite testing."""
 
 import logging
-import shutil
-import socket
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .clients import DatabaseClient, get_default_client
 

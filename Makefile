@@ -85,4 +85,4 @@ status:
 	@echo "================"
 	@echo "Python version: $(shell $(PYTHON_CMD) --version)"
 	@echo "Quick test:"
-	@$(PYTHON_CMD) -c "import py_pglite; print(f'py-pglite {py_pglite.__version__} ready!')" 2>/dev/null || echo "py-pglite not installed in dev mode" 
+	@$(PYTHON_CMD) -c "import py_pglite; print(f'py-pglite {py_pglite.__version__} ready!')" 2>/dev/null || echo "py-pglite not installed in dev mode"

@@ -9,7 +9,6 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from ..config import PGliteConfig
 from .manager import SQLAlchemyPGliteManager

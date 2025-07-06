@@ -99,6 +99,7 @@ dev = [
     "ruff>=0.11.12",
     "bandit[toml]>=1.8.3",
     "safety>=3.5.2",
+    "pre-commit>=4.2.0",
     {include-group = "test"},
     {include-group = "typing"},
 ]
@@ -158,11 +159,11 @@ ignore_errors = true
 module = "py_pglite.django.*"
 ignore_errors = true
 
-# Allow untyped external imports  
+# Allow untyped external imports
 [[tool.mypy.overrides]]
 module = [
     "django.*",
-    "sqlalchemy.*", 
+    "sqlalchemy.*",
     "psycopg.*",
     "fastapi.*",
     "pytest_django.*",
@@ -185,47 +186,16 @@ select = [
 ]
 # Exclude specific rules that might interfere with pytest fixtures
 ignore = [
+    "F401",  # Unused import (needed for fixture registration)
     "E402",  # Module level import not at top of file (needed for conditional imports)
+    "E501",
 ]
 
 # Preserve critical imports for pytest plugin functionality
 [tool.ruff.lint.per-file-ignores]
-"py_pglite/pytest_plugin.py" = [
-    "F401",  # Unused import (needed for fixture registration)
-    "E501",  # Line too long (error messages)
-]
-"py_pglite/*.py" = [
-    "F401",  # Unused import (needed for fixture registration)
-]
-"tests/*.py" = [
-    "F401",  # Unused import (needed for fixture registration)
-]
-"examples/*.py" = [
-    "F401",  # Unused import (needed for fixture registration)
-    "F841",  # Unused variable
-]
-"py_pglite/fixtures.py" = [
-    "F401",  # Unused import
-]
-"py_pglite/sqlalchemy/fixtures.py" = [
-    "F401",  # Unused import
-]
-"py_pglite/django/fixtures.py" = [
-    "F401",  # Unused import
-]
-"py_pglite/django/backend/*.py" = [
-    "F401",  # Django imports for compatibility
-    "E501",  # Line too long (comments and complex Django patterns)
-]
-"py_pglite/django/utils.py" = [
-    "F401",  # Django imports for compatibility
-]
-"py_pglite/manager.py" = [
-    "E501",  # Line too long (error messages)
-]
-"*/conftest.py" = [
-    "F401",  # Unused import (fixtures are auto-discovered)
-]
+#"examples/*.py" = [
+#    "F841",  # Unused variable
+#]
 
 [tool.ruff.lint.isort]
 # Configure import sorting to be compatible with our structure
@@ -275,7 +245,7 @@ testpaths = ["tests", "examples"]
 python_files = ["test_*.py", "*_test.py"]
 addopts = [
     "-n",
-    "logical",
+    "1",  # TODO: Fix concurrent execution
     "-ra",
     "--strict-markers",
     "--strict-config",
@@ -306,4 +276,4 @@ filterwarnings = [
 
 # Disable pytest-django for examples to prevent interference
 # Users can run: pytest examples/ -p no:django
-# Or the examples will work with our zero-config approach 
+# Or the examples will work with our zero-config approach

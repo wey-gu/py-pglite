@@ -13,7 +13,7 @@ cd py-pglite
 make install          # Standard pip
 # OR
 PDM_RUN_CWD=. make install    # PDM
-# OR  
+# OR
 UV=1 make install            # UV
 
 # Run full development workflow (like CI)
@@ -32,7 +32,7 @@ We use **one unified script** that mirrors CI exactly:
 
 ```bash
 make dev         # Full workflow (linting + tests + examples)
-make test        # Run tests only  
+make test        # Run tests only
 make examples    # Run examples only
 make lint        # Run linting only
 make quick       # Quick checks during development
@@ -42,7 +42,7 @@ make quick       # Quick checks during development
 
 ```bash
 make install     # Install in development mode
-make clean       # Clean build artifacts  
+make clean       # Clean build artifacts
 make fmt         # Auto-fix formatting
 make status      # Show project status
 ```
@@ -52,7 +52,7 @@ make status      # Show project status
 ```bash
 # Use the script directly for more control
 python scripts/dev.py              # Full workflow
-python scripts/dev.py --quick      # Quick checks  
+python scripts/dev.py --quick      # Quick checks
 python scripts/dev.py --test       # Tests only
 python scripts/dev.py --examples   # Examples only
 python scripts/dev.py --lint       # Linting only
@@ -88,7 +88,7 @@ vim py_pglite/manager.py
 # Quick validation
 make quick              # ~10s: linting + imports
 
-# Full validation  
+# Full validation
 make dev                # ~30s: everything (like CI)
 ```
 
@@ -96,7 +96,7 @@ make dev                # ~30s: everything (like CI)
 
 ```bash
 make test               # All tests
-make examples           # All examples  
+make examples           # All examples
 pytest tests/test_core_manager.py -v    # Specific test
 ```
 
@@ -124,7 +124,7 @@ py-pglite/
 │   │   ├── manager.py           #    Enhanced SQLAlchemy manager
 │   │   ├── fixtures.py          #    Pytest fixtures
 │   │   └── utils.py             #    SQLAlchemy utilities
-│   ├── django/                  #    Django integration  
+│   ├── django/                  #    Django integration
 │   │   ├── fixtures.py          #    Django fixtures
 │   │   └── utils.py             #    Django utilities
 │   ├── pytest_plugin.py         #    Auto-discovery pytest plugin
@@ -217,7 +217,7 @@ Our test suite validates these critical scenarios:
 # Test SQLAlchemy isolation
 pytest examples/testing-patterns/sqlalchemy/ -p no:django
 
-# Test Django isolation  
+# Test Django isolation
 pytest examples/testing-patterns/django/ -p no:sqlalchemy
 
 # Test framework coexistence
@@ -258,7 +258,7 @@ ruff format py_pglite/  # Manual format
 # Edit core
 vim py_pglite/manager.py
 
-# Test core  
+# Test core
 pytest tests/test_core_manager.py -v
 
 # Full validation
@@ -346,13 +346,13 @@ def test_new_extension_feature():
 ```python
 def new_feature(param: str) -> bool:
     """Short description.
-    
+
     Args:
         param: Parameter description
-        
+
     Returns:
         Description of return value
-        
+
     Example:
         >>> new_feature("test")
         True
@@ -368,7 +368,7 @@ def new_feature(param: str) -> bool:
 1. **Reproduce** with minimal example
 2. **Check** which component (core, SQLAlchemy, Django)
 3. **Write test** that fails
-4. **Fix** the issue  
+4. **Fix** the issue
 5. **Validate** with `make dev`
 
 ### **Feature Requests**
@@ -467,7 +467,7 @@ SQLModel.metadata.create_all(engine)  # ✅ Works
 ```bash
 # These work perfectly without interference
 pytest -m sqlalchemy -p no:django     # Pure SQLAlchemy
-pytest -m django -p no:sqlalchemy     # Pure Django  
+pytest -m django -p no:sqlalchemy     # Pure Django
 pytest tests/test_framework_isolation.py # Validation suite
 ```
 
@@ -520,7 +520,7 @@ CI automatically:
 
 - 🔀 **Pull requests** welcome!
 - 📝 **Documentation** improvements
-- 🧪 **Test coverage** enhancements  
+- 🧪 **Test coverage** enhancements
 - 🎨 **Example** additions
 
 ---

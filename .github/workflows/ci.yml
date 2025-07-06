@@ -82,7 +82,7 @@ jobs:
         python -m pip install --upgrade pip build
         python -m build
         pip install dist/*.whl
-        
+
     - name: Test installed package
       run: |
         python -c "import py_pglite; print(f'Successfully imported py-pglite {py_pglite.__version__}')"
