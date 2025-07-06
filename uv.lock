@@ -1199,8 +1199,13 @@ test-extensions = [
 ]
 
 [package.dev-dependencies]
+coverage = [
+    { name = "coverage", extra = ["toml"] },
+    { name = "pytest-cov" },
+]
 dev = [
     { name = "bandit", extra = ["toml"] },
+    { name = "coverage", extra = ["toml"] },
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "py-pglite", extra = ["all"] },
@@ -1214,6 +1219,7 @@ dev = [
     { name = "types-psutil" },
 ]
 test = [
+    { name = "coverage", extra = ["toml"] },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -1261,8 +1267,13 @@ requires-dist = [
 provides-extras = ["psycopg", "asyncpg", "async", "sqlalchemy", "sqlmodel", "django", "fastapi", "extensions", "examples", "test-extensions", "all"]
 
 [package.metadata.requires-dev]
+coverage = [
+    { name = "coverage", extras = ["toml"] },
+    { name = "pytest-cov", specifier = ">=6.1.1" },
+]
 dev = [
     { name = "bandit", extras = ["toml"], specifier = ">=1.8.3" },
+    { name = "coverage", extras = ["toml"] },
     { name = "mypy", specifier = ">=1.16.0" },
     { name = "pre-commit", specifier = ">=4.2.0" },
     { name = "py-pglite", extras = ["all"] },
@@ -1276,6 +1287,7 @@ dev = [
     { name = "types-psutil", specifier = ">=7.0.0" },
 ]
 test = [
+    { name = "coverage", extras = ["toml"] },
     { name = "pytest", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.0" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
