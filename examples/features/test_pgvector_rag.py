@@ -17,14 +17,17 @@ import pytest
 from py_pglite import PGliteManager
 from py_pglite.config import PGliteConfig
 
+
 if TYPE_CHECKING:
     import numpy as np
+
     from numpy.typing import NDArray
     from pgvector.psycopg import register_vector
 
 # Try to import optional dependencies, or skip tests
 try:
     import numpy as np
+
     from pgvector.psycopg import register_vector
 except ImportError:
     np = None
@@ -109,10 +112,6 @@ def test_pgvector_rag_example():
             answer = generate_answer(retrieved_context, question)
 
             # --- 6. Verification ---
-
-            print(f"\nQuestion: {question}")
-            print(f"Retrieved Context: '{retrieved_context}'")
-            print(f"Answer: {answer}")
 
             assert "The sky is blue" in retrieved_context
             assert "the sky is blue" in answer.lower()

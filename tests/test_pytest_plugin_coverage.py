@@ -1,23 +1,24 @@
 """Comprehensive tests for pytest_plugin module - targeting 33.61% coverage gap."""
 
 import warnings
-from unittest.mock import Mock, call, patch
+
+from unittest.mock import Mock
+from unittest.mock import call
+from unittest.mock import patch
 
 import pytest
 
-from py_pglite.pytest_plugin import (
-    HAS_DJANGO,
-    HAS_PYTEST_DJANGO,
-    HAS_SQLALCHEMY,
-    _auto_mark_test,
-    _check_framework_isolation,
-    _is_explicitly_marked,
-    _should_disable_django_plugin,
-    pytest_collection_modifyitems,
-    pytest_configure,
-    pytest_runtest_setup,
-    pytest_terminal_summary,
-)
+from py_pglite.pytest_plugin import HAS_DJANGO
+from py_pglite.pytest_plugin import HAS_PYTEST_DJANGO
+from py_pglite.pytest_plugin import HAS_SQLALCHEMY
+from py_pglite.pytest_plugin import _auto_mark_test
+from py_pglite.pytest_plugin import _check_framework_isolation
+from py_pglite.pytest_plugin import _is_explicitly_marked
+from py_pglite.pytest_plugin import _should_disable_django_plugin
+from py_pglite.pytest_plugin import pytest_collection_modifyitems
+from py_pglite.pytest_plugin import pytest_configure
+from py_pglite.pytest_plugin import pytest_runtest_setup
+from py_pglite.pytest_plugin import pytest_terminal_summary
 
 
 class TestFrameworkAvailabilityDetection:
@@ -97,7 +98,7 @@ class TestPytestConfigure:
 
     def test_pytest_configure_does_not_disable_django_when_should_disable_returns_false(
         self,
-    ):  # noqa: E501
+    ):
         """Test pytest_configure doesn't disable Django when not needed."""
         mock_config = Mock()
 
@@ -111,7 +112,7 @@ class TestPytestConfigure:
             assert (
                 not hasattr(mock_config, "pluginmanager")
                 or not mock_config.pluginmanager.set_blocked.called
-            )  # noqa: E501
+            )
 
     def test_pytest_configure_handles_missing_plugin_manager(self):
         """Test pytest_configure handles missing plugin manager gracefully."""
@@ -213,18 +214,12 @@ class TestPytestRuntestSetup:
         with (
             patch("py_pglite.pytest_plugin.HAS_SQLALCHEMY", False),
             patch("py_pglite.pytest_plugin._is_explicitly_marked", return_value=True),
-            patch("builtins.print") as mock_print,
         ):
             with pytest.raises(
                 expected_exception=pytest.skip.Exception,
                 match="SQLAlchemy not available",
             ):
                 pytest_runtest_setup(mock_item)
-
-            mock_print.assert_called_once_with(
-                "Skipping test test_sqlalchemy_feature "
-                "because SQLAlchemy is not available",
-            )
 
     def test_pytest_runtest_setup_skips_django_test_without_django(self):
         """Test skipping Django tests when Django unavailable."""
@@ -237,17 +232,12 @@ class TestPytestRuntestSetup:
         with (
             patch("py_pglite.pytest_plugin.HAS_DJANGO", False),
             patch("py_pglite.pytest_plugin._is_explicitly_marked", return_value=True),
-            patch("builtins.print") as mock_print,
         ):
             with pytest.raises(
                 expected_exception=pytest.skip.Exception,
                 match="Django not available",
             ):
                 pytest_runtest_setup(mock_item)
-
-            mock_print.assert_called_once_with(
-                "Skipping test test_django_feature because Django is not available",
-            )
 
     def test_pytest_runtest_setup_skips_pytest_django_test_without_pytest_django(self):
         """Test skipping pytest-django tests when pytest-django unavailable."""

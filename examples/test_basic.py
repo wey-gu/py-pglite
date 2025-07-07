@@ -1,6 +1,9 @@
 """Basic example showing how to use py-pglite fixtures."""
 
-from sqlmodel import Field, Session, SQLModel, select
+from sqlmodel import Field
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import select
 
 
 # Example model

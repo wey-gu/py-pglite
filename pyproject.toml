@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.7.19,<0.8.0"]
+build-backend = "uv_build"
 
 [project]
 name = "py-pglite"
-dynamic = ["version"]
+version = "0.5.0"
 description = "Python testing library for PGlite - in-memory PostgreSQL for tests"
 readme = "README.md"
 license = "Apache-2.0"
@@ -41,19 +41,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=6.1.1",
-    "pytest-mock>=3.0.0",
-    "mypy>=1.16.0",
-    "ruff>=0.11.12",
-    "build>=1.2.2.post1",
-    "twine>=6.1.0",
-    "bandit[toml]>=1.8.3",
-    "safety>=3.5.2",
-    "types-psutil>=7.0.0",
-]
 psycopg = [
     "psycopg>=3.0.0",
 ]
@@ -106,6 +93,32 @@ all = [
     "pytest-asyncio>=0.21.0",
 ]
 
+[dependency-groups]
+dev = [
+    "py-pglite[all]",
+    "ruff>=0.11.12",
+    "bandit[toml]>=1.8.3",
+    "safety>=3.5.2",
+    "pre-commit>=4.2.0",
+    {include-group = "test"},
+    {include-group = "typing"},
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.0.0",
+    "pytest-xdist>=3.8.0",
+    {include-group = "coverage"},
+]
+coverage = [
+    "coverage[toml]",
+    "pytest-cov>=6.1.1",
+]
+typing = [
+    "mypy>=1.16.0",
+    "types-psutil>=7.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/wey-gu/py-pglite"
 Documentation = "https://github.com/wey-gu/py-pglite#readme"
@@ -115,11 +128,12 @@ Issues = "https://github.com/wey-gu/py-pglite/issues"
 [project.entry-points.pytest11]
 py_pglite = "py_pglite.pytest_plugin"
 
-[tool.hatch.version]
-path = "py_pglite/__init__.py"
+[tool.uv]
+default-groups = ["dev"]
 
-[tool.hatch.build.targets.wheel]
-packages = ["py_pglite"]
+[tool.uv.build-backend]
+module-name = "py_pglite"
+module-root = "src"
 
 [tool.mypy]
 python_version = "3.10"
@@ -149,11 +163,11 @@ ignore_errors = true
 module = "py_pglite.django.*"
 ignore_errors = true
 
-# Allow untyped external imports  
+# Allow untyped external imports
 [[tool.mypy.overrides]]
 module = [
     "django.*",
-    "sqlalchemy.*", 
+    "sqlalchemy.*",
     "psycopg.*",
     "fastapi.*",
     "pytest_django.*",
@@ -173,32 +187,48 @@ select = [
     "B",  # flake8-bugbear
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
+    # "ERA", # flake8-eradicate/eradicate
+    "N",   # pep8-naming
+    "PIE", # flake8-pie
+    # "PGH", # pygrep
+    "RUF", # ruff checks
+    # "SIM", # flake8-simplify
+    "T20", # flake8-print
+    "TC",  # flake8-type-checking
+    "TID", # flake8-tidy-imports
+]
+# Exclude specific rules that might interfere with pytest fixtures
+ignore = [
+    "F401",  # Unused import (needed for fixture registration)
+    "E402",  # Module level import not at top of file (needed for conditional imports)
+    "E501",
+]
+extend-safe-fixes = [
+    "TC",   # move import from and to TYPE_CHECKING blocks
+]
+unfixable = [
+    "ERA", # do not autoremove commented out code
 ]
 
-# Preserve critical imports for pytest plugin functionality
-[tool.ruff.lint.per-file-ignores]
-"py_pglite/pytest_plugin.py" = [
-    "F401",  # Unused import (needed for fixture registration)
-    "E501",  # Line too long (error messages)
-]
-"py_pglite/fixtures.py" = ["F401"]
-"py_pglite/sqlalchemy/fixtures.py" = ["F401"] 
-"py_pglite/django/fixtures.py" = ["F401"]
-"py_pglite/django/backend/*.py" = ["F401", "E501"]
-"py_pglite/django/utils.py" = ["F401"]
-"py_pglite/manager.py" = ["E501"]
-"*/conftest.py" = ["F401"]
+[tool.ruff.lint.isort]
+force-single-line = true
+lines-between-types = 1
+lines-after-imports = 2
+known-first-party = ["py_pglite"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.format]
-
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.coverage.run]
-source = ["py_pglite"]
+source = ["src/py_pglite"]
 omit = [
+    "src/**/fixtures.py",
     "*/tests/*",
     "*/test_*",
     "examples/*",
@@ -225,18 +255,46 @@ directory = "htmlcov"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
+asyncio_mode = "auto"
+testpaths = ["tests", "examples"]
+python_files = ["test_*.py", "*_test.py"]
 addopts = [
+    "-n",
+    "1",  # TODO: Fix concurrent execution
     "-ra",
     "--strict-markers",
     "--strict-config",
-    "--disable-warnings",
 ]
-testpaths = ["tests", "examples"]
-pythonpath = ["."]
 markers = [
-    "slow: marks tests as slow",
+    "sqlalchemy: marks tests as requiring SQLAlchemy (deselect with '-m \"not sqlalchemy\"')",
+    "django: marks tests as requiring Django (deselect with '-m \"not django\"')",
+    "pytest_django: pytest-django specific tests",
+    "extensions: marks tests as requiring extension dependencies like pgvector",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
+    "database: Database tests",
+    "performance: Performance benchmarks",
+    "unit: marks tests as unit tests",
+    "stress: marks tests as stress/load tests",
+    "core: Core functionality tests",
+    "fixtures: Fixture pattern tests",
+    "isolation: Framework isolation tests",
+
 ]
-# Disable pytest-django for examples to prevent interference
-# Users can run: pytest examples/ -p no:django
-# Or the examples will work with our zero-config approach 
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    # Only suppress specific AsyncpgClient warnings during test execution
+    # These occur because AsyncpgClient uses sync-over-async pattern with mocking
+    "ignore:coroutine 'AsyncpgClient._async_execute_query' was never awaited:RuntimeWarning",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "path/to/file"]
+tests = ["B201", "B301"]
+skips = ["B603", "B607"]
+exclude_dires = [
+    "examples",
+    "tests",
+    "dist",
+]

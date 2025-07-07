@@ -9,15 +9,17 @@
 git clone https://github.com/wey-gu/py-pglite.git
 cd py-pglite
 
-# Install dependencies (choose your package manager)
-make install          # Standard pip
-# OR
-PDM_RUN_CWD=. make install    # PDM
-# OR  
-UV=1 make install            # UV
+# Install dependencies with uv
+uv sync
+
+# Install pre-commit hooks
+pre-commit install
 
 # Run full development workflow (like CI)
 make dev
+
+# Activate virtual environment
+source .venv/bin/activate
 ```
 
 **That's it!** You're ready to contribute.
@@ -32,7 +34,7 @@ We use **one unified script** that mirrors CI exactly:
 
 ```bash
 make dev         # Full workflow (linting + tests + examples)
-make test        # Run tests only  
+make test        # Run tests only
 make examples    # Run examples only
 make lint        # Run linting only
 make quick       # Quick checks during development
@@ -42,38 +44,34 @@ make quick       # Quick checks during development
 
 ```bash
 make install     # Install in development mode
-make clean       # Clean build artifacts  
+make clean       # Clean build artifacts
 make fmt         # Auto-fix formatting
 make status      # Show project status
 ```
 
-### **Direct Script Usage**
+### **📦 Package Manager: uv**
+
+py-pglite has unified around [uv](https://github.com/astral-sh/uv) as the package manager:
 
 ```bash
-# Use the script directly for more control
-python scripts/dev.py              # Full workflow
-python scripts/dev.py --quick      # Quick checks  
-python scripts/dev.py --test       # Tests only
-python scripts/dev.py --examples   # Examples only
-python scripts/dev.py --lint       # Linting only
+# All commands use uv by default
+make install     # Uses uv sync
+make dev         # Uses uv run pytest
+make lint        # Uses uv run pre-commit
 ```
 
-### **📦 Package Manager Support**
-
-py-pglite supports modern Python package managers:
+**Pre-commit hooks:** We use pre-commit to enforce code quality standards. Install the hooks with:
 
 ```bash
-# Standard pip (default)
-make dev
-
-# PDM (Project Dependency Manager)
-PDM_RUN_CWD=. make dev
-
-# UV (Ultra-fast Python package installer)
-UV=1 make dev
+pre-commit install
 ```
 
-**Auto-detection:** The development script automatically detects your package manager based on environment variables and uses the appropriate commands.
+You can then run them using:
+```bash
+pre-commit run --all-files
+```
+
+This ensures all code quality checks run automatically before each commit.
 
 ---
 
@@ -88,7 +86,7 @@ vim py_pglite/manager.py
 # Quick validation
 make quick              # ~10s: linting + imports
 
-# Full validation  
+# Full validation
 make dev                # ~30s: everything (like CI)
 ```
 
@@ -96,8 +94,8 @@ make dev                # ~30s: everything (like CI)
 
 ```bash
 make test               # All tests
-make examples           # All examples  
-pytest tests/test_core_manager.py -v    # Specific test
+make examples           # All examples
+uv run pytest tests/test_core_manager.py -v    # Specific test
 ```
 
 ### **3. Before Committing**
@@ -124,7 +122,7 @@ py-pglite/
 │   │   ├── manager.py           #    Enhanced SQLAlchemy manager
 │   │   ├── fixtures.py          #    Pytest fixtures
 │   │   └── utils.py             #    SQLAlchemy utilities
-│   ├── django/                  #    Django integration  
+│   ├── django/                  #    Django integration
 │   │   ├── fixtures.py          #    Django fixtures
 │   │   └── utils.py             #    Django utilities
 │   ├── pytest_plugin.py         #    Auto-discovery pytest plugin
@@ -152,10 +150,6 @@ py-pglite/
 │       ├── sqlalchemy/          #    SQLAlchemy patterns (2 tests)
 │       ├── django/              #    Django patterns (10 tests)
 │       └── test_fixtures_showcase.py # Advanced patterns (8 tests)
-│
-├── scripts/                     # 🔧 Development tools
-│   └── dev.py                   #    Unified development script
-│
 └── Makefile                     # 🎯 Convenience commands
 ```
 
@@ -187,16 +181,16 @@ py-pglite/
 
 ```bash
 # Framework isolation validation
-pytest -m sqlalchemy -p no:django     # Pure SQLAlchemy (no Django bleeding)
-pytest -m django -p no:sqlalchemy     # Pure Django (no SQLAlchemy bleeding)
+uv run pytest -m sqlalchemy -p no:django     # Pure SQLAlchemy (no Django bleeding)
+uv run pytest -m django -p no:sqlalchemy     # Pure Django (no SQLAlchemy bleeding)
 
 # Comprehensive coverage areas
-pytest tests/test_configuration.py    # Config validation & edge cases
-pytest tests/test_reliability.py      # Error recovery & resilience
-pytest tests/test_connection_management.py # Connection pooling & cleanup
+uv run pytest tests/test_configuration.py    # Config validation & edge cases
+uv run pytest tests/test_reliability.py      # Error recovery & resilience
+uv run pytest tests/test_connection_management.py # Connection pooling & cleanup
 
 # Real-world scenario validation
-pytest examples/testing-patterns/     # Production usage patterns
+uv run pytest examples/testing-patterns/     # Production usage patterns
 ```
 
 ### **Battle-Tested Scenarios**
@@ -215,30 +209,42 @@ Our test suite validates these critical scenarios:
 
 ```bash
 # Test SQLAlchemy isolation
-pytest examples/testing-patterns/sqlalchemy/ -p no:django
+uv run pytest examples/testing-patterns/sqlalchemy/ -p no:django
 
-# Test Django isolation  
-pytest examples/testing-patterns/django/ -p no:sqlalchemy
+# Test Django isolation
+uv run pytest examples/testing-patterns/django/ -p no:sqlalchemy
 
 # Test framework coexistence
-pytest tests/test_framework_isolation.py
+uv run pytest tests/test_framework_isolation.py
 
 # Test decoupling fix
-pytest tests/test_django_backend.py::TestDjangoBackendDecoupling
+uv run pytest tests/test_django_backend.py::TestDjangoBackendDecoupling
 ```
 
 ---
 
 ## 🎨 **Code Style**
 
-We use **Ruff** for linting and formatting:
+We use **Ruff** for linting and formatting, automated through **pre-commit hooks**:
 
 ```bash
-make lint               # Check style
-make fmt                # Auto-fix formatting
-ruff check py_pglite/   # Manual check
-ruff format py_pglite/  # Manual format
+# Run all pre-commit hooks manually
+make lint               # Uses uv run pre-commit run --all-files
+
+# Auto-fix formatting only
+make fmt                # Uses uv run ruff format
+
+# Manual commands (if needed)
+uv run ruff check py_pglite/   # Manual check
+uv run ruff format py_pglite/  # Manual format
 ```
+
+**Pre-commit Hooks:**
+
+Our pre-commit configuration (`.pre-commit-config.yaml`) includes:
+- Basic checks (trailing whitespace, file endings, YAML/TOML validation)
+- Ruff for linting and formatting
+- Bandit for security checks
 
 **Style Guide:**
 
@@ -258,8 +264,8 @@ ruff format py_pglite/  # Manual format
 # Edit core
 vim py_pglite/manager.py
 
-# Test core  
-pytest tests/test_core_manager.py -v
+# Test core
+uv run pytest tests/test_core_manager.py -v
 
 # Full validation
 make dev
@@ -272,10 +278,10 @@ make dev
 vim py_pglite/sqlalchemy/fixtures.py
 
 # Test integration
-pytest examples/testing-patterns/sqlalchemy/ -v
+uv run pytest examples/testing-patterns/sqlalchemy/ -v
 
 # Test isolation
-pytest tests/test_framework_isolation.py -v
+uv run pytest tests/test_framework_isolation.py -v
 ```
 
 ### **3. Examples/Demos**
@@ -285,10 +291,10 @@ pytest tests/test_framework_isolation.py -v
 vim examples/testing-patterns/new_example.py
 
 # Test example
-pytest examples/testing-patterns/new_example.py -v
+uv run pytest examples/testing-patterns/new_example.py -v
 
 # Test quickstart
-python examples/quickstart/demo_instant.py
+uv run python examples/quickstart/demo_instant.py
 ```
 
 ### 4. PostgreSQL Extensions
@@ -346,13 +352,13 @@ def test_new_extension_feature():
 ```python
 def new_feature(param: str) -> bool:
     """Short description.
-    
+
     Args:
         param: Parameter description
-        
+
     Returns:
         Description of return value
-        
+
     Example:
         >>> new_feature("test")
         True
@@ -368,7 +374,7 @@ def new_feature(param: str) -> bool:
 1. **Reproduce** with minimal example
 2. **Check** which component (core, SQLAlchemy, Django)
 3. **Write test** that fails
-4. **Fix** the issue  
+4. **Fix** the issue
 5. **Validate** with `make dev`
 
 ### **Feature Requests**
@@ -466,9 +472,9 @@ SQLModel.metadata.create_all(engine)  # ✅ Works
 
 ```bash
 # These work perfectly without interference
-pytest -m sqlalchemy -p no:django     # Pure SQLAlchemy
-pytest -m django -p no:sqlalchemy     # Pure Django  
-pytest tests/test_framework_isolation.py # Validation suite
+uv run pytest -m sqlalchemy -p no:django     # Pure SQLAlchemy
+uv run pytest -m django -p no:sqlalchemy     # Pure Django
+uv run pytest tests/test_framework_isolation.py # Validation suite
 ```
 
 **Coverage:** 139 total tests including edge cases, error recovery, and production scenarios.
@@ -508,6 +514,55 @@ CI automatically:
 
 ---
 
+## 🔄 **GitHub Actions**
+
+py-pglite provides a reusable GitHub Action to standardize the setup of Python, Node.js, and uv in workflows.
+
+### **Setup Environment Action**
+
+Located in `.github/actions/setup-environment`, this action abstracts the common setup steps used across workflows:
+
+```yaml
+- name: Setup Environment
+  uses: ./.github/actions/setup-environment
+  with:
+    python-version: '3.11'  # Default, can be configured
+    node-version: '22'      # Default, can be configured
+    run-tests: true         # Optional, runs pytest
+    coverage: true          # Optional, generates coverage report
+```
+
+**Inputs:**
+
+- `python-version` - Python version to use (default: '3.11')
+- `node-version` - Node.js version to use (default: '22')
+- `run-tests` - Whether to run tests after setup (default: false)
+- `coverage` - Whether to generate coverage report (default: false)
+
+**Example Usage:**
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          python-version: '3.12'
+          run-tests: true
+
+      # Additional steps...
+```
+
+**Test Workflow:**
+
+A test workflow is available at `.github/workflows/test-setup-action.yml` that demonstrates how to use this action with different configurations.
+
+---
+
 ## 💝 **Community**
 
 ### **Getting Help**
@@ -520,7 +575,7 @@ CI automatically:
 
 - 🔀 **Pull requests** welcome!
 - 📝 **Documentation** improvements
-- 🧪 **Test coverage** enhancements  
+- 🧪 **Test coverage** enhancements
 - 🎨 **Example** additions
 
 ---

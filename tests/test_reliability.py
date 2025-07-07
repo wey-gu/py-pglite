@@ -4,14 +4,19 @@ Tests process recovery, timeout handling, resource cleanup, and edge cases
 to ensure robust behavior under adverse conditions.
 """
 
+import contextlib
 import os
 import signal
 import tempfile
 import time
+
 from pathlib import Path
 
 import pytest
+
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import ProgrammingError
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
@@ -215,10 +220,8 @@ class TestResourceManagement:
         # Clean up test directory
         import shutil
 
-        try:
+        with contextlib.suppress(Exception):
             shutil.rmtree(temp_dir, ignore_errors=True)
-        except Exception:
-            pass
 
     def test_work_dir_handling(self):
         """Test work directory handling and cleanup."""
@@ -242,10 +245,8 @@ class TestResourceManagement:
         # Clean up test directory
         import shutil
 
-        try:
+        with contextlib.suppress(Exception):
             shutil.rmtree(work_dir, ignore_errors=True)
-        except Exception:
-            pass
 
     def test_memory_usage_stability(self):
         """Test that memory usage remains stable over multiple operations."""
@@ -299,9 +300,8 @@ class TestErrorRecovery:
             engine = manager.get_engine()
 
             # Test recovery after syntax error
-            with engine.connect() as conn:
-                with pytest.raises(Exception):
-                    conn.execute(text("INVALID SQL SYNTAX ERROR"))
+            with engine.connect() as conn, pytest.raises(ProgrammingError):
+                conn.execute(text("INVALID SQL SYNTAX ERROR"))
 
             # Should still work after error
             with engine.connect() as conn:
@@ -317,7 +317,7 @@ class TestErrorRecovery:
                 conn.commit()
 
                 # Try to insert duplicate primary key
-                with pytest.raises(Exception):
+                with pytest.raises(IntegrityError):
                     conn.execute(text("INSERT INTO test_recovery VALUES (1)"))
                     conn.commit()
 

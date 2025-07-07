@@ -8,12 +8,14 @@ import logging
 import os
 import tempfile
 import uuid
+
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-from py_pglite.config import PGliteConfig, _get_secure_socket_path
+from py_pglite.config import PGliteConfig
+from py_pglite.config import _get_secure_socket_path
 
 
 class TestSecureSocketPath:

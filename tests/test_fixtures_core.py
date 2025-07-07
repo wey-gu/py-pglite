@@ -1,11 +1,10 @@
 """Tests for pytest fixtures functionality."""
 
-from py_pglite import PGliteConfig, PGliteManager
-from py_pglite.fixtures import (
-    pglite_config,
-    pglite_manager,
-    pglite_manager_custom,
-)
+from py_pglite import PGliteConfig
+from py_pglite import PGliteManager
+from py_pglite.fixtures import pglite_config
+from py_pglite.fixtures import pglite_manager
+from py_pglite.fixtures import pglite_manager_custom
 
 
 class TestPGliteFixtures:
@@ -52,7 +51,7 @@ class TestPGliteFixtures:
 
         # Fixture should handle cleanup automatically after test
 
-    def test_pglite_manager_custom_fixture(self):  # noqa: F811
+    def test_pglite_manager_custom_fixture(self):
         """Test custom manager creation with custom config."""
         custom_config = PGliteConfig(timeout=60, log_level="DEBUG")
 
@@ -150,7 +149,7 @@ class TestPGliteFixtures:
         # Test with invalid config
         try:
             PGliteConfig(timeout=-1)
-            assert False, "Should have raised ValueError"
+            raise AssertionError("Should have raised ValueError")
         except ValueError:
             pass  # Expected
 

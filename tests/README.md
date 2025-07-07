@@ -9,7 +9,7 @@ Our test suite is organized by functionality and scope to ensure comprehensive c
 ```
 tests/
 ├── test_core_manager.py         # Core PGliteManager functionality
-├── test_framework_isolation.py  # Framework independence & isolation  
+├── test_framework_isolation.py  # Framework independence & isolation
 ├── test_advanced.py            # Advanced usage patterns & edge cases
 ├── test_fastapi_integration.py # FastAPI integration testing
 └── README.md                   # This documentation
@@ -61,7 +61,7 @@ Ensures true framework independence:
   - Independent operation
   - Legacy utils isolation
 
-- **Django Isolation**  
+- **Django Isolation**
   - No SQLAlchemy contamination
   - Backend independence
   - Framework-agnostic backend
@@ -148,7 +148,7 @@ pytest tests/ --cov=py_pglite --cov-report=html
 # Core functionality
 pytest tests/test_core_manager.py -v
 
-# Framework isolation  
+# Framework isolation
 pytest tests/test_framework_isolation.py -v
 
 # Advanced patterns

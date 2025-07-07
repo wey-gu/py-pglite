@@ -32,13 +32,13 @@ def test_users(pglite_session):
 # ❌ Traditional testing
 def test_old_way():
     # 1. Install PostgreSQL
-    # 2. Configure connection  
+    # 2. Configure connection
     # 3. Manage test databases
     # 4. Handle cleanup
     # 5. Docker containers...
     pass
 
-# ✅ py-pglite way  
+# ✅ py-pglite way
 def test_new_way(pglite_session):
     User.objects.create(name="Alice")  # Just works!
 ```
@@ -61,7 +61,7 @@ pip install py-pglite
 
 # With your stack
 pip install py-pglite[sqlalchemy]  # SQLAlchemy + SQLModel
-pip install py-pglite[django]      # Django + pytest-django  
+pip install py-pglite[django]      # Django + pytest-django
 pip install py-pglite[asyncpg]     # Pure async client
 pip install py-pglite[all]         # Everything
 
@@ -77,10 +77,10 @@ pip install py-pglite[extensions]  # pglite extensions, like pgvector, fuzzystrm
 
 ```python
 def test_sqlalchemy_just_works(pglite_session):
-    user = User(name="Alice", email="alice@test.com")  
+    user = User(name="Alice", email="alice@test.com")
     pglite_session.add(user)
     pglite_session.commit()
-    
+
     assert user.id is not None
     assert User.query.count() == 1  # Real PostgreSQL!
 ```
@@ -89,7 +89,7 @@ def test_sqlalchemy_just_works(pglite_session):
 
 **🔹 Lightweight/Socket** (Minimal setup)
 
-```python  
+```python
 def test_django_socket_pattern(configured_django):
     Post.objects.create(title="Hello", content="World")
     assert Post.objects.count() == 1  # Real PostgreSQL via socket!
@@ -97,7 +97,7 @@ def test_django_socket_pattern(configured_django):
 
 **🔸 Full Integration/Backend** (Enhanced features)
 
-```python  
+```python
 def test_django_backend_pattern(django_pglite_db):
     Post.objects.create(title="Hello", content="World", metadata={"tags": ["test"]})
     assert Post.objects.count() == 1  # Custom backend with JSON support!
@@ -117,7 +117,7 @@ def test_any_client_works(pglite_manager):
     # Extract connection details
     engine = pglite_manager.get_engine()
     host, port, database = str(engine.url.host), engine.url.port, engine.url.database
-    
+
     # Use with any PostgreSQL client
     # conn = psycopg.connect(host=host, port=port, dbname=database)
     # conn = await asyncpg.connect(host=host, port=port, database=database)
@@ -136,7 +136,7 @@ from fastapi.testclient import TestClient
 def test_api_endpoint(client: TestClient):
     response = client.post("/users/", json={"name": "Alice"})
     assert response.status_code == 201
-    
+
     response = client.get("/users/")
     assert len(response.json()) == 1
 ```
@@ -152,19 +152,19 @@ def test_postgresql_power(pglite_session):
             created TIMESTAMP DEFAULT NOW()
         )
     """))
-    
+
     pglite_session.execute(text("""
-        INSERT INTO analytics (data, tags) VALUES 
+        INSERT INTO analytics (data, tags) VALUES
         ('{"clicks": 100}', ARRAY['web', 'mobile'])
     """))
-    
+
     result = pglite_session.execute(text("""
         SELECT data->>'clicks' as clicks,
                array_length(tags, 1) as tag_count
-        FROM analytics 
+        FROM analytics
         WHERE data->>'clicks' > '50'
     """)).fetchone()
-    
+
     assert result.clicks == '100'
 ```
 
@@ -202,7 +202,7 @@ with PGliteManager(config=config) as db:
         # Create a table and insert a vector
         conn.execute("CREATE TABLE items (embedding vector(3))")
         conn.execute("INSERT INTO items (embedding) VALUES (%s)", (np.array([1, 2, 3]),))
-        
+
         # Perform a similarity search
         result = conn.execute("SELECT * FROM items ORDER BY embedding <-> %s LIMIT 1", (np.array([1, 1, 1]),)).fetchone()
         assert np.array_equal(result[0], np.array([1, 2, 3]))
@@ -246,10 +246,10 @@ with SQLAlchemyPGliteManager(config) as manager:
 with SQLAlchemyPGliteManager() as manager:
     engine = manager.get_engine()
     url = engine.url
-    
+
     # Extract connection details for any PostgreSQL client
     host, port, database = str(url.host), url.port, url.database
-    
+
     # Examples for different clients:
     # psycopg:  psycopg.connect(host=host, port=port, dbname=database)
     # asyncpg:  await asyncpg.connect(host=host, port=port, database=database)
@@ -274,7 +274,7 @@ with SQLAlchemyPGliteManager() as manager:
 ```bash
 # Perfect isolation - no framework bleeding
 pytest -m sqlalchemy -p no:django     # Pure SQLAlchemy
-pytest -m django -p no:sqlalchemy     # Pure Django  
+pytest -m django -p no:sqlalchemy     # Pure Django
 pytest tests/sqlalchemy/              # Directory isolation
 ```
 

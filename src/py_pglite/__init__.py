@@ -4,23 +4,30 @@ Provides seamless integration between PGlite (in-memory PostgreSQL)
 and Python test suites with support for SQLAlchemy, SQLModel, and Django.
 """
 
-__version__ = "0.5.0"
+import importlib.metadata
+
+
+__version__ = importlib.metadata.version(__name__)
 
 # Core exports (always available)
 # Database client exports (choose your preferred client)
-from .clients import AsyncpgClient, PsycopgClient, get_client, get_default_client
-from .config import PGliteConfig
-from .manager import PGliteManager
+from py_pglite.clients import AsyncpgClient
+from py_pglite.clients import PsycopgClient
+from py_pglite.clients import get_client
+from py_pglite.clients import get_default_client
+from py_pglite.config import PGliteConfig
+from py_pglite.manager import PGliteManager
+
 
 # Core public API - framework agnostic
 __all__ = [
+    "AsyncpgClient",
     "PGliteConfig",
     "PGliteManager",
+    "PsycopgClient",
     # Database clients
     "get_client",
     "get_default_client",
-    "PsycopgClient",
-    "AsyncpgClient",
 ]
 
 # Framework integrations are imported separately:

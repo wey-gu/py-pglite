@@ -2,10 +2,12 @@
 
 import os
 import secrets
+
 from collections.abc import Generator
 from typing import Any
 
 import pytest
+
 
 # Import Django components with proper error handling
 HAS_DJANGO = False
@@ -21,15 +23,16 @@ TransactionTestCase: Any = object
 
 try:
     import django  # type: ignore
+
     from django.apps import apps
     from django.conf import settings  # type: ignore
     from django.core.management import call_command  # type: ignore
-    from django.db import connection, connections  # type: ignore
-    from django.test import TestCase, TransactionTestCase  # type: ignore
-    from django.test.utils import (  # type: ignore
-        setup_test_environment,
-        teardown_test_environment,
-    )
+    from django.db import connection  # type: ignore
+    from django.db import connections  # type: ignore
+    from django.test import TestCase  # type: ignore
+    from django.test import TransactionTestCase  # type: ignore
+    from django.test.utils import setup_test_environment  # type: ignore
+    from django.test.utils import teardown_test_environment  # type: ignore
 
     HAS_DJANGO = True
 except ImportError:
@@ -145,11 +148,11 @@ def django_pglite_db(pglite_manager: PGliteManager) -> Generator[None, None, Non
             interactive=False,
             run_syncdb=True,
         )  # type: ignore
-    except Exception as e:
+    except Exception:
         # If migrations fail, try to create tables manually
         # using Django's schema editor
         if settings and settings.DEBUG:
-            print(f"Migration failed, attempting manual table creation: {e}")
+            pass
         try:
             with connection.schema_editor() as schema_editor:  # type: ignore
                 # Get all models from all apps
@@ -157,17 +160,14 @@ def django_pglite_db(pglite_manager: PGliteManager) -> Generator[None, None, Non
                     for model in app_config.get_models():
                         try:
                             schema_editor.create_model(model)
-                        except Exception as model_error:
+                        except Exception:
                             # Log specific model creation failures in debug mode
                             if settings and settings.DEBUG:
-                                print(
-                                    f"Table creation failed for {model.__name__}: "
-                                    f"{model_error}"
-                                )
-        except Exception as schema_error:
+                                pass
+        except Exception:
             # Log schema editor failures in debug mode
             if settings and settings.DEBUG:
-                print(f"Schema editor failed: {schema_error}")
+                pass
 
     try:
         yield
@@ -175,9 +175,9 @@ def django_pglite_db(pglite_manager: PGliteManager) -> Generator[None, None, Non
         # Cleanup: Clear all data for next test and restore original config
         try:
             call_command("flush", verbosity=0, interactive=False)  # type: ignore
-        except Exception as flush_error:
+        except Exception:
             if settings and settings.DEBUG:
-                print(f"Database flush failed: {flush_error}")
+                pass
 
         # Restore original database configuration
         if connection is not None:
@@ -231,11 +231,11 @@ def django_pglite_transactional_db(
             interactive=False,
             run_syncdb=True,
         )  # type: ignore
-    except Exception as e:
+    except Exception:
         # If migrations fail, try to create tables manually
         # using Django's schema editor
         if settings and settings.DEBUG:
-            print(f"Migration failed, attempting manual table creation: {e}")
+            pass
         try:
             with connection.schema_editor() as schema_editor:  # type: ignore
                 # Get all models from all apps
@@ -243,17 +243,14 @@ def django_pglite_transactional_db(
                     for model in app_config.get_models():
                         try:
                             schema_editor.create_model(model)
-                        except Exception as model_error:
+                        except Exception:
                             # Log specific model creation failures in debug mode
                             if settings and settings.DEBUG:
-                                print(
-                                    f"Table creation failed for {model.__name__}: "
-                                    f"{model_error}"
-                                )
-        except Exception as schema_error:
+                                pass
+        except Exception:
             # Log schema editor failures in debug mode
             if settings and settings.DEBUG:
-                print(f"Schema editor failed: {schema_error}")
+                pass
 
     try:
         yield
@@ -261,9 +258,9 @@ def django_pglite_transactional_db(
         # Cleanup for next test and restore config
         try:
             call_command("flush", verbosity=0, interactive=False)  # type: ignore
-        except Exception as flush_error:
+        except Exception:
             if settings and settings.DEBUG:
-                print(f"Database flush failed: {flush_error}")
+                pass
 
         if connection is not None:
             connection.settings_dict.clear()  # type: ignore
@@ -279,7 +276,7 @@ def db(django_pglite_db: None) -> None:
     Just use this fixture and py-pglite automatically configures Django
     to use ultra-fast PGlite with zero setup required!
     """
-    pass  # The actual work is done by django_pglite_db
+    # The actual work is done by django_pglite_db
 
 
 @pytest.fixture(scope="function")
@@ -289,7 +286,7 @@ def transactional_db(django_pglite_transactional_db: None) -> None:
     Provides the same interface as pytest-django's transactional_db fixture
     but uses ultra-fast PGlite with zero configuration required.
     """
-    pass  # The actual work is done by django_pglite_transactional_db
+    # The actual work is done by django_pglite_transactional_db
 
 
 @pytest.fixture(scope="function")

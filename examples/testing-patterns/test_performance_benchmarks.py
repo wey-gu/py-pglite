@@ -10,13 +10,20 @@ Run with: pytest examples/testing-patterns/test_performance_benchmarks.py -v -s
 
 import statistics
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 from typing import Any
 
 import pytest
+
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import create_engine
+from sqlmodel import select
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
@@ -28,7 +35,7 @@ def resilient_session(engine, retries=3, delay=1):
     last_exception: Exception | None = RuntimeError(
         "Failed to connect to the database after multiple retries."
     )
-    for attempt in range(retries):
+    for _attempt in range(retries):
         try:
             session = Session(engine)
             # Perform a simple query to ensure the connection is live
@@ -36,7 +43,6 @@ def resilient_session(engine, retries=3, delay=1):
             return session
         except OperationalError as e:
             last_exception = e
-            print(f"⚠️ Connection attempt {attempt + 1} failed. Retrying in {delay}s...")
             time.sleep(delay)
     raise last_exception
 
@@ -88,8 +94,6 @@ class TestPerformanceBenchmarks:
 
     def test_bulk_insert_performance(self, benchmark_engine):
         """Benchmark bulk insert operations with timing analysis."""
-        print("\n🚀 Bulk Insert Performance Test")
-        print("=" * 50)
 
         batch_sizes = [10, 20, 30]  # Minimal batch sizes for stability check
         results = {}
@@ -118,10 +122,6 @@ class TestPerformanceBenchmarks:
 
             results[batch_size] = {"duration": duration, "rate": rate}
 
-            print(
-                f"  📊 {batch_size:4d} users: {duration:.3f}s ({rate:8.0f} users/sec)"
-            )
-
             # Cleanup for next test
             with resilient_session(benchmark_engine) as session:
                 session.execute(
@@ -136,15 +136,10 @@ class TestPerformanceBenchmarks:
         )
 
         if any(r["rate"] for r in results.values()):
-            print(
-                f"✅ Peak performance: "
-                f"{max(r['rate'] for r in results.values()):.0f} users/sec"
-            )
+            pass
 
     def test_concurrent_read_write_performance(self, benchmark_engine):
         """Benchmark concurrent read/write operations."""
-        print("\n⚡ Concurrent Read/Write Performance Test")
-        print("=" * 50)
 
         # Setup initial data
         with resilient_session(benchmark_engine) as session:
@@ -175,8 +170,8 @@ class TestPerformanceBenchmarks:
                         session.add(order)
                         operations += 1
                     session.commit()
-            except Exception as e:
-                print(f"  ⚠️ Write worker {worker_id} failed: {e}")
+            except Exception:
+                pass
 
             duration = time.time() - start_time
             return {
@@ -194,12 +189,12 @@ class TestPerformanceBenchmarks:
             try:
                 with resilient_session(benchmark_engine) as session:
                     for i in range(10):  # Minimal read operations
-                        result = session.exec(
+                        session.exec(
                             select(BenchmarkUser).where(BenchmarkUser.score > (i % 20))
                         ).all()
                         operations += 1
-            except Exception as e:
-                print(f"  ⚠️ Read worker {worker_id} failed: {e}")
+            except Exception:
+                pass
 
             duration = time.time() - start_time
             return {
@@ -224,32 +219,24 @@ class TestPerformanceBenchmarks:
         # Analysis
         total_writes = sum(r["operations"] for r in write_results)
         total_reads = sum(r["operations"] for r in read_results)
-        avg_write_rate = (
+        (
             statistics.mean(r["rate"] for r in write_results if r["rate"] > 0)
             if any(r["rate"] for r in write_results)
             else 0
         )
-        avg_read_rate = (
+        (
             statistics.mean(r["rate"] for r in read_results if r["rate"] > 0)
             if any(r["rate"] for r in read_results)
             else 0
         )
-
-        print(f"  📝 Total writes: {total_writes} ({avg_write_rate:.1f} writes/sec)")
-        print(f"  📖 Total reads:  {total_reads} ({avg_read_rate:.1f} reads/sec)")
-        print(f"  ⏱️  Total time:   {total_duration:.2f}s")
 
         # Performance assertions (very relaxed)
         assert total_writes > 0, "Should complete at least one write operation"
         assert total_reads > 0, "Should complete at least one read operation"
         assert total_duration < 60, "Minimal concurrent test should finish quickly"
 
-        print("✅ Concurrent operations completed successfully")
-
     def test_large_query_performance(self, benchmark_engine):
         """Benchmark large query processing and result handling."""
-        print("\n📊 Large Query Performance Test")
-        print("=" * 50)
 
         batch_size = 50
         users = [
@@ -271,8 +258,7 @@ class TestPerformanceBenchmarks:
                 session.add_all(chunk)
                 session.commit()
 
-        insert_duration = time.time() - start_time
-        print(f"  📥 Data setup: {batch_size} users in {insert_duration:.2f}s")
+        time.time() - start_time
 
         # Simplified query tests
         query_tests = [
@@ -288,18 +274,13 @@ class TestPerformanceBenchmarks:
         for test_name, query in query_tests:
             start_time = time.time()
             with resilient_session(benchmark_engine) as session:
-                result = session.execute(text(query)).fetchall()
+                session.execute(text(query)).fetchall()
             duration = time.time() - start_time
 
-            print(f"  🔍 {test_name}: {duration:.4f}s ({len(result)} results)")
             assert duration < 10.0, f"{test_name} should be very fast"
-
-        print("✅ All large queries completed within performance targets")
 
     def test_connection_pool_stress(self, benchmark_engine):
         """Stress test connection pooling and resource management."""
-        print("\n🔗 Connection Pool Stress Test")
-        print("=" * 50)
 
         def connection_worker(worker_id: int) -> dict[str, Any]:
             """Worker that rapidly creates and releases connections."""
@@ -307,15 +288,14 @@ class TestPerformanceBenchmarks:
             successful_operations = 0
             errors = 0
 
-            for i in range(5):  # Minimal cycles
+            for _i in range(5):  # Minimal cycles
                 try:
                     with resilient_session(benchmark_engine) as session:
                         session.execute(text("SELECT 1"))
                         successful_operations += 1
                         time.sleep(0.05)
-                except Exception as e:
+                except Exception:
                     errors += 1
-                    print(f"    ⚠️  Worker {worker_id} error: {e}")
 
             duration = time.time() - start_time
             return {
@@ -332,18 +312,13 @@ class TestPerformanceBenchmarks:
             futures = [executor.submit(connection_worker, i) for i in range(2)]
             results = [f.result() for f in as_completed(futures)]
 
-        total_duration = time.time() - start_time
+        time.time() - start_time
 
         total_errors = sum(r["errors"] for r in results)
         assert total_errors == 0, "Should be no errors in minimal stress test"
-        print(f"  ✅ Completed in {total_duration:.2f}s with no errors.")
-
-        print("✅ Connection pool handled stress test successfully")
 
     def test_memory_stability_long_running(self, benchmark_engine):
         """Test memory stability during long-running operations."""
-        print("\n🧠 Memory Stability Test")
-        print("=" * 50)
 
         initial_time = time.time()
         cycles = 5  # Minimal cycles
@@ -364,35 +339,16 @@ class TestPerformanceBenchmarks:
                 session.commit()
 
         total_duration = time.time() - initial_time
-        print(f"  ✅ Completed {cycles} cycles in {total_duration:.2f}s")
         assert total_duration < 30, "Memory test should complete quickly"
-
-        print("✅ Memory remained stable throughout long-running test")
 
 
 # Performance summary fixture
 @pytest.fixture(scope="module", autouse=True)
 def performance_summary():
     """Print performance test summary."""
-    print("\n" + "🚀 py-pglite Performance Benchmarks" + "\n" + "=" * 80)
-    print("Testing production-grade performance and reliability...")
 
     yield
 
-    print("\n" + "📊 Performance Test Summary" + "\n" + "=" * 50)
-    print("✅ All performance benchmarks completed successfully!")
-    print("🎯 py-pglite demonstrates production-ready performance:")
-    print("   • High-throughput bulk operations")
-    print("   • Concurrent read/write handling")
-    print("   • Large query processing")
-    print("   • Connection pool stability")
-    print("   • Long-running memory stability")
-    print("\n🚀 Ready for production workloads! 🚀")
-
 
 if __name__ == "__main__":
-    print("🚀 py-pglite Performance Benchmarks")
-    print(
-        "Run with: "
-        "pytest examples/testing-patterns/test_performance_benchmarks.py -v -s"
-    )
+    pass

@@ -25,7 +25,7 @@ Uses the standard PostgreSQL backend with direct socket connections to PGlite.
 ### 📁 Pattern 1 Files
 
 - `test_socket_basic.py` - Basic Django ORM usage
-- `test_socket_advanced.py` - Advanced Django features  
+- `test_socket_advanced.py` - Advanced Django features
 - `test_socket_pytest_django.py` - pytest-django integration
 
 ### 🚀 Pattern 1 Quick Start
@@ -33,14 +33,14 @@ Uses the standard PostgreSQL backend with direct socket connections to PGlite.
 ```python
 def test_django_with_socket(configured_django):
     """Uses standard PostgreSQL backend via socket"""
-    
+
     class Product(models.Model):
         name = models.CharField(max_length=100)
         price = models.DecimalField(max_digits=10, decimal_places=2)
-        
+
         class Meta:
             app_label = "example"
-    
+
     # Standard Django operations work perfectly
     product = Product.objects.create(name="Widget", price=29.99)
     assert product.id is not None
@@ -83,22 +83,22 @@ Uses the custom py-pglite Django backend for enhanced features and optimization.
 ```python
 def test_django_with_backend(django_pglite_db):
     """Uses custom py-pglite backend"""
-    
+
     class Product(models.Model):
         name = models.CharField(max_length=100)
         metadata = models.JSONField(default=dict)  # Enhanced JSON
         tags = models.JSONField(default=list)     # JSON arrays
-        
+
         class Meta:
             app_label = "example"
-    
+
     # Advanced features with backend optimization
     product = Product.objects.create(
         name="Advanced Widget",
         metadata={"features": ["json", "backend"]},
         tags=["premium", "advanced"]
     )
-    
+
     # Enhanced JSON queries
     results = Product.objects.filter(tags__contains=["premium"])
     assert results.count() == 1

@@ -2,17 +2,25 @@
 
 import pytest
 
+
 # Mark all tests in this module as SQLAlchemy tests
 pytestmark = pytest.mark.sqlalchemy
 from collections.abc import Generator
 
-from sqlalchemy import Boolean, Column, Integer, String, select
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import select
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, declarative_base, sessionmaker
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
+
 
 Base = declarative_base()
 
@@ -47,8 +55,8 @@ def sqlalchemy_session(
     sqlalchemy_pglite_engine: Engine,
 ) -> Generator[Session, None, None]:  # type: ignore
     """Function-scoped session for clean test isolation."""
-    SessionLocal = sessionmaker(bind=sqlalchemy_pglite_engine)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=sqlalchemy_pglite_engine)
+    session = session_local()
     try:
         yield session
     finally:
@@ -107,4 +115,4 @@ def test_multiple_users(sqlalchemy_session: Session):
 
 
 if __name__ == "__main__":
-    print("SQLAlchemy + py-pglite Real Usage Example")
+    pass

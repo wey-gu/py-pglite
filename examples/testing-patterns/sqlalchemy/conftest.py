@@ -9,8 +9,10 @@ All fixtures are module-scoped to avoid conflicts with other test modules.
 from collections.abc import Generator
 
 import pytest
+
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from py_pglite import PGliteConfig
@@ -37,8 +39,8 @@ def sqlalchemy_session(
     sqlalchemy_pglite_engine: Engine,
 ) -> Generator[Session, None, None]:  # type: ignore
     """Function-scoped session for clean test isolation."""
-    SessionLocal = sessionmaker(bind=sqlalchemy_pglite_engine)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=sqlalchemy_pglite_engine)
+    session = session_local()
     try:
         yield session
     finally:
@@ -53,8 +55,8 @@ def sqlalchemy_transaction(
     connection = sqlalchemy_pglite_engine.connect()
     transaction = connection.begin()
 
-    SessionLocal = sessionmaker(bind=connection)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=connection)
+    session = session_local()
 
     try:
         yield session

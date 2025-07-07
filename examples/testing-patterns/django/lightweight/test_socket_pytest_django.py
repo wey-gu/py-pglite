@@ -26,8 +26,11 @@ For basic Django testing without pytest-django, see test_socket_basic.py
 """
 
 import pytest
-from django.db import connection, models
+
+from django.db import connection
+from django.db import models
 from django.test import TestCase
+
 
 # pytest-django specific markers
 pytestmark = pytest.mark.django
@@ -87,9 +90,7 @@ def test_with_db_access(configured_django):
         schema_editor.create_model(Comment)
 
     # Test database operations
-    comment = Comment.objects.create(
-        text="pytest-django db access works great!", approved=True
-    )
+    Comment.objects.create(text="pytest-django db access works great!", approved=True)
 
     assert Comment.objects.filter(approved=True).count() == 1
 
@@ -161,9 +162,6 @@ def test_django_testing_utilities(configured_django):
     # Test that we can create client and it's available
     assert client is not None
 
-    print("✅ Django testing utilities available with py-pglite")
-
 
 if __name__ == "__main__":
-    print("🌟 pytest-django + py-pglite Example")
-    print("Run with: pytest testing-patterns/django/test_pytest_django.py -v")
+    pass

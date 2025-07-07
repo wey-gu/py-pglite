@@ -26,8 +26,13 @@ For basic Django testing with custom backend, see test_backend_basic.py
 """
 
 import pytest
-from django.db import connection, models, transaction
-from django.test import Client, TestCase
+
+from django.db import connection
+from django.db import models
+from django.db import transaction
+from django.test import Client
+from django.test import TestCase
+
 
 # pytest-django specific markers
 pytestmark = pytest.mark.django
@@ -147,7 +152,7 @@ def test_backend_advanced_features(django_pglite_db):
         schema_editor.create_model(Product)
 
     # Test backend-enhanced JSON operations
-    product = Product.objects.create(
+    Product.objects.create(
         name="Advanced Widget",
         specifications={
             "weight": "2.5kg",
@@ -200,7 +205,7 @@ def test_django_testing_utilities_with_backend(django_pglite_db):
     )
 
     # Test with Django test client
-    client = Client()
+    Client()
 
     # Verify the test environment is working with backend
     assert TestModel.objects.count() == 1
@@ -208,8 +213,6 @@ def test_django_testing_utilities_with_backend(django_pglite_db):
     assert test_record is not None
     assert test_record.data["api_version"] == "v1"
     assert "backend" in test_record.data["features"]
-
-    print("✅ Django testing utilities with custom backend working!")
 
 
 def test_backend_performance_features(django_pglite_db):
@@ -255,13 +258,6 @@ def test_backend_performance_features(django_pglite_db):
     )
     assert high_value_records.count() == 50
 
-    print("✅ Backend performance features working!")
-
 
 if __name__ == "__main__":
-    print("🌟 pytest-django + py-pglite: Full Integration Pattern")
-    print(
-        "Run with: "
-        "pytest testing-patterns/django/full-integration/"
-        "test_backend_pytest_django.py -v"
-    )
+    pass

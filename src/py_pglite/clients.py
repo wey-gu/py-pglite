@@ -5,8 +5,11 @@ allowing users to choose their preferred PostgreSQL driver.
 """
 
 import logging
-from abc import ABC, abstractmethod
+
+from abc import ABC
+from abc import abstractmethod
 from typing import Any
+
 
 logger = logging.getLogger(__name__)
 
@@ -17,29 +20,24 @@ class DatabaseClient(ABC):
     @abstractmethod
     def connect(self, connection_string: str) -> Any:
         """Create a connection to the database."""
-        pass
 
     @abstractmethod
     def execute_query(
         self, connection: Any, query: str, params: Any = None
     ) -> list[tuple]:
         """Execute a query and return results."""
-        pass
 
     @abstractmethod
     def test_connection(self, connection_string: str) -> bool:
         """Test if database connection is working."""
-        pass
 
     @abstractmethod
     def get_database_version(self, connection_string: str) -> str | None:
         """Get PostgreSQL version string."""
-        pass
 
     @abstractmethod
     def close_connection(self, connection: Any) -> None:
         """Close a database connection."""
-        pass
 
 
 class PsycopgClient(DatabaseClient):
@@ -250,7 +248,7 @@ def get_default_client() -> DatabaseClient:
             raise ImportError(
                 "No supported database client found. "
                 "Install either: pip install psycopg[binary] OR pip install asyncpg"
-            )
+            ) from None
 
 
 def get_client(client_type: str = "auto") -> DatabaseClient:
@@ -273,9 +271,9 @@ def get_client(client_type: str = "auto") -> DatabaseClient:
 
 
 __all__ = [
+    "AsyncpgClient",
     "DatabaseClient",
     "PsycopgClient",
-    "AsyncpgClient",
-    "get_default_client",
     "get_client",
+    "get_default_client",
 ]

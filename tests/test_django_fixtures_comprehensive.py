@@ -1,6 +1,7 @@
 """Comprehensive tests for Django fixtures module."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
@@ -31,14 +32,12 @@ class TestDjangoInitImports:
 
     def test_django_init_imports(self):
         """Test that Django __init__.py imports work."""
-        from py_pglite.django import (
-            configure_django_for_pglite,
-            create_django_superuser,
-            db,
-            django_pglite_db,
-            django_pglite_transactional_db,
-            transactional_db,
-        )
+        from py_pglite.django import configure_django_for_pglite
+        from py_pglite.django import create_django_superuser
+        from py_pglite.django import db
+        from py_pglite.django import django_pglite_db
+        from py_pglite.django import django_pglite_transactional_db
+        from py_pglite.django import transactional_db
 
         # These should be importable
         assert db is not None
@@ -360,13 +359,13 @@ class TestDjangoUtilsFunctionality:
         from py_pglite.django.utils import create_django_superuser
 
         # Create a proper DoesNotExist exception class
-        class DoesNotExist(Exception):
+        class DoesNotExistError(Exception):
             pass
 
         mock_user_model = Mock()
-        mock_user_model.DoesNotExist = DoesNotExist
+        mock_user_model.DoesNotExist = DoesNotExistError
         mock_user = Mock()
-        mock_user_model.objects.get.side_effect = DoesNotExist()
+        mock_user_model.objects.get.side_effect = DoesNotExistError()
         mock_user_model.objects.create_superuser.return_value = mock_user
         mock_get_user_model = Mock(return_value=mock_user_model)
 
@@ -413,13 +412,13 @@ class TestDjangoUtilsFunctionality:
         from py_pglite.django.utils import create_django_superuser
 
         # Create a proper DoesNotExist exception class
-        class DoesNotExist(Exception):
+        class DoesNotExistError(Exception):
             pass
 
         mock_user_model = Mock()
-        mock_user_model.DoesNotExist = DoesNotExist
+        mock_user_model.DoesNotExist = DoesNotExistError
         mock_user = Mock()
-        mock_user_model.objects.get.side_effect = DoesNotExist()
+        mock_user_model.objects.get.side_effect = DoesNotExistError()
         mock_user_model.objects.create_superuser.return_value = mock_user
         mock_get_user_model = Mock(return_value=mock_user_model)
         test_password = "env-admin-password"

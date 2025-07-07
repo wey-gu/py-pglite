@@ -13,10 +13,15 @@ Usage:
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import Session, declarative_base, sessionmaker
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
+
 
 # ⚡ ONE LINE SETUP - Real PostgreSQL ready!
 manager = SQLAlchemyPGliteManager()
@@ -99,18 +104,9 @@ def get_user(user_id: int):
 
 
 if __name__ == "__main__":
-    print("🚀 Starting FastAPI with instant PostgreSQL...")
-    print("📊 Real PostgreSQL database ready (zero config!)")
-    print("🌐 API docs: http://localhost:8000/docs")
-    print("🎯 Try these endpoints:")
-    print("   POST /users/  - Create user")
-    print("   GET  /users/  - List users")
-    print("   GET  /users/1 - Get user by ID")
-
     import uvicorn
 
     try:
         uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
     finally:
         manager.stop()
-        print("🔌 py-pglite cleaned up!")

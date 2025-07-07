@@ -8,8 +8,10 @@ import pytest
 from py_pglite import PGliteManager
 from py_pglite.config import PGliteConfig
 
+
 if TYPE_CHECKING:
     import numpy as np
+
     from pgvector.psycopg import register_vector
 
 # Mark all tests in this module as 'extensions'
@@ -18,6 +20,7 @@ pytestmark = pytest.mark.extensions
 # Try to import optional dependencies, or skip tests
 try:
     import numpy as np  # type: ignore[import-untyped]
+
     from pgvector.psycopg import register_vector  # type: ignore[import-untyped]
 except ImportError:
     np = None

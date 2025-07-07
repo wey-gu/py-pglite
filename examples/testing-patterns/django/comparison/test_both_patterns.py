@@ -34,7 +34,10 @@ This example demonstrates:
 """
 
 import pytest
-from django.db import connection, models
+
+from django.db import connection
+from django.db import models
+
 
 # Mark as Django test
 pytestmark = pytest.mark.django
@@ -50,7 +53,6 @@ def test_pattern_1_lightweight_socket(configured_django):
     • Minimal setup and dependencies
     • Fast and simple
     """
-    print("\n🔹 Testing Pattern 1: Lightweight/Socket")
 
     # Define model
     class SocketProduct(models.Model):
@@ -78,8 +80,6 @@ def test_pattern_1_lightweight_socket(configured_django):
     active_products = SocketProduct.objects.filter(active=True)
     assert active_products.count() == 1
 
-    print("✅ Pattern 1: Basic operations work great!")
-
 
 def test_pattern_2_full_integration_backend(django_pglite_db):
     """
@@ -91,7 +91,6 @@ def test_pattern_2_full_integration_backend(django_pglite_db):
     • Advanced backend capabilities
     • Enhanced features and optimization
     """
-    print("\n🔸 Testing Pattern 2: Full Integration/Backend")
 
     # Define model with advanced features
     class BackendProduct(models.Model):
@@ -133,8 +132,6 @@ def test_pattern_2_full_integration_backend(django_pglite_db):
     widget_products = BackendProduct.objects.filter(tags__contains=["widget"])
     assert widget_products.count() == 1
 
-    print("✅ Pattern 2: Advanced features work great!")
-
 
 def test_pattern_comparison_side_by_side():
     """
@@ -142,7 +139,6 @@ def test_pattern_comparison_side_by_side():
 
     This test runs independently to show the differences clearly.
     """
-    print("\n🔄 Pattern Comparison Summary")
 
     # Create summary comparison
     patterns = {
@@ -169,25 +165,11 @@ def test_pattern_comparison_side_by_side():
     }
 
     # Print comparison
-    print("\n📊 Feature Comparison:")
-    for pattern_name, details in patterns.items():
-        print(f"\n{pattern_name}:")
-        for feature, description in details.items():
-            print(f"  • {feature}: {description}")
+    for _pattern_name, details in patterns.items():
+        for _feature, _description in details.items():
+            pass
 
     # Decision guide
-    print("\n🎯 When to use each pattern:")
-    print("\n🔹 Use Lightweight/Socket when:")
-    print("  • You want minimal setup and dependencies")
-    print("  • You're doing basic Django model testing")
-    print("  • You need fast startup times")
-    print("  • You're prototyping or doing simple tests")
-
-    print("\n🔸 Use Full Integration/Backend when:")
-    print("  • You want comprehensive Django testing")
-    print("  • You need advanced PostgreSQL features")
-    print("  • You're building production-like test suites")
-    print("  • You want backend optimization features")
 
 
 def test_pattern_performance_characteristics():
@@ -196,7 +178,6 @@ def test_pattern_performance_characteristics():
 
     Shows the performance trade-offs between patterns.
     """
-    print("\n🏃 Performance Characteristics:")
 
     characteristics = {
         "Startup Time": {
@@ -217,10 +198,9 @@ def test_pattern_performance_characteristics():
         },
     }
 
-    for metric, values in characteristics.items():
-        print(f"\n{metric}:")
-        for pattern, description in values.items():
-            print(f"  {pattern}: {description}")
+    for _metric, values in characteristics.items():
+        for _pattern, _description in values.items():
+            pass
 
 
 def test_migration_between_patterns():
@@ -229,7 +209,6 @@ def test_migration_between_patterns():
 
     Shows how to migrate from one pattern to another.
     """
-    print("\n🔄 Migration Between Patterns:")
 
     migration_guide = {
         "From Lightweight to Full Integration": [
@@ -254,21 +233,10 @@ def test_migration_between_patterns():
         ],
     }
 
-    for direction, steps in migration_guide.items():
-        print(f"\n{direction}:")
-        for step in steps:
-            print(f"  {step}")
-
-    print("\n💡 Migration Tips:")
-    print("  • Both patterns work with the same Django models")
-    print("  • You can run both patterns in the same project")
-    print("  • Choose based on your specific testing needs")
-    print("  • Start with Lightweight, upgrade to Full Integration as needed")
+    for _direction, steps in migration_guide.items():
+        for _step in steps:
+            pass
 
 
 if __name__ == "__main__":
-    print("🔄 Django + py-pglite: Pattern Comparison")
-    print(
-        "Run with: "
-        "pytest testing-patterns/django/comparison/test_both_patterns.py -v -s"
-    )
+    pass

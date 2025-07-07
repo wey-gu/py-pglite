@@ -1,11 +1,9 @@
 """Comprehensive tests for SQLAlchemy utils module."""
 
 from pathlib import Path  # type: ignore[reportUnusedImport]
-from unittest.mock import (
-    MagicMock,
-    Mock,
-    patch,
-)
+from unittest.mock import MagicMock
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
@@ -165,11 +163,11 @@ class TestSessionOperations:
         with (
             patch("py_pglite.sqlalchemy.utils.HAS_SQLMODEL", False),
             patch("py_pglite.sqlalchemy.utils.HAS_SQLALCHEMY_ORM", False),
-        ):
-            with pytest.raises(
+            pytest.raises(
                 ImportError, match="Neither SQLModel nor SQLAlchemy ORM Session found"
-            ):
-                get_session_class()
+            ),
+        ):
+            get_session_class()
 
 
 class TestMetadataOperations:
@@ -559,11 +557,11 @@ class TestSchemaOperations:
                 "py_pglite.sqlalchemy.utils.SQLAlchemySession",
                 return_value=mock_session,
             ),
+            pytest.raises(ValueError, match="Invalid schema name"),
         ):
             # The validation should happen after session creation
             # but before SQL execution
-            with pytest.raises(ValueError, match="Invalid schema name"):
-                create_test_schema(mock_engine, "invalid; DROP TABLE users;")
+            create_test_schema(mock_engine, "invalid; DROP TABLE users;")
 
     def test_drop_test_schema(self):
         """Test drop_test_schema functionality."""

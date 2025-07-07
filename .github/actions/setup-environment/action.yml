@@ -1,0 +1,48 @@
+name: 'Setup Environment'
+description: 'Sets up Python, Node.js, and uv, and optionally runs tests'
+
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.11'
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '22'
+  run-tests:
+    description: 'Whether to run tests after setup'
+    required: false
+    default: 'false'
+  coverage:
+    description: 'Whether to generate coverage report'
+    required: false
+    default: 'false'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Set up Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Run tests
+      if: inputs.run-tests == 'true' && inputs.coverage != 'true'
+      shell: bash
+      run: uv run pytest
+
+    - name: Generate coverage report
+      if: inputs.run-tests == 'true' && inputs.coverage == 'true'
+      shell: bash
+      run: uv run pytest --cov=py_pglite --cov-report=xml --cov-report=term-missing

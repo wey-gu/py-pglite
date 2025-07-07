@@ -22,9 +22,17 @@ Compare with: ../lightweight/ for socket-based pattern
 This complements test_backend_basic.py by showing advanced backend-focused patterns.
 """
 
+from typing import ClassVar
+
 import pytest
-from django.db import IntegrityError, connection, models, transaction
-from django.db.models import Count, Q
+
+from django.db import IntegrityError
+from django.db import connection
+from django.db import models
+from django.db import transaction
+from django.db.models import Count
+from django.db.models import Q
+
 
 # Mark as Django test
 pytestmark = pytest.mark.django
@@ -61,7 +69,7 @@ def test_advanced_django_queries_with_backend(django_pglite_db):
 
         class Meta:
             app_label = "backend_advanced"
-            indexes = [
+            indexes: ClassVar[models.Index] = [
                 models.Index(fields=["published", "view_count"]),
             ]
 
@@ -133,8 +141,6 @@ def test_advanced_django_queries_with_backend(django_pglite_db):
     published_articles = Article.objects.filter(published=True)
     assert published_articles.count() == 2
 
-    print("✅ Advanced backend queries working!")
-
 
 def test_database_constraints_with_backend(django_pglite_db):
     """
@@ -195,8 +201,6 @@ def test_database_constraints_with_backend(django_pglite_db):
     # Test JSON field operations (backend feature)
     assert user.profile_data["theme"] == "dark"
     assert profile.preferences["language"] == "en"
-
-    print("✅ Backend-enhanced constraints working!")
 
 
 def test_transaction_management_with_backend(django_pglite_db):
@@ -266,8 +270,6 @@ def test_transaction_management_with_backend(django_pglite_db):
     # Should have orders 001, 003, and 005 (004 rolled back)
     assert Order.objects.count() == 3
 
-    print("✅ Backend transaction management working!")
-
 
 def test_bulk_operations_with_backend(django_pglite_db):
     """
@@ -320,12 +322,6 @@ def test_bulk_operations_with_backend(django_pglite_db):
     in_stock = Product.objects.filter(attributes__in_stock=True)
     assert in_stock.count() == 50
 
-    print("✅ Backend-optimized bulk operations working!")
-
 
 if __name__ == "__main__":
-    print("🌟 Django + py-pglite: Advanced Full Integration Pattern")
-    print(
-        "Run with: pytest testing-patterns/django/"
-        "full-integration/test_backend_advanced.py -v"
-    )
+    pass

@@ -2,8 +2,11 @@
 
 import subprocess
 import tempfile
+
 from pathlib import Path
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock
+from unittest.mock import call
+from unittest.mock import patch
 
 import psutil
 import pytest
@@ -135,7 +138,7 @@ class TestWorkingDirectorySetup:
             patch("tempfile.mkdtemp", return_value="/tmp/test"),
             patch("pathlib.Path.mkdir"),
             patch("pathlib.Path.exists", return_value=False),
-            patch("builtins.open", mock_open_write()) as mock_open,  # noqa: F841
+            patch("builtins.open", mock_open_write()) as mock_open,
         ):
             manager._setup_work_dir()
 
@@ -153,7 +156,7 @@ class TestWorkingDirectorySetup:
             patch("tempfile.mkdtemp", return_value="/tmp/test"),
             patch("pathlib.Path.mkdir"),
             patch("pathlib.Path.exists", return_value=False),
-            patch("builtins.open", mock_open_write()) as mock_open,  # noqa: F841
+            patch("builtins.open", mock_open_write()) as mock_open,
         ):
             manager._setup_work_dir()
 
@@ -174,7 +177,7 @@ class TestWorkingDirectorySetup:
             patch("tempfile.mkdtemp", return_value="/tmp/test"),
             patch("pathlib.Path.mkdir"),
             patch("pathlib.Path.exists", return_value=False),
-            patch("builtins.open", mock_open_write()) as mock_open,  # noqa: F841
+            patch("builtins.open", mock_open_write()) as mock_open,
         ):
             manager._setup_work_dir()
 
@@ -399,11 +402,9 @@ class TestProcessLifecycle:
             patch("os.chdir"),
             patch.object(manager, "_install_dependencies"),
             patch("subprocess.Popen", return_value=mock_process),
+            pytest.raises(RuntimeError, match="PGlite process died during startup"),
         ):
-            with pytest.raises(
-                RuntimeError, match="PGlite process died during startup"
-            ):
-                manager.start()
+            manager.start()
 
     def test_start_timeout(self):
         """Test start timeout handling."""

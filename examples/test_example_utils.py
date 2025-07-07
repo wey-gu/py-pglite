@@ -1,7 +1,10 @@
 """Example showing how to use py-pglite utils for advanced database operations."""
 
 from sqlalchemy import text
-from sqlmodel import Field, Session, SQLModel, select
+from sqlmodel import Field
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import select
 
 from py_pglite.sqlalchemy import utils
 
@@ -166,33 +169,31 @@ def test_schema_operations(pglite_engine):
     utils.create_test_schema(pglite_engine, test_schema)
 
     # Verify schema exists
-    with Session(pglite_engine) as session:
-        with session.connection() as conn:
-            result = conn.execute(
-                text(
-                    "SELECT schema_name FROM information_schema.schemata "
-                    "WHERE schema_name = :name"
-                ),
-                {"name": test_schema},
-            )
-            schemas = result.fetchall()
-            assert len(schemas) == 1
+    with Session(pglite_engine) as session, session.connection() as conn:
+        result = conn.execute(
+            text(
+                "SELECT schema_name FROM information_schema.schemata "
+                "WHERE schema_name = :name"
+            ),
+            {"name": test_schema},
+        )
+        schemas = result.fetchall()
+        assert len(schemas) == 1
 
     # Drop schema
     utils.drop_test_schema(pglite_engine, test_schema)
 
     # Verify schema is gone
-    with Session(pglite_engine) as session:
-        with session.connection() as conn:
-            result = conn.execute(
-                text(
-                    "SELECT schema_name FROM information_schema.schemata "
-                    "WHERE schema_name = :name"
-                ),
-                {"name": test_schema},
-            )
-            schemas = result.fetchall()
-            assert len(schemas) == 0
+    with Session(pglite_engine) as session, session.connection() as conn:
+        result = conn.execute(
+            text(
+                "SELECT schema_name FROM information_schema.schemata "
+                "WHERE schema_name = :name"
+            ),
+            {"name": test_schema},
+        )
+        schemas = result.fetchall()
+        assert len(schemas) == 0
 
 
 def test_combined_cleanup_fixture(pglite_session: Session):

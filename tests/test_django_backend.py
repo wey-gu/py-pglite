@@ -17,14 +17,12 @@ class TestDjangoBackendDecoupling:
     def test_django_backend_imports(self):
         """Test that Django backend can be imported when Django is available."""
         try:
-            import django  # noqa: F401
+            import django
 
             # Should be able to import Django backend components
-            from py_pglite.django.backend import (
-                PGliteDatabaseCreation,
-                PGliteDatabaseWrapper,
-                get_pglite_manager,
-            )
+            from py_pglite.django.backend import PGliteDatabaseCreation
+            from py_pglite.django.backend import PGliteDatabaseWrapper
+            from py_pglite.django.backend import get_pglite_manager
 
             assert PGliteDatabaseCreation is not None
             assert PGliteDatabaseWrapper is not None
@@ -81,7 +79,7 @@ class TestDjangoBackendDecoupling:
     def test_django_backend_compatibility(self):
         """Test that Django backend code pattern works with base manager."""
         try:
-            import django  # noqa: F401
+            import django
 
             has_django = True
         except ImportError:

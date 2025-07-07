@@ -65,7 +65,7 @@ pytest testing-patterns/sqlalchemy/ -v
 
 Perfect SQLAlchemy integration with automatic cleanup.
 
-### **🌟 Django** - Two integration patterns  
+### **🌟 Django** - Two integration patterns
 
 **🔹 Lightweight/Socket Pattern** (Minimal setup)
 
@@ -76,7 +76,7 @@ pytest testing-patterns/django/lightweight/ -v
 
 **🔸 Full Integration/Backend Pattern** (Enhanced features)
 
-```bash  
+```bash
 # Custom py-pglite backend with advanced capabilities
 pytest testing-patterns/django/full-integration/ -v
 ```
@@ -174,7 +174,7 @@ def test_django_socket(configured_django):
     Post.objects.create(title="Hello World")
     assert Post.objects.count() == 1  # Standard backend + socket!
 
-# Django tests - Full Integration/Backend pattern  
+# Django tests - Full Integration/Backend pattern
 def test_django_backend(django_pglite_db):
     Post.objects.create(title="Hello", metadata={"tags": ["test"]})
     assert Post.objects.count() == 1  # Custom backend + JSON support!
@@ -237,7 +237,7 @@ pytest testing-patterns/django/                   # Pure Django patterns
 
 ```python
 # 1. Install PostgreSQL server
-# 2. Configure connection strings  
+# 2. Configure connection strings
 # 3. Manage test databases
 # 4. Handle cleanup manually
 # 5. Docker containers...
@@ -246,7 +246,7 @@ pytest testing-patterns/django/                   # Pure Django patterns
 
 ### **✅ py-pglite Way**
 
-```python  
+```python
 def test_my_feature(pglite_session):
     User.objects.create(name="Alice")  # Just works!
 ```

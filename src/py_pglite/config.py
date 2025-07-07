@@ -4,10 +4,12 @@ import logging
 import os
 import tempfile
 import uuid
-from dataclasses import dataclass, field
+
+from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
 
-from .extensions import SUPPORTED_EXTENSIONS
+from py_pglite.extensions import SUPPORTED_EXTENSIONS
 
 
 def _get_secure_socket_path() -> str:

@@ -2,7 +2,9 @@
 # ================================
 #
 # Vite-style convenience commands for development
-# Supports pip, PDM, and UV package managers
+
+# Define Python command using uv
+PYTHON_CMD := uv run python
 
 .PHONY: help dev test examples lint quick clean install
 
@@ -23,51 +25,45 @@ help:
 	@echo "  make clean       Clean build artifacts"
 	@echo "  make fmt         Auto-fix formatting"
 	@echo ""
-	@echo "Package Manager Support:"
-	@echo "  make dev         # Standard pip commands"
-	@echo "  PDM_RUN_CWD=. make dev    # Use PDM"
-	@echo "  UV=1 make dev            # Use UV"
-	@echo ""
 	@echo "Example Usage:"
 	@echo "  make dev         # Full workflow (linting + tests + examples)"
 	@echo "  make quick       # Quick checks during development"
 	@echo "  make test        # Just run the test suite"
 
 # Full development workflow (mirrors CI exactly)
-dev:
-	@echo "🚀 Running full development workflow..."
-	python scripts/dev.py
+dev: | install lint examples test
 
 # Run tests only
 test:
 	@echo "🧪 Running test suite..."
-	python scripts/dev.py --test
+	uv run pytest tests/
 
 # Run examples only
 examples:
 	@echo "📚 Running examples..."
-	python scripts/dev.py --examples
+	uv run pytest examples/
 
 # Run linting only
 lint:
 	@echo "🎨 Running linting checks..."
-	python scripts/dev.py --lint
+	uv run pre-commit run --all-files
 
 # Quick checks for development
-quick:
+quick: | install lint
 	@echo "⚡ Running quick development checks..."
-	python scripts/dev.py --quick
+	$(PYTHON_CMD) -c "import py_pglite"
+	$(PYTHON_CMD) -c "from py_pglite import PGliteManager, PGliteConfig"
+	$(PYTHON_CMD) -c "print('✅ All imports working')"
 
 # Install in development mode
 install:
 	@echo "📦 Installing in development mode..."
-	pip install -e ".[dev]"
-	pip install types-psutil
+	uv sync
 
 # Auto-fix formatting
 fmt:
 	@echo "🎨 Auto-fixing formatting..."
-	ruff format py_pglite/
+	uv run ruff format
 	@echo "✅ Formatting complete!"
 
 # Clean build artifacts
@@ -79,17 +75,14 @@ clean:
 	rm -rf .pytest_cache/
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
-	find . -type d -name __pycache__ -delete
-	find . -type f -name "*.pyc" -delete
+	find src/ tests/ examples/ -type d -name __pycache__ -exec rm -rf {} +
+	find src/ tests/ examples/ -type f -name "*.pyc" -exec rm -rf {} +
 	@echo "✅ Cleanup complete!"
 
 # Show project status
 status:
 	@echo "📊 Project Status"
 	@echo "================"
-	@echo "Python version: $(shell python --version)"
-	@echo "Pip packages:"
-	@pip list | grep -E "(ruff|mypy|pytest|pglite)" || echo "Development packages not installed"
-	@echo ""
+	@echo "Python version: $(shell $(PYTHON_CMD) --version)"
 	@echo "Quick test:"
-	@python -c "import py_pglite; print(f'py-pglite {py_pglite.__version__} ready!')" 2>/dev/null || echo "py-pglite not installed in dev mode" 
+	@$(PYTHON_CMD) -c "import py_pglite; print(f'py-pglite {py_pglite.__version__} ready!')" 2>/dev/null || echo "py-pglite not installed in dev mode"

@@ -7,15 +7,16 @@ import subprocess  # nosec B404 - subprocess needed for npm/node process managem
 import sys
 import tempfile
 import time
+
 from pathlib import Path
 from typing import Any
 
 import psutil
 
-from . import __version__
-from .config import PGliteConfig
-from .extensions import SUPPORTED_EXTENSIONS
-from .utils import find_pglite_modules
+from py_pglite import __version__
+from py_pglite.config import PGliteConfig
+from py_pglite.extensions import SUPPORTED_EXTENSIONS
+from py_pglite.utils import find_pglite_modules
 
 
 class PGliteManager:
@@ -408,7 +409,7 @@ startServer();"""
         Returns:
             True if database becomes ready, False otherwise
         """
-        from .utils import check_connection
+        from py_pglite.utils import check_connection
 
         for attempt in range(max_retries):
             try:

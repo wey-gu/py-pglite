@@ -24,9 +24,13 @@ This complements test_socket_basic.py by showing advanced Django-focused pattern
 
 import django
 import pytest
+
 from django.conf import settings
-from django.db import IntegrityError, connection, models
-from django.db.models import Count, Q
+from django.db import IntegrityError
+from django.db import connection
+from django.db import models
+from django.db.models import Count
+from django.db.models import Q
 
 
 def configure_django_for_testing(pglite_manager):
@@ -267,7 +271,7 @@ def test_django_transactions(configured_django):
 
     # Test successful transaction
     with transaction.atomic():
-        order = Order.objects.create(amount=100.00, processed=True)
+        Order.objects.create(amount=100.00, processed=True)
 
     assert Order.objects.count() == 1
 
@@ -323,5 +327,4 @@ def test_bulk_operations(configured_django):
 
 
 if __name__ == "__main__":
-    print("🌟 Django Fixtures + py-pglite Examples")
-    print("Run with: pytest testing-patterns/django/test_django_fixtures.py -v")
+    pass

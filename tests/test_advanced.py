@@ -3,11 +3,17 @@
 from typing import TYPE_CHECKING
 
 import pytest
+
 from sqlalchemy import text
-from sqlmodel import Field, Session, SQLModel, select
+from sqlalchemy.exc import ProgrammingError
+from sqlmodel import Field
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import select
 
 from py_pglite import PGliteConfig
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
+
 
 if TYPE_CHECKING:
     from py_pglite.sqlalchemy import (
@@ -137,21 +143,17 @@ def test_multiple_sessions():
             product = Product(name="Widget", price=5.99, category="Tools")
             session1.add(product)
             session1.commit()
-            print("Session 1 commit successful")
         finally:
             session1.close()
-            print("Session 1 closed")
 
         # Test second session (same engine, different session)
         session2 = Session(engine)
         try:
             result = session2.exec(select(Product)).all()
-            print(f"Session 2 query successful, found {len(result)} products")
             assert len(result) == 1
             assert result[0].name == "Widget"
         finally:
             session2.close()
-            print("Session 2 closed")
 
         # Test concurrent sessions
         sessions = []
@@ -181,14 +183,8 @@ def test_multiple_sessions():
         try:
             all_products = final_session.exec(select(Product)).all()
             assert len(all_products) == 4  # 1 original + 3 new
-            print(
-                f"All sessions completed successfully, total products: "
-                f"{len(all_products)}"
-            )
         finally:
             final_session.close()
-
-        print("Multiple sessions test completed successfully")
 
 
 def test_error_handling():
@@ -207,7 +203,7 @@ def test_error_handling():
 
         # Test invalid SQL using connection
         with Session(engine) as session:
-            with pytest.raises(Exception):  # Should raise some SQL error
+            with pytest.raises(ProgrammingError):  # Should raise SQL syntax error
                 with session.connection() as conn:
                     conn.execute(text("SELECT invalid_syntax FROM nonexistent_table"))
 

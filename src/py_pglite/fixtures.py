@@ -1,15 +1,15 @@
 """Pytest fixtures for PGlite integration - Framework Agnostic Core."""
 
-import os
 import tempfile
 import uuid
+
 from collections.abc import Generator
 from pathlib import Path
 
 import pytest
 
-from .config import PGliteConfig
-from .manager import PGliteManager
+from py_pglite.config import PGliteConfig
+from py_pglite.manager import PGliteManager
 
 
 @pytest.fixture(scope="session")
