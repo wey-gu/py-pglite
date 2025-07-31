@@ -67,7 +67,7 @@ def pytest_configure(config: pytest.Config) -> None:
 def _should_disable_django_plugin(config: pytest.Config) -> bool:
     """Determine if Django plugin should be disabled for better isolation."""
     # Check if we're running pure SQLAlchemy tests
-    test_paths = getattr(config.option, "file_or_dir", [])
+    test_paths = getattr(config.option, "file_or_dir", []) or []
     if any(
         "sqlalchemy" in str(path) and "django" not in str(path) for path in test_paths
     ):
