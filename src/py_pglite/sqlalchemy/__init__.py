@@ -9,6 +9,7 @@ from py_pglite.sqlalchemy.fixtures import pglite_session
 from py_pglite.sqlalchemy.fixtures import pglite_sqlalchemy_engine
 from py_pglite.sqlalchemy.fixtures import pglite_sqlalchemy_session
 from py_pglite.sqlalchemy.manager import SQLAlchemyPGliteManager
+from py_pglite.sqlalchemy.manager_async import SQLAlchemyAsyncPGliteManager
 from py_pglite.sqlalchemy.utils import create_all_tables
 from py_pglite.sqlalchemy.utils import drop_all_tables
 from py_pglite.sqlalchemy.utils import get_session_class
@@ -16,6 +17,7 @@ from py_pglite.sqlalchemy.utils import get_session_class
 
 __all__ = [
     # Manager
+    "SQLAlchemyAsyncPGliteManager",
     "SQLAlchemyPGliteManager",
     # Utilities
     "create_all_tables",
