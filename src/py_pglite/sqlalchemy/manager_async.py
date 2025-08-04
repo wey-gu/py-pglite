@@ -11,10 +11,10 @@ from py_pglite.manager import PGliteManager
 
 
 class SQLAlchemyAsyncPGliteManager(PGliteManager):
-    """PGlite manager with SQLAlchemy-specific functionality.
+    """PGlite manager with SQLAlchemy-specific async functionality.
 
-    Extends the core PGliteManager with methods that require SQLAlchemy.
-    Use this manager when you need SQLAlchemy integration.
+    Extends the core PGliteManager with methods that require async SQLAlchemy.
+    Use this manager when you need async SQLAlchemy integration.
     """
 
     async def __aenter__(self) -> "SQLAlchemyAsyncPGliteManager":
@@ -49,7 +49,7 @@ class SQLAlchemyAsyncPGliteManager(PGliteManager):
             **engine_kwargs: Additional arguments for create_async_engine
 
         Returns:
-            SQLAlchemy Async Engine connected to PGlite (shared instance)
+            SQLAlchemy AsyncEngine connected to PGlite (shared instance)
 
         Raises:
             ImportError: If SQLAlchemy is not installed

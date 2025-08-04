@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     )
 
 # Base class with separate registry
-# not to conflict with other tests
+# not to conflict with sync sqla tests
 registry = registry()
 
 
@@ -50,12 +50,8 @@ async def test_custom_configuration():
     # Custom config with longer timeout
     config = PGliteConfig(timeout=30, log_level="DEBUG", cleanup_on_exit=True)
     manager: SQLAlchemyAsyncPGliteManager
-    with SQLAlchemyAsyncPGliteManager(config) as manager:
+    async with SQLAlchemyAsyncPGliteManager(config) as manager:
         engine = manager.get_engine()
-
-        # Create tables
-        # async with engine.connect() as conn:
-        #     await conn.run_sync(SQLModel.metadata.create_all)
 
         async with AsyncSession(engine) as session:
             # Test database connectivity using connection directly

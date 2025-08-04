@@ -13,6 +13,7 @@ from sqlalchemy import text
 
 from py_pglite import PGliteConfig
 from py_pglite import PGliteManager
+from py_pglite.sqlalchemy import SQLAlchemyAsyncPGliteManager
 from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
 
 
@@ -107,6 +108,35 @@ class TestSQLAlchemyManagerEngineCreation:
                 result = conn.execute(text("SELECT version()"))
                 version = result.fetchone()[0]
                 assert "PostgreSQL" in version
+
+
+class TestSQLAlchemyAsyncManagerEngineCreation:
+    """Test SQLAlchemy async engine creation and management."""
+
+    def test_get_engine_requires_running_manager(self):
+        """Test that get_engine() requires manager to be running."""
+        manager = SQLAlchemyAsyncPGliteManager()
+
+        with pytest.raises(RuntimeError, match="not running"):
+            manager.get_engine()
+
+    async def test_get_engine_basic(self):
+        """Test basic engine creation."""
+        async with SQLAlchemyAsyncPGliteManager() as manager:
+            engine = manager.get_engine()
+
+            # Should be able to connect and query
+            async with engine.connect() as conn:
+                result = await conn.execute(text("SELECT version()"))
+                version = result.fetchone()[0]
+                assert "PostgreSQL" in version
+
+    def test_sync_context_manager(self):
+        with pytest.raises(
+            TypeError, match="does not support the context manager protocol"
+        ):
+            with SQLAlchemyAsyncPGliteManager():
+                pass
 
 
 class TestPGliteManagerErrorHandling:
