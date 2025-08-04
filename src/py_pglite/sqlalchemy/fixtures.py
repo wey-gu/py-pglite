@@ -301,9 +301,3 @@ async def pglite_async_session(
 def pglite_sqlalchemy_session(pglite_session: Session) -> Session:
     """Legacy fixture name for backwards compatibility."""
     return pglite_session
-
-
-@pytest.fixture(scope="function")
-def pglite_sqlalchemy_async_session(pglite_async_session: AsyncSession) -> AsyncSession:
-    """Legacy fixture name for backwards compatibility."""
-    return pglite_session
