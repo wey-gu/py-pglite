@@ -57,8 +57,11 @@ def test_sqlalchemy_package_imports():
     from py_pglite.sqlalchemy import create_all_tables
     from py_pglite.sqlalchemy import drop_all_tables
     from py_pglite.sqlalchemy import get_session_class
+    from py_pglite.sqlalchemy import pglite_async_engine
+    from py_pglite.sqlalchemy import pglite_async_session
     from py_pglite.sqlalchemy import pglite_engine
     from py_pglite.sqlalchemy import pglite_session
+    from py_pglite.sqlalchemy import pglite_sqlalchemy_async_engine
     from py_pglite.sqlalchemy import pglite_sqlalchemy_engine
     from py_pglite.sqlalchemy import pglite_sqlalchemy_session
 
