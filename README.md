@@ -252,11 +252,11 @@ with PGliteManager() as db:
     dsn = db.get_dsn()  # host=/tmp/... dbname=postgres
 ```
 
-### TCP Socket Mode (ADBC/Cloud-Native Compatibility)
+### TCP Socket Mode
 ```python
 from py_pglite import PGliteConfig, PGliteManager
 
-# Enable TCP mode for ADBC and other TCP-only clients
+# Enable TCP mode for any TCP-only clients
 config = PGliteConfig(
     use_tcp=True,
     tcp_host="127.0.0.1",  # Default: localhost only
@@ -265,13 +265,13 @@ config = PGliteConfig(
 )
 
 with PGliteManager(config) as db:
-    # Now compatible with ADBC PostgreSQL driver
+    # Now compatible with any TCP-only clients
     uri = db.get_psycopg_uri()
     # postgresql://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable
 ```
 
 **When to use TCP mode:**
-- ADBC PostgreSQL driver (doesn't support Unix sockets)
+- Any TCP-only clients (doesn't support Unix sockets)
 - Cloud-native testing environments
 - Docker containers with network isolation
 - Testing network-based database tools

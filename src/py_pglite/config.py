@@ -122,3 +122,17 @@ class PGliteConfig:
         socket_dir = str(Path(self.socket_path).parent)
         # Use key-value format for psycopg DSN, including password
         return f"host={socket_dir} dbname=postgres user=postgres password=postgres"
+
+    def get_asyncpg_uri(self) -> str:
+        """Get PostgreSQL URI for asyncpg usage.
+        
+        Returns:
+            PostgreSQL URI string compatible with asyncpg.connect()
+        """
+        if self.use_tcp:
+            # TCP URI (asyncpg doesn't support sslmode parameter)
+            return f"postgresql://postgres:postgres@{self.tcp_host}:{self.tcp_port}/postgres"
+        
+        # Unix socket URI
+        socket_dir = str(Path(self.socket_path).parent)
+        return f"postgresql://postgres:postgres@/postgres?host={socket_dir}"
