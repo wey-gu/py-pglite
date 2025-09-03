@@ -36,6 +36,9 @@ class PGliteConfig:
         auto_install_deps: Whether to auto-install npm dependencies (default: True)
         extensions: List of PGlite extensions to enable (e.g., ["pgvector"])
         node_options: Custom NODE_OPTIONS for the Node.js process
+        use_tcp: Use TCP socket instead of Unix domain socket (default: False)
+        tcp_host: TCP host to bind to when use_tcp is True (default: "127.0.0.1")
+        tcp_port: TCP port to bind to when use_tcp is True (default: 5432)
     """
 
     timeout: int = 30
@@ -47,6 +50,9 @@ class PGliteConfig:
     auto_install_deps: bool = True
     extensions: list[str] | None = None
     node_options: str | None = None
+    use_tcp: bool = False
+    tcp_host: str = "127.0.0.1"
+    tcp_port: int = 5432
 
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""
@@ -67,6 +73,13 @@ class PGliteConfig:
         if self.work_dir is not None:
             self.work_dir = Path(self.work_dir).resolve()
 
+        # Validate TCP configuration
+        if self.use_tcp:
+            if not (1 <= self.tcp_port <= 65535):
+                raise ValueError(f"Invalid TCP port: {self.tcp_port}")
+            if not self.tcp_host:
+                raise ValueError("TCP host cannot be empty")
+
     @property
     def log_level_int(self) -> int:
         """Get logging level as integer."""
@@ -75,6 +88,10 @@ class PGliteConfig:
 
     def get_connection_string(self) -> str:
         """Get PostgreSQL connection string for SQLAlchemy usage."""
+        if self.use_tcp:
+            # TCP connection string
+            return f"postgresql+psycopg://postgres:postgres@{self.tcp_host}:{self.tcp_port}/postgres?sslmode=disable"
+        
         # For SQLAlchemy with Unix domain sockets, we need to specify the directory
         # and use the standard PostgreSQL socket naming convention
         socket_dir = str(Path(self.socket_path).parent)
@@ -88,12 +105,20 @@ class PGliteConfig:
 
     def get_psycopg_uri(self) -> str:
         """Get PostgreSQL URI for direct psycopg usage."""
+        if self.use_tcp:
+            # TCP URI
+            return f"postgresql://postgres:postgres@{self.tcp_host}:{self.tcp_port}/postgres?sslmode=disable"
+        
         socket_dir = str(Path(self.socket_path).parent)
         # Use standard PostgreSQL URI format for psycopg
         return f"postgresql://postgres:postgres@/postgres?host={socket_dir}"
 
     def get_dsn(self) -> str:
         """Get PostgreSQL DSN connection string for direct psycopg usage."""
+        if self.use_tcp:
+            # TCP DSN
+            return f"host={self.tcp_host} port={self.tcp_port} dbname=postgres user=postgres password=postgres sslmode=disable"
+        
         socket_dir = str(Path(self.socket_path).parent)
         # Use key-value format for psycopg DSN, including password
         return f"host={socket_dir} dbname=postgres user=postgres password=postgres"

@@ -97,16 +97,31 @@ class PGliteManager:
             ext_configs_str = ",\n".join(ext_configs)
             extensions_obj_str = f"{{\n{ext_configs_str}\n}}" if ext_configs else "{}"
 
-            js_content = f"""const {{ PGlite }} = require('@electric-sql/pglite');
-const {{ PGLiteSocketServer }} = require('@electric-sql/pglite-socket');
-const fs = require('fs');
-const path = require('path');
-const {{ unlink }} = require('fs/promises');
-const {{ existsSync }} = require('fs');
-{ext_requires_str}
+            # Generate server configuration based on socket mode
+            if self.config.use_tcp:
+                server_config = f"""
+        // Create and start a TCP server
+        const server = new PGLiteSocketServer({{
+            db,
+            host: '{self.config.tcp_host}',
+            port: {self.config.tcp_port}
+        }});
+        await server.start();
+        console.log(`Server started on TCP ${{'{self.config.tcp_host}:{self.config.tcp_port}'}}`);"""
+                cleanup_section = ""
+            else:
+                server_config = f"""
+        // Clean up any existing socket
+        await cleanup();
 
-const SOCKET_PATH = '{self.config.socket_path}';
-
+        // Create and start a Unix socket server
+        const server = new PGLiteSocketServer({{
+            db,
+            path: SOCKET_PATH,
+        }});
+        await server.start();
+        console.log(`Server started on socket ${{SOCKET_PATH}}`);"""
+                cleanup_section = f"""
 async function cleanup() {{
     if (existsSync(SOCKET_PATH)) {{
         try {{
@@ -116,7 +131,18 @@ async function cleanup() {{
             // Ignore errors during cleanup
         }}
     }}
-}}
+}}"""
+
+            js_content = f"""const {{ PGlite }} = require('@electric-sql/pglite');
+const {{ PGLiteSocketServer }} = require('@electric-sql/pglite-socket');
+const fs = require('fs');
+const path = require('path');
+const {{ unlink }} = require('fs/promises');
+const {{ existsSync }} = require('fs');
+{ext_requires_str}
+
+const SOCKET_PATH = '{self.config.socket_path}';
+{cleanup_section}
 
 async function startServer() {{
     try {{
@@ -124,17 +150,7 @@ async function startServer() {{
         const db = new PGlite({{
             extensions: {extensions_obj_str}
         }});
-
-        // Clean up any existing socket
-        await cleanup();
-
-        // Create and start a socket server
-        const server = new PGLiteSocketServer({{
-            db,
-            path: SOCKET_PATH,
-        }});
-        await server.start();
-        console.log(`Server started on socket ${{SOCKET_PATH}}`);
+{server_config}
 
         // Handle graceful shutdown
         process.on('SIGINT', async () => {{
@@ -180,6 +196,10 @@ startServer();"""
 
     def _cleanup_socket(self) -> None:
         """Clean up the PGlite socket file."""
+        # Skip cleanup for TCP mode
+        if self.config.use_tcp:
+            return
+            
         socket_path = Path(self.config.socket_path)
         if socket_path.exists():
             try:
@@ -277,7 +297,6 @@ startServer();"""
 
             # Wait for startup with robust monitoring
             start_time = time.time()
-            socket_path = Path(self.config.socket_path)
             ready_logged = False
 
             while time.time() - start_time < self.config.timeout:
@@ -285,7 +304,7 @@ startServer();"""
                 if self.process.poll() is not None:
                     # Get output with timeout to prevent hanging
                     try:
-                        stdout, stderr = self.process.communicate(timeout=2)
+                        stdout, _ = self.process.communicate(timeout=2)
                         output = (
                             stdout[:1000] if stdout else "No output"
                         )  # Limit output
@@ -296,24 +315,43 @@ startServer();"""
                         f"PGlite process died during startup. Output: {output}"
                     )
 
-                # Check if socket exists and log ready message once
-                if socket_path.exists() and not ready_logged:
-                    self.logger.info("PGlite socket created, server should be ready...")
-                    ready_logged = True
+                # Check readiness based on socket mode
+                if self.config.use_tcp:
+                    # TCP readiness check
+                    if not ready_logged:
+                        self.logger.info(f"Waiting for TCP server on {self.config.tcp_host}:{self.config.tcp_port}...")
+                        ready_logged = True
 
-                    # Test basic connectivity to ensure it's really ready
                     try:
                         import socket
-
-                        test_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                        test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         test_socket.settimeout(1)
-                        test_socket.connect(str(socket_path))
+                        test_socket.connect((self.config.tcp_host, self.config.tcp_port))
                         test_socket.close()
-                        self.logger.info("PGlite server started successfully")
+                        self.logger.info(f"PGlite TCP server started successfully on {self.config.tcp_host}:{self.config.tcp_port}")
                         break
                     except (ImportError, OSError):
-                        # Socket exists but not ready yet, continue waiting
+                        # TCP port not ready yet, continue waiting
                         pass
+                else:
+                    # Unix socket readiness check
+                    socket_path = Path(self.config.socket_path)
+                    if socket_path.exists() and not ready_logged:
+                        self.logger.info("PGlite socket created, server should be ready...")
+                        ready_logged = True
+
+                        # Test basic connectivity to ensure it's really ready
+                        try:
+                            import socket
+                            test_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                            test_socket.settimeout(1)
+                            test_socket.connect(str(socket_path))
+                            test_socket.close()
+                            self.logger.info("PGlite server started successfully")
+                            break
+                        except (ImportError, OSError):
+                            # Socket exists but not ready yet, continue waiting
+                            pass
 
                 time.sleep(0.5)  # Check more frequently for better responsiveness
             else:
