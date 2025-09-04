@@ -2,16 +2,34 @@
 
 import asyncio
 import json
+
 from io import StringIO
 
-import asyncpg
-import psycopg
 import pytest
-from sqlalchemy import create_engine, text
+
+from sqlalchemy import create_engine
+from sqlalchemy import text
 from sqlalchemy.pool import StaticPool
 
 from py_pglite import PGliteConfig
 from py_pglite import PGliteManager
+
+
+# Optional dependencies - only import if available
+try:
+    import asyncpg
+except ImportError:
+    asyncpg = None
+
+try:
+    import psycopg
+except ImportError:
+    psycopg = None
+
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
 
 
 class TestTCPSocketConfiguration:
@@ -337,7 +355,7 @@ class TestTCPModeDatabaseClients:
 
                 conn.commit()
 
-
+    @pytest.mark.skipif(asyncpg is None, reason="asyncpg not available")
     def test_asyncpg_tcp_mode(self):
         """Test asyncpg connectivity in TCP mode."""
 
@@ -352,8 +370,8 @@ class TestTCPModeDatabaseClients:
                 assert "127.0.0.1:15443" in uri
                 assert "postgresql://postgres:postgres@" in uri
 
-                # Connect with asyncpg
-                conn = await asyncpg.connect(uri)
+                # Connect with asyncpg - disable SSL since PGlite doesn't support it
+                conn = await asyncpg.connect(uri, ssl=False)
                 try:
                     # Test SELECT
                     result = await conn.fetchval("SELECT 1")
@@ -423,37 +441,64 @@ class TestTCPModeDatabaseClients:
         config = PGliteConfig(use_tcp=True, tcp_port=15444)
 
         with PGliteManager(config) as manager:
-            # Test psycopg2
-            conn2 = psycopg2.connect(manager.get_dsn())
-            cur2 = conn2.cursor()
-            cur2.execute("CREATE TABLE multi_client (id INT, client TEXT)")
-            cur2.execute("INSERT INTO multi_client VALUES (1, 'psycopg2')")
-            conn2.commit()
-            cur2.close()
-            conn2.close()
+            clients_tested = []
 
-            # Test psycopg3
-            with psycopg.connect(manager.get_dsn()) as conn3:
-                with conn3.cursor() as cur3:
-                    cur3.execute("INSERT INTO multi_client VALUES (2, 'psycopg3')")
-                    conn3.commit()
+            # Test psycopg2 (if available)
+            if psycopg2 is not None:
+                conn2 = psycopg2.connect(manager.get_dsn())
+                cur2 = conn2.cursor()
+                cur2.execute("CREATE TABLE multi_client (id INT, client TEXT)")
+                cur2.execute("INSERT INTO multi_client VALUES (1, 'psycopg2')")
+                conn2.commit()
+                cur2.close()
+                conn2.close()
+                clients_tested.append("psycopg2")
 
-            # Test SQLAlchemy
+            # Test psycopg3 (if available)
+            if psycopg is not None:
+                with psycopg.connect(manager.get_dsn()) as conn3:
+                    with conn3.cursor() as cur3:
+                        # Create table if it doesn't exist (in case psycopg2 wasn't available)
+                        if not clients_tested:
+                            cur3.execute(
+                                "CREATE TABLE multi_client (id INT, client TEXT)"
+                            )
+                        cur3.execute("INSERT INTO multi_client VALUES (2, 'psycopg3')")
+                        conn3.commit()
+                clients_tested.append("psycopg3")
+
+            # Test SQLAlchemy (always available since it's imported directly)
             engine = create_engine(
                 manager.get_connection_string(), poolclass=StaticPool
             )
             with engine.connect() as conn_sa:
+                # Create table if it doesn't exist (in case no psycopg was available)
+                if not clients_tested:
+                    conn_sa.execute(
+                        text("CREATE TABLE multi_client (id INT, client TEXT)")
+                    )
                 conn_sa.execute(
                     text("INSERT INTO multi_client VALUES (3, 'sqlalchemy')")
                 )
                 conn_sa.commit()
+            clients_tested.append("sqlalchemy")
 
-            # Verify all inserts with psycopg3
-            with psycopg.connect(manager.get_dsn()) as conn:
-                with conn.cursor() as cur:
-                    cur.execute("SELECT COUNT(*) FROM multi_client")
-                    assert cur.fetchone()[0] == 3
+            # Verify inserts (use psycopg3 if available, otherwise SQLAlchemy)
+            if psycopg is not None:
+                with psycopg.connect(manager.get_dsn()) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT COUNT(*) FROM multi_client")
+                        expected_count = len(clients_tested)
+                        assert cur.fetchone()[0] == expected_count
 
-                    cur.execute("SELECT client FROM multi_client ORDER BY id")
-                    clients = [row[0] for row in cur.fetchall()]
-                    assert clients == ["psycopg2", "psycopg3", "sqlalchemy"]
+                        cur.execute("SELECT client FROM multi_client ORDER BY id")
+                        actual_clients = [row[0] for row in cur.fetchall()]
+                        # Check that all expected clients were tested
+                        for client in clients_tested:
+                            assert client in actual_clients
+            else:
+                # Fallback to SQLAlchemy for verification
+                with engine.connect() as conn_sa:
+                    result = conn_sa.execute(text("SELECT COUNT(*) FROM multi_client"))
+                    expected_count = len(clients_tested)
+                    assert result.scalar() == expected_count
