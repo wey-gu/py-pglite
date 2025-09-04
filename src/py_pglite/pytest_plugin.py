@@ -89,9 +89,14 @@ from py_pglite.fixtures import pglite_manager_custom
 # Smart fixture loading with perfect isolation
 if HAS_SQLALCHEMY:
     try:
+        # async
+        from py_pglite.sqlalchemy.fixtures import pglite_async_engine
+        from py_pglite.sqlalchemy.fixtures import pglite_async_session
+        from py_pglite.sqlalchemy.fixtures import pglite_async_sqlalchemy_manager
         from py_pglite.sqlalchemy.fixtures import pglite_config
         from py_pglite.sqlalchemy.fixtures import pglite_engine
         from py_pglite.sqlalchemy.fixtures import pglite_session
+        from py_pglite.sqlalchemy.fixtures import pglite_sqlalchemy_async_engine
         from py_pglite.sqlalchemy.fixtures import pglite_sqlalchemy_engine
         from py_pglite.sqlalchemy.fixtures import pglite_sqlalchemy_manager
         from py_pglite.sqlalchemy.fixtures import pglite_sqlalchemy_session

@@ -52,16 +52,21 @@ def test_django_package_imports():
 def test_sqlalchemy_package_imports():
     """Test SQLAlchemy package imports work correctly."""
     # Test all imports from py_pglite/sqlalchemy/__init__.py (lines 7-20)
+    from py_pglite.sqlalchemy import SQLAlchemyAsyncPGliteManager
     from py_pglite.sqlalchemy import SQLAlchemyPGliteManager
     from py_pglite.sqlalchemy import create_all_tables
     from py_pglite.sqlalchemy import drop_all_tables
     from py_pglite.sqlalchemy import get_session_class
+    from py_pglite.sqlalchemy import pglite_async_engine
+    from py_pglite.sqlalchemy import pglite_async_session
     from py_pglite.sqlalchemy import pglite_engine
     from py_pglite.sqlalchemy import pglite_session
+    from py_pglite.sqlalchemy import pglite_sqlalchemy_async_engine
     from py_pglite.sqlalchemy import pglite_sqlalchemy_engine
     from py_pglite.sqlalchemy import pglite_sqlalchemy_session
 
-    # Verify manager class can be imported
+    # Verify manager classes can be imported
+    assert SQLAlchemyAsyncPGliteManager is not None
     assert SQLAlchemyPGliteManager is not None
 
     # Verify utilities are callable
