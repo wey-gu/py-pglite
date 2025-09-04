@@ -7,6 +7,7 @@ import subprocess  # nosec B404 - subprocess needed for npm/node process managem
 import sys
 import tempfile
 import time
+
 from pathlib import Path
 from textwrap import dedent
 from typing import Any
