@@ -180,6 +180,7 @@ class TestTCPSocketManager:
         with PGliteManager(config) as manager:
             # Use psycopg to connect
             dsn = manager.get_dsn()
+            assert psycopg is not None
             with psycopg.connect(dsn) as conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT version()")
@@ -205,6 +206,7 @@ class TestTCPSocketManager:
         with PGliteManager(config) as manager:
             # Use psycopg to connect
             dsn = manager.get_dsn()
+            assert psycopg is not None
             with psycopg.connect(dsn) as conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT version()")
@@ -239,6 +241,7 @@ class TestTCPSocketManager:
                 assert "15436" in manager2.get_dsn()
 
                 # Test connectivity to both
+                assert psycopg is not None
                 with psycopg.connect(manager1.get_dsn()) as conn1:
                     with conn1.cursor() as cur1:
                         cur1.execute("SELECT 1")
@@ -254,6 +257,7 @@ class TestTCPSocketManager:
         # Test with Unix socket
         config_unix = PGliteConfig(use_tcp=False, extensions=["pgvector"])
         with PGliteManager(config_unix) as manager:
+            assert psycopg is not None
             with psycopg.connect(manager.get_dsn()) as conn:
                 with conn.cursor() as cur:
                     cur.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -266,6 +270,7 @@ class TestTCPSocketManager:
         # Test with TCP socket
         config_tcp = PGliteConfig(use_tcp=True, tcp_port=15437, extensions=["pgvector"])
         with PGliteManager(config_tcp) as manager:
+            assert psycopg is not None
             with psycopg.connect(manager.get_dsn()) as conn:
                 with conn.cursor() as cur:
                     cur.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -357,7 +362,7 @@ class TestTCPModeDatabaseClients:
 
     def test_asyncpg_tcp_mode(self):
         """Test asyncpg connectivity in TCP mode.
-        
+
         Root cause analysis showed asyncpg DOES work with PGlite TCP mode,
         but requires specific connection parameters and careful cleanup handling.
         """
@@ -367,9 +372,10 @@ class TestTCPModeDatabaseClients:
         async def run_asyncpg_test():
             config = PGliteConfig(use_tcp=True, tcp_port=15443)
 
-            with PGliteManager(config) as manager:
+            with PGliteManager(config):
                 # Connect with asyncpg using the working configuration found through debugging
                 # Key fixes: server_settings={} and proper timeout handling
+                assert asyncpg is not None
                 conn = await asyncio.wait_for(
                     asyncpg.connect(
                         host=config.tcp_host,
@@ -378,11 +384,11 @@ class TestTCPModeDatabaseClients:
                         password="postgres",
                         database="postgres",
                         ssl=False,
-                        server_settings={}  # CRITICAL: Empty server_settings prevents hanging
+                        server_settings={},  # CRITICAL: Empty server_settings prevents hanging
                     ),
-                    timeout=10.0
+                    timeout=10.0,
                 )
-                
+
                 try:
                     # Test basic operations
                     result = await conn.fetchval("SELECT 1")
@@ -499,12 +505,12 @@ class TestTCPModeDatabaseClients:
                     text("INSERT INTO multi_client VALUES (3, 'sqlalchemy')")
                 )
                 conn_sa.commit()
-                
+
                 # Do the verification within the same connection to avoid reconnection issues
                 result = conn_sa.execute(text("SELECT COUNT(*) FROM multi_client"))
                 expected_count = len(clients_tested) + 1  # +1 for sqlalchemy
                 assert result.scalar() == expected_count
-            
+
             clients_tested.append("sqlalchemy")
 
             # Verify that we tested at least one client
