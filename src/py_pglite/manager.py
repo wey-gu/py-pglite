@@ -7,8 +7,8 @@ import subprocess  # nosec B404 - subprocess needed for npm/node process managem
 import sys
 import tempfile
 import time
-
 from pathlib import Path
+from textwrap import dedent
 from typing import Any
 
 import psutil
@@ -97,89 +97,175 @@ class PGliteManager:
             ext_configs_str = ",\n".join(ext_configs)
             extensions_obj_str = f"{{\n{ext_configs_str}\n}}" if ext_configs else "{}"
 
-            js_content = f"""const {{ PGlite }} = require('@electric-sql/pglite');
-const {{ PGLiteSocketServer }} = require('@electric-sql/pglite-socket');
-const fs = require('fs');
-const path = require('path');
-const {{ unlink }} = require('fs/promises');
-const {{ existsSync }} = require('fs');
-{ext_requires_str}
-
-const SOCKET_PATH = '{self.config.socket_path}';
-
-async function cleanup() {{
-    if (existsSync(SOCKET_PATH)) {{
-        try {{
-            await unlink(SOCKET_PATH);
-            console.log(`Removed old socket at ${{SOCKET_PATH}}`);
-        }} catch (err) {{
-            // Ignore errors during cleanup
-        }}
-    }}
-}}
-
-async function startServer() {{
-    try {{
-        // Create a PGlite instance with extensions
-        const db = new PGlite({{
-            extensions: {extensions_obj_str}
-        }});
-
-        // Clean up any existing socket
-        await cleanup();
-
-        // Create and start a socket server
-        const server = new PGLiteSocketServer({{
-            db,
-            path: SOCKET_PATH,
-        }});
-        await server.start();
-        console.log(`Server started on socket ${{SOCKET_PATH}}`);
-
-        // Handle graceful shutdown
-        process.on('SIGINT', async () => {{
-            console.log('Received SIGINT, shutting down gracefully...');
-            try {{
-                await server.stop();
-                await db.close();
-                console.log('Server stopped and database closed');
-            }} catch (err) {{
-                console.error('Error during shutdown:', err);
-            }}
-            process.exit(0);
-        }});
-
-        process.on('SIGTERM', async () => {{
-            console.log('Received SIGTERM, shutting down gracefully...');
-            try {{
-                await server.stop();
-                await db.close();
-                console.log('Server stopped and database closed');
-            }} catch (err) {{
-                console.error('Error during shutdown:', err);
-            }}
-            process.exit(0);
-        }});
-
-        // Keep the process alive
-        process.on('exit', () => {{
-            console.log('Process exiting...');
-        }});
-
-    }} catch (err) {{
-        console.error('Failed to start PGlite server:', err);
-        process.exit(1);
-    }}
-}}
-
-startServer();"""
+            # Generate JavaScript content based on socket mode
+            if self.config.use_tcp:
+                js_content = self._generate_tcp_js_content(
+                    ext_requires_str, extensions_obj_str
+                )
+            else:
+                js_content = self._generate_unix_js_content(
+                    ext_requires_str, extensions_obj_str
+                )
             with open(manager_js, "w") as f:
                 f.write(js_content)
 
         return work_dir
 
+    def _generate_unix_js_content(
+        self, ext_requires_str: str, extensions_obj_str: str
+    ) -> str:
+        """Generate JavaScript content for Unix socket mode (original logic)."""
+        return dedent(f"""
+            const {{ PGlite }} = require('@electric-sql/pglite');
+            const {{ PGLiteSocketServer }} = require('@electric-sql/pglite-socket');
+            const fs = require('fs');
+            const path = require('path');
+            const {{ unlink }} = require('fs/promises');
+            const {{ existsSync }} = require('fs');
+            {ext_requires_str}
+
+            const SOCKET_PATH = '{self.config.socket_path}';
+
+            async function cleanup() {{
+                if (existsSync(SOCKET_PATH)) {{
+                    try {{
+                        await unlink(SOCKET_PATH);
+                        console.log(`Removed old socket at ${{SOCKET_PATH}}`);
+                    }} catch (err) {{
+                        // Ignore errors during cleanup
+                    }}
+                }}
+            }}
+
+            async function startServer() {{
+                try {{
+                    // Create a PGlite instance with extensions
+                    const db = new PGlite({{
+                        extensions: {extensions_obj_str}
+                    }});
+
+                    // Clean up any existing socket
+                    await cleanup();
+
+                    // Create and start a socket server
+                    const server = new PGLiteSocketServer({{
+                        db,
+                        path: SOCKET_PATH,
+                    }});
+                    await server.start();
+                    console.log(`Server started on socket ${{SOCKET_PATH}}`);
+
+                    // Handle graceful shutdown
+                    process.on('SIGINT', async () => {{
+                        console.log('Received SIGINT, shutting down gracefully...');
+                        try {{
+                            await server.stop();
+                            await db.close();
+                            console.log('Server stopped and database closed');
+                        }} catch (err) {{
+                            console.error('Error during shutdown:', err);
+                        }}
+                        process.exit(0);
+                    }});
+
+                    process.on('SIGTERM', async () => {{
+                        console.log('Received SIGTERM, shutting down gracefully...');
+                        try {{
+                            await server.stop();
+                            await db.close();
+                            console.log('Server stopped and database closed');
+                        }} catch (err) {{
+                            console.error('Error during shutdown:', err);
+                        }}
+                        process.exit(0);
+                    }});
+
+                    // Keep the process alive
+                    process.on('exit', () => {{
+                        console.log('Process exiting...');
+                    }});
+
+                }} catch (err) {{
+                    console.error('Failed to start PGlite server:', err);
+                    process.exit(1);
+                }}
+            }}
+
+            startServer();
+        """).strip()
+
+    def _generate_tcp_js_content(
+        self, ext_requires_str: str, extensions_obj_str: str
+    ) -> str:
+        """Generate JavaScript content for TCP socket mode."""
+        return dedent(f"""
+            const {{ PGlite }} = require('@electric-sql/pglite');
+            const {{ PGLiteSocketServer }} = require('@electric-sql/pglite-socket');
+            const fs = require('fs');
+            const path = require('path');
+            {ext_requires_str}
+
+            async function startServer() {{
+                try {{
+                    // Create a PGlite instance with extensions
+                    const db = new PGlite({{
+                        extensions: {extensions_obj_str}
+                    }});
+
+                    // Create and start a TCP server
+                    const server = new PGLiteSocketServer({{
+                        db,
+                        host: '{self.config.tcp_host}',
+                        port: {self.config.tcp_port}
+                    }});
+                    await server.start();
+                    console.log(`Server started on TCP {self.config.tcp_host}:{self.config.tcp_port}`);
+
+                    // Handle graceful shutdown
+                    process.on('SIGINT', async () => {{
+                        console.log('Received SIGINT, shutting down gracefully...');
+                        try {{
+                            await server.stop();
+                            await db.close();
+                            console.log('Server stopped and database closed');
+                        }} catch (err) {{
+                            console.error('Error during shutdown:', err);
+                        }}
+                        process.exit(0);
+                    }});
+
+                    process.on('SIGTERM', async () => {{
+                        console.log('Received SIGTERM, shutting down gracefully...');
+                        try {{
+                            await server.stop();
+                            await db.close();
+                            console.log('Server stopped and database closed');
+                        }} catch (err) {{
+                            console.error('Error during shutdown:', err);
+                        }}
+                        process.exit(0);
+                    }});
+
+                    // Keep the process alive
+                    process.on('exit', () => {{
+                        console.log('Process exiting...');
+                    }});
+
+                }} catch (err) {{
+                    console.error('Failed to start PGlite server:', err);
+                    process.exit(1);
+                }}
+            }}
+
+            startServer();
+        """).strip()
+
     def _cleanup_socket(self) -> None:
         """Clean up the PGlite socket file."""
+        # Skip cleanup for TCP mode
+        if self.config.use_tcp:
+            return
+
         socket_path = Path(self.config.socket_path)
         if socket_path.exists():
             try:
@@ -277,7 +363,6 @@ startServer();"""
 
             # Wait for startup with robust monitoring
             start_time = time.time()
-            socket_path = Path(self.config.socket_path)
             ready_logged = False
 
             while time.time() - start_time < self.config.timeout:
@@ -285,7 +370,7 @@ startServer();"""
                 if self.process.poll() is not None:
                     # Get output with timeout to prevent hanging
                     try:
-                        stdout, stderr = self.process.communicate(timeout=2)
+                        stdout, _ = self.process.communicate(timeout=2)
                         output = (
                             stdout[:1000] if stdout else "No output"
                         )  # Limit output
@@ -296,24 +381,43 @@ startServer();"""
                         f"PGlite process died during startup. Output: {output}"
                     )
 
-                # Check if socket exists and log ready message once
-                if socket_path.exists() and not ready_logged:
-                    self.logger.info("PGlite socket created, server should be ready...")
-                    ready_logged = True
+                # Check readiness based on socket mode
+                if self.config.use_tcp:
+                    # TCP readiness check
+                    if not ready_logged:
+                        self.logger.info(f"Waiting for TCP server on {self.config.tcp_host}:{self.config.tcp_port}...")
+                        ready_logged = True
 
-                    # Test basic connectivity to ensure it's really ready
                     try:
                         import socket
-
-                        test_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                        test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         test_socket.settimeout(1)
-                        test_socket.connect(str(socket_path))
+                        test_socket.connect((self.config.tcp_host, self.config.tcp_port))
                         test_socket.close()
-                        self.logger.info("PGlite server started successfully")
+                        self.logger.info(f"PGlite TCP server started successfully on {self.config.tcp_host}:{self.config.tcp_port}")
                         break
                     except (ImportError, OSError):
-                        # Socket exists but not ready yet, continue waiting
+                        # TCP port not ready yet, continue waiting
                         pass
+                else:
+                    # Unix socket readiness check
+                    socket_path = Path(self.config.socket_path)
+                    if socket_path.exists() and not ready_logged:
+                        self.logger.info("PGlite socket created, server should be ready...")
+                        ready_logged = True
+
+                        # Test basic connectivity to ensure it's really ready
+                        try:
+                            import socket
+                            test_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                            test_socket.settimeout(1)
+                            test_socket.connect(str(socket_path))
+                            test_socket.close()
+                            self.logger.info("PGlite server started successfully")
+                            break
+                        except (ImportError, OSError):
+                            # Socket exists but not ready yet, continue waiting
+                            pass
 
                 time.sleep(0.5)  # Check more frequently for better responsiveness
             else:
@@ -469,3 +573,17 @@ startServer();"""
             raise RuntimeError("PGlite server is not running. Call start() first.")
 
         return self.config.get_psycopg_uri()
+
+    def get_asyncpg_uri(self) -> str:
+        """Get the database URI for asyncpg usage.
+
+        Returns:
+            PostgreSQL URI string compatible with asyncpg.connect()
+
+        Raises:
+            RuntimeError: If PGlite server is not running
+        """
+        if not self.is_running():
+            raise RuntimeError("PGlite server is not running. Call start() first.")
+
+        return self.config.get_asyncpg_uri()

@@ -238,6 +238,53 @@ with SQLAlchemyPGliteManager(config) as manager:
 </details>
 
 <details>
+<summary><strong>🌐 Socket Modes (Unix vs TCP)</strong></summary>
+
+py-pglite supports both Unix domain sockets (default) and TCP sockets for different use cases:
+
+### Unix Socket Mode (Default)
+```python
+# Default configuration - uses Unix domain socket for best performance
+from py_pglite import PGliteManager
+
+with PGliteManager() as db:
+    # Connection via Unix socket - fastest for local testing
+    dsn = db.get_dsn()  # host=/tmp/... dbname=postgres
+```
+
+### TCP Socket Mode
+```python
+from py_pglite import PGliteConfig, PGliteManager
+
+# Enable TCP mode for any TCP-only clients
+config = PGliteConfig(
+    use_tcp=True,
+    tcp_host="127.0.0.1",  # Default: localhost only
+    tcp_port=5432,         # Default: PostgreSQL standard port
+    extensions=["pgvector"]
+)
+
+with PGliteManager(config) as db:
+    # Now compatible with any TCP-only clients
+    uri = db.get_psycopg_uri()
+    # postgresql://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable
+```
+
+**When to use TCP mode:**
+- Any TCP-only clients (doesn't support Unix sockets)
+- Cloud-native testing environments
+- Docker containers with network isolation
+- Testing network-based database tools
+
+**Important notes:**
+- PGlite Socket supports only **one active connection** at a time
+- SSL is not supported - always use `sslmode=disable`
+- Unix sockets are faster for local testing (default)
+- TCP mode binds to localhost by default for security
+
+</details>
+
+<details>
 <summary><strong>🔄 Client Compatibility</strong></summary>
 
 ```python
