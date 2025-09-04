@@ -120,8 +120,22 @@ def test_any_client_works(pglite_manager):
 
     # Use with any PostgreSQL client
     # conn = psycopg.connect(host=host, port=port, dbname=database)
-    # conn = await asyncpg.connect(host=host, port=port, database=database)
     # engine = create_async_engine(f"postgresql+asyncpg://{host}:{port}/{database}")
+
+# For asyncpg specifically, use TCP mode with proper configuration:
+async def test_asyncpg_works(pglite_tcp_manager):
+    config = pglite_tcp_manager.config
+    conn = await asyncpg.connect(
+        host=config.tcp_host,
+        port=config.tcp_port,
+        user="postgres",
+        password="postgres",
+        database="postgres",
+        ssl=False,
+        server_settings={}  # CRITICAL: Required for PGlite compatibility
+    )
+    result = await conn.fetchval("SELECT 1")
+    await conn.close()
 ```
 
 ---
@@ -243,6 +257,7 @@ with SQLAlchemyPGliteManager(config) as manager:
 py-pglite supports both Unix domain sockets (default) and TCP sockets for different use cases:
 
 ### Unix Socket Mode (Default)
+
 ```python
 # Default configuration - uses Unix domain socket for best performance
 from py_pglite import PGliteManager
@@ -253,6 +268,7 @@ with PGliteManager() as db:
 ```
 
 ### TCP Socket Mode
+
 ```python
 from py_pglite import PGliteConfig, PGliteManager
 
@@ -271,16 +287,20 @@ with PGliteManager(config) as db:
 ```
 
 **When to use TCP mode:**
+
 - Any TCP-only clients (doesn't support Unix sockets)
 - Cloud-native testing environments
 - Docker containers with network isolation
 - Testing network-based database tools
+- **Required for asyncpg**: asyncpg only works in TCP mode
 
 **Important notes:**
+
 - PGlite Socket supports only **one active connection** at a time
 - SSL is not supported - always use `sslmode=disable`
 - Unix sockets are faster for local testing (default)
 - TCP mode binds to localhost by default for security
+- **asyncpg requires `server_settings={}` to prevent hanging**
 
 </details>
 
@@ -299,8 +319,20 @@ with SQLAlchemyPGliteManager() as manager:
 
     # Examples for different clients:
     # psycopg:  psycopg.connect(host=host, port=port, dbname=database)
-    # asyncpg:  await asyncpg.connect(host=host, port=port, database=database)
     # Django:   Uses custom py-pglite backend automatically
+
+# asyncpg requires TCP mode and specific configuration:
+config = PGliteConfig(use_tcp=True)
+with PGliteManager(config) as manager:
+    conn = await asyncpg.connect(
+        host=config.tcp_host,
+        port=config.tcp_port,
+        user="postgres",
+        password="postgres",
+        database="postgres",
+        ssl=False,
+        server_settings={}  # Required for PGlite compatibility
+    )
 ```
 
 **Installation Matrix:**

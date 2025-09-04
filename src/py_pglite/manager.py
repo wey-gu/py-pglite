@@ -7,6 +7,7 @@ import subprocess  # nosec B404 - subprocess needed for npm/node process managem
 import sys
 import tempfile
 import time
+
 from pathlib import Path
 from textwrap import dedent
 from typing import Any
@@ -385,16 +386,23 @@ class PGliteManager:
                 if self.config.use_tcp:
                     # TCP readiness check
                     if not ready_logged:
-                        self.logger.info(f"Waiting for TCP server on {self.config.tcp_host}:{self.config.tcp_port}...")
+                        self.logger.info(
+                            f"Waiting for TCP server on {self.config.tcp_host}:{self.config.tcp_port}..."
+                        )
                         ready_logged = True
 
                     try:
                         import socket
+
                         test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         test_socket.settimeout(1)
-                        test_socket.connect((self.config.tcp_host, self.config.tcp_port))
+                        test_socket.connect(
+                            (self.config.tcp_host, self.config.tcp_port)
+                        )
                         test_socket.close()
-                        self.logger.info(f"PGlite TCP server started successfully on {self.config.tcp_host}:{self.config.tcp_port}")
+                        self.logger.info(
+                            f"PGlite TCP server started successfully on {self.config.tcp_host}:{self.config.tcp_port}"
+                        )
                         break
                     except (ImportError, OSError):
                         # TCP port not ready yet, continue waiting
@@ -403,13 +411,18 @@ class PGliteManager:
                     # Unix socket readiness check
                     socket_path = Path(self.config.socket_path)
                     if socket_path.exists() and not ready_logged:
-                        self.logger.info("PGlite socket created, server should be ready...")
+                        self.logger.info(
+                            "PGlite socket created, server should be ready..."
+                        )
                         ready_logged = True
 
                         # Test basic connectivity to ensure it's really ready
                         try:
                             import socket
-                            test_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+                            test_socket = socket.socket(
+                                socket.AF_UNIX, socket.SOCK_STREAM
+                            )
                             test_socket.settimeout(1)
                             test_socket.connect(str(socket_path))
                             test_socket.close()
