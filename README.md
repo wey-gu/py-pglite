@@ -128,7 +128,7 @@ async def test_asyncpg_works(pglite_tcp_manager):
     conn = await asyncpg.connect(
         host=config.tcp_host,
         port=config.tcp_port,
-        user="postgres", 
+        user="postgres",
         password="postgres",
         database="postgres",
         ssl=False,
@@ -257,6 +257,7 @@ with SQLAlchemyPGliteManager(config) as manager:
 py-pglite supports both Unix domain sockets (default) and TCP sockets for different use cases:
 
 ### Unix Socket Mode (Default)
+
 ```python
 # Default configuration - uses Unix domain socket for best performance
 from py_pglite import PGliteManager
@@ -267,6 +268,7 @@ with PGliteManager() as db:
 ```
 
 ### TCP Socket Mode
+
 ```python
 from py_pglite import PGliteConfig, PGliteManager
 
@@ -285,6 +287,7 @@ with PGliteManager(config) as db:
 ```
 
 **When to use TCP mode:**
+
 - Any TCP-only clients (doesn't support Unix sockets)
 - Cloud-native testing environments
 - Docker containers with network isolation
@@ -292,6 +295,7 @@ with PGliteManager(config) as db:
 - **Required for asyncpg**: asyncpg only works in TCP mode
 
 **Important notes:**
+
 - PGlite Socket supports only **one active connection** at a time
 - SSL is not supported - always use `sslmode=disable`
 - Unix sockets are faster for local testing (default)
@@ -324,7 +328,7 @@ with PGliteManager(config) as manager:
         host=config.tcp_host,
         port=config.tcp_port,
         user="postgres",
-        password="postgres", 
+        password="postgres",
         database="postgres",
         ssl=False,
         server_settings={}  # Required for PGlite compatibility
