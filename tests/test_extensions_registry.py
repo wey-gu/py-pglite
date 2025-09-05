@@ -33,6 +33,40 @@ def test_pgvector_extension_registration():
     assert pgvector_config["name"] == "vector"
 
 
+def test_pg_trgm_extension_registration():
+    """Test pg_trgm extension is properly registered."""
+    pg_trgm_config = SUPPORTED_EXTENSIONS["pg_trgm"]
+
+    assert pg_trgm_config["module"] == "@electric-sql/pglite/contrib/pg_trgm"
+    assert pg_trgm_config["name"] == "pg_trgm"
+
+
+def test_btree_gin_extension_registration():
+    """Test btree_gin extension is properly registered."""
+    btree_gin_config = SUPPORTED_EXTENSIONS["btree_gin"]
+
+    assert btree_gin_config["module"] == "@electric-sql/pglite/contrib/btree_gin"
+    assert btree_gin_config["name"] == "btree_gin"
+
+
+def test_btree_gist_extension_registration():
+    """Test btree_gist extension is properly registered."""
+    btree_gist_config = SUPPORTED_EXTENSIONS["btree_gist"]
+
+    assert btree_gist_config["module"] == "@electric-sql/pglite/contrib/btree_gist"
+    assert btree_gist_config["name"] == "btree_gist"
+
+
+def test_fuzzystrmatch_extension_registration():
+    """Test fuzzystrmatch extension is properly registered."""
+    fuzzystrmatch_config = SUPPORTED_EXTENSIONS["fuzzystrmatch"]
+
+    assert (
+        fuzzystrmatch_config["module"] == "@electric-sql/pglite/contrib/fuzzystrmatch"
+    )
+    assert fuzzystrmatch_config["name"] == "fuzzystrmatch"
+
+
 def test_config_extension_validation():
     """Test that PGliteConfig properly validates extensions."""
     # Valid extension should work
@@ -159,6 +193,30 @@ def test_extension_registry_is_immutable():
     assert SUPPORTED_EXTENSIONS["pgvector"] == original_pgvector
 
 
+def test_new_extensions_configuration():
+    """Test that all new extensions can be configured."""
+    # Test individual extensions
+    for ext in ["pg_trgm", "btree_gin", "btree_gist", "fuzzystrmatch"]:
+        config = PGliteConfig(extensions=[ext])
+        assert config.extensions == [ext]
+
+        manager = PGliteManager(config)
+        assert manager.config.extensions == [ext]
+
+    # Test all new extensions together
+    new_extensions = ["pg_trgm", "btree_gin", "btree_gist", "fuzzystrmatch"]
+    config = PGliteConfig(extensions=new_extensions)
+    assert config.extensions == new_extensions
+
+    manager = PGliteManager(config)
+    assert manager.config.extensions == new_extensions
+
+    # Test all extensions including pgvector
+    all_exts = ["pgvector", "pg_trgm", "btree_gin", "btree_gist", "fuzzystrmatch"]
+    config = PGliteConfig(extensions=all_exts)
+    assert config.extensions == all_exts
+
+
 def test_extension_validation_error_messages():
     """Test that extension validation provides helpful error messages."""
     try:
@@ -169,6 +227,10 @@ def test_extension_validation_error_messages():
         assert "Unsupported extension: 'nonexistent'" in error_msg
         assert "Available extensions:" in error_msg
         assert "pgvector" in error_msg
+        assert "pg_trgm" in error_msg
+        assert "btree_gin" in error_msg
+        assert "btree_gist" in error_msg
+        assert "fuzzystrmatch" in error_msg
 
 
 def test_extensions_with_empty_string():
