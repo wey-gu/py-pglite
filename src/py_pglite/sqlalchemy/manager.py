@@ -5,7 +5,7 @@ Extends the core PGliteManager with SQLAlchemy-specific functionality.
 
 import time
 
-from typing import Any
+from typing import Any, Literal
 
 from py_pglite.manager import PGliteManager
 
@@ -22,7 +22,7 @@ class SQLAlchemyPGliteManager(PGliteManager):
         super().__enter__()
         return self
 
-    def get_engine(self, **engine_kwargs: Any) -> Any:
+    def get_engine(self, driver: Literal["psycopg", "psycopg2"] = "psycopg", **engine_kwargs: Any) -> Any:
         """Get SQLAlchemy engine connected to PGlite.
 
         NOTE: This method requires SQLAlchemy to be installed.
@@ -33,6 +33,7 @@ class SQLAlchemyPGliteManager(PGliteManager):
         architecture ensures all database operations use the same connection.
 
         Args:
+            driver: Which driver to use for connecting to the Postgres database. Defaults to 'psycopg'.
             **engine_kwargs: Additional arguments for create_engine
 
         Returns:
@@ -96,7 +97,7 @@ class SQLAlchemyPGliteManager(PGliteManager):
 
         # Create and store the shared engine
         self._shared_engine = create_engine(
-            self.config.get_connection_string(), **final_kwargs
+            self.config.get_connection_string(driver), **final_kwargs
         )
         return self._shared_engine
 
