@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "py-pglite"
-version = "0.5.0"
+version = "0.5.1"
 description = "Python testing library for PGlite - in-memory PostgreSQL for tests"
 readme = "README.md"
 license = "Apache-2.0"
