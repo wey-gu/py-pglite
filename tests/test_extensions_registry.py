@@ -61,7 +61,9 @@ def test_fuzzystrmatch_extension_registration():
     """Test fuzzystrmatch extension is properly registered."""
     fuzzystrmatch_config = SUPPORTED_EXTENSIONS["fuzzystrmatch"]
 
-    assert fuzzystrmatch_config["module"] == "@electric-sql/pglite/contrib/fuzzystrmatch"
+    assert (
+        fuzzystrmatch_config["module"] == "@electric-sql/pglite/contrib/fuzzystrmatch"
+    )
     assert fuzzystrmatch_config["name"] == "fuzzystrmatch"
 
 
@@ -197,18 +199,18 @@ def test_new_extensions_configuration():
     for ext in ["pg_trgm", "btree_gin", "btree_gist", "fuzzystrmatch"]:
         config = PGliteConfig(extensions=[ext])
         assert config.extensions == [ext]
-        
+
         manager = PGliteManager(config)
         assert manager.config.extensions == [ext]
-    
+
     # Test all new extensions together
     new_extensions = ["pg_trgm", "btree_gin", "btree_gist", "fuzzystrmatch"]
     config = PGliteConfig(extensions=new_extensions)
     assert config.extensions == new_extensions
-    
+
     manager = PGliteManager(config)
     assert manager.config.extensions == new_extensions
-    
+
     # Test all extensions including pgvector
     all_exts = ["pgvector", "pg_trgm", "btree_gin", "btree_gist", "fuzzystrmatch"]
     config = PGliteConfig(extensions=all_exts)
