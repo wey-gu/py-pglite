@@ -8,6 +8,7 @@ import uuid
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
+from typing import Literal
 
 from py_pglite.extensions import SUPPORTED_EXTENSIONS
 
@@ -86,11 +87,11 @@ class PGliteConfig:
         level_value = getattr(logging, self.log_level)
         return int(level_value)
 
-    def get_connection_string(self) -> str:
+    def get_connection_string(self, driver: Literal["psycopg", "psycopg2"] = "psycopg") -> str:
         """Get PostgreSQL connection string for SQLAlchemy usage."""
         if self.use_tcp:
             # TCP connection string
-            return f"postgresql+psycopg://postgres:postgres@{self.tcp_host}:{self.tcp_port}/postgres?sslmode=disable"
+            return f"postgresql+{driver}://postgres:postgres@{self.tcp_host}:{self.tcp_port}/postgres?sslmode=disable"
 
         # For SQLAlchemy with Unix domain sockets, we need to specify the directory
         # and use the standard PostgreSQL socket naming convention
@@ -98,7 +99,7 @@ class PGliteConfig:
 
         # Use the socket directory as host - psycopg will look for .s.PGSQL.5432
         connection_string = (
-            f"postgresql+psycopg://postgres:postgres@/postgres?host={socket_dir}"
+            f"postgresql+{driver}://postgres:postgres@/postgres?host={socket_dir}"
         )
 
         return connection_string
