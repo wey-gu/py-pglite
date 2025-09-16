@@ -87,7 +87,9 @@ class PGliteConfig:
         level_value = getattr(logging, self.log_level)
         return int(level_value)
 
-    def get_connection_string(self, driver: Literal["psycopg", "psycopg2"] = "psycopg") -> str:
+    def get_connection_string(
+        self, driver: Literal["psycopg", "psycopg2"] = "psycopg"
+    ) -> str:
         """Get PostgreSQL connection string for SQLAlchemy usage."""
         if self.use_tcp:
             # TCP connection string

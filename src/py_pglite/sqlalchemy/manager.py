@@ -5,7 +5,8 @@ Extends the core PGliteManager with SQLAlchemy-specific functionality.
 
 import time
 
-from typing import Any, Literal
+from typing import Any
+from typing import Literal
 
 from py_pglite.manager import PGliteManager
 
@@ -22,7 +23,9 @@ class SQLAlchemyPGliteManager(PGliteManager):
         super().__enter__()
         return self
 
-    def get_engine(self, driver: Literal["psycopg", "psycopg2"] = "psycopg", **engine_kwargs: Any) -> Any:
+    def get_engine(
+        self, driver: Literal["psycopg", "psycopg2"] = "psycopg", **engine_kwargs: Any
+    ) -> Any:
         """Get SQLAlchemy engine connected to PGlite.
 
         NOTE: This method requires SQLAlchemy to be installed.
