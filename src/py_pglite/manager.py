@@ -278,17 +278,28 @@ class PGliteManager:
     def _kill_existing_processes(self) -> None:
         """Kill any existing PGlite processes that might conflict with this socket."""
         try:
-            my_socket_dir = str(Path(self.config.socket_path).parent)
+            # Fix for issue #31: Compare work directory, not socket directory
+            # Socket and work directories are different by design for isolation
+            # Use work_dir if available, otherwise fall back to socket directory
+            if hasattr(self, "work_dir") and self.work_dir:
+                my_target_dir = str(self.work_dir)
+                comparison_type = "work directory"
+            else:
+                my_target_dir = str(Path(self.config.socket_path).parent)
+                comparison_type = "socket directory"
+
             for proc in psutil.process_iter(["pid", "name", "cmdline", "cwd"]):
                 if proc.info["cmdline"] and any(
                     "pglite_manager.js" in cmd for cmd in proc.info["cmdline"]
                 ):
-                    # Only kill processes in the same socket directory to avoid killing other instances
+                    # Use exact directory match to avoid killing processes in similar paths
                     try:
                         proc_cwd = proc.info.get("cwd", "")
-                        if my_socket_dir in proc_cwd or proc_cwd in my_socket_dir:
+                        if proc_cwd == my_target_dir:
                             pid = proc.info["pid"]
-                            self.logger.info(f"Killing existing PGlite process: {pid}")
+                            self.logger.info(
+                                f"Killing existing PGlite process: {pid} (matching {comparison_type})"
+                            )
                             proc.kill()
                             proc.wait(timeout=5)
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -296,6 +307,31 @@ class PGliteManager:
                         continue
         except Exception as e:
             self.logger.warning(f"Error killing existing PGlite processes: {e}")
+
+    def _kill_all_pglite_processes(self) -> None:
+        """Kill all PGlite processes globally (more aggressive cleanup for termination)."""
+        try:
+            killed_processes = []
+            for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+                if proc.info["cmdline"] and any(
+                    "pglite_manager.js" in cmd for cmd in proc.info["cmdline"]
+                ):
+                    try:
+                        pid = proc.info["pid"]
+                        self.logger.info(f"Killing PGlite process globally: {pid}")
+                        proc.kill()
+                        proc.wait(timeout=5)
+                        killed_processes.append(pid)
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        # Process already gone or can't access it
+                        continue
+
+            if killed_processes:
+                self.logger.info(
+                    f"Killed {len(killed_processes)} PGlite processes: {killed_processes}"
+                )
+        except Exception as e:
+            self.logger.warning(f"Error killing all PGlite processes: {e}")
 
     def _install_dependencies(self, work_dir: Path) -> None:
         """Install npm dependencies if needed."""
@@ -322,12 +358,13 @@ class PGliteManager:
             self.logger.warning("PGlite process already running")
             return
 
+        # Setup work directory first so it's available for cleanup logic
+        self.work_dir = self._setup_work_dir()
+
         # Setup
         self._kill_existing_processes()
         self._cleanup_socket()
 
-        # Setup work directory
-        self.work_dir = self._setup_work_dir()
         self._original_cwd = os.getcwd()
         os.chdir(self.work_dir)
 
@@ -360,6 +397,9 @@ class PGliteManager:
                 bufsize=0,  # Unbuffered for real-time monitoring
                 universal_newlines=True,
                 env=env,
+                preexec_fn=os.setsid
+                if hasattr(os, "setsid")
+                else None,  # Create new process group on Unix
             )
 
             # Wait for startup with robust monitoring
@@ -462,7 +502,18 @@ class PGliteManager:
         try:
             # Send SIGTERM first for graceful shutdown
             self.logger.debug("Sending SIGTERM to PGlite process...")
-            self.process.terminate()
+
+            # Try to terminate the entire process group if it exists
+            if hasattr(os, "killpg") and hasattr(self.process, "pid"):
+                try:
+                    # Try to kill the process group first (includes child processes)
+                    os.killpg(os.getpgid(self.process.pid), 15)  # SIGTERM
+                    self.logger.debug("Sent SIGTERM to process group")
+                except (OSError, ProcessLookupError):
+                    # Fall back to single process termination
+                    self.process.terminate()
+            else:
+                self.process.terminate()
 
             # Wait for graceful shutdown with timeout
             try:
@@ -473,17 +524,32 @@ class PGliteManager:
                 self.logger.warning(
                     "PGlite process didn't stop gracefully, force killing..."
                 )
-                self.process.kill()
+
+                # Try to kill the entire process group first
+                if hasattr(os, "killpg") and hasattr(self.process, "pid"):
+                    try:
+                        os.killpg(os.getpgid(self.process.pid), 9)  # SIGKILL
+                        self.logger.debug("Sent SIGKILL to process group")
+                    except (OSError, ProcessLookupError):
+                        # Fall back to single process kill
+                        self.process.kill()
+                else:
+                    self.process.kill()
+
                 try:
                     self.process.wait(timeout=2)
                     self.logger.info("PGlite server stopped forcefully")
                 except subprocess.TimeoutExpired:
                     self.logger.error("Failed to kill PGlite process!")
+                    # Use global cleanup as last resort when normal termination fails
+                    self._kill_all_pglite_processes()
 
         except Exception as e:
             self.logger.warning(f"Error stopping PGlite: {e}")
         finally:
             self.process = None
+            # Additional cleanup: kill any remaining pglite processes
+            # Note: Global cleanup is only used in error conditions, not normal stop
             if self.config.cleanup_on_exit:
                 self._cleanup_socket()
 
