@@ -3,6 +3,7 @@
 Extends the core PGliteManager with SQLAlchemy-specific functionality.
 """
 
+import os
 import time
 
 from typing import Any
@@ -183,7 +184,18 @@ class SQLAlchemyPGliteManager(PGliteManager):
         try:
             # Send SIGTERM first for graceful shutdown
             self.logger.debug("Sending SIGTERM to PGlite process...")
-            self.process.terminate()
+            
+            # Try to terminate the entire process group if it exists
+            if hasattr(os, 'killpg') and hasattr(self.process, 'pid'):
+                try:
+                    # Try to kill the process group first (includes child processes)
+                    os.killpg(os.getpgid(self.process.pid), 15)  # SIGTERM
+                    self.logger.debug("Sent SIGTERM to process group")
+                except (OSError, ProcessLookupError):
+                    # Fall back to single process termination
+                    self.process.terminate()
+            else:
+                self.process.terminate()
 
             # Wait for graceful shutdown with timeout
             try:
@@ -194,7 +206,18 @@ class SQLAlchemyPGliteManager(PGliteManager):
                 self.logger.warning(
                     "PGlite process didn't stop gracefully, force killing..."
                 )
-                self.process.kill()
+                
+                # Try to kill the entire process group first
+                if hasattr(os, 'killpg') and hasattr(self.process, 'pid'):
+                    try:
+                        os.killpg(os.getpgid(self.process.pid), 9)  # SIGKILL
+                        self.logger.debug("Sent SIGKILL to process group")
+                    except (OSError, ProcessLookupError):
+                        # Fall back to single process kill
+                        self.process.kill()
+                else:
+                    self.process.kill()
+                
                 try:
                     self.process.wait(timeout=2)
                     self.logger.info("PGlite server stopped forcefully")
@@ -213,6 +236,8 @@ class SQLAlchemyPGliteManager(PGliteManager):
                     self.logger.warning(f"Error disposing engine: {e}")
                 finally:
                     self._shared_engine = None
+            # Additional cleanup: kill any remaining pglite processes
+            self._kill_all_pglite_processes()
             if self.config.cleanup_on_exit:
                 self._cleanup_socket()
 

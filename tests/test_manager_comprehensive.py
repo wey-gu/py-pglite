@@ -442,10 +442,16 @@ class TestProcessLifecycle:
         manager = PGliteManager()
 
         mock_process = Mock()
+        mock_process.pid = 1234
         mock_process.wait.return_value = None  # Graceful shutdown
         manager.process = mock_process
 
-        with patch.object(manager, "_cleanup_socket"):
+        with (
+            patch.object(manager, "_cleanup_socket"),
+            patch.object(manager, "_kill_all_pglite_processes"),
+            patch("os.killpg", side_effect=OSError("No process group")),  # Force fallback
+            patch("os.getpgid", side_effect=OSError("No process group")),
+        ):
             manager.stop()
 
             mock_process.terminate.assert_called_once()
@@ -457,10 +463,16 @@ class TestProcessLifecycle:
         manager = PGliteManager()
 
         mock_process = Mock()
+        mock_process.pid = 1234
         mock_process.wait.side_effect = [subprocess.TimeoutExpired("cmd", 5), None]
         manager.process = mock_process
 
-        with patch.object(manager, "_cleanup_socket"):
+        with (
+            patch.object(manager, "_cleanup_socket"),
+            patch.object(manager, "_kill_all_pglite_processes"),
+            patch("os.killpg", side_effect=OSError("No process group")),  # Force fallback
+            patch("os.getpgid", side_effect=OSError("No process group")),
+        ):
             manager.stop()
 
             mock_process.terminate.assert_called_once()
@@ -472,10 +484,16 @@ class TestProcessLifecycle:
         manager = PGliteManager()
 
         mock_process = Mock()
+        mock_process.pid = 1234
         mock_process.terminate.side_effect = Exception("Process error")
         manager.process = mock_process
 
-        with patch.object(manager, "_cleanup_socket"):
+        with (
+            patch.object(manager, "_cleanup_socket"),
+            patch.object(manager, "_kill_all_pglite_processes"),
+            patch("os.killpg", side_effect=OSError("No process group")),  # Force fallback
+            patch("os.getpgid", side_effect=OSError("No process group")),
+        ):
             # Should not raise exception
             manager.stop()
 

@@ -297,6 +297,29 @@ class PGliteManager:
         except Exception as e:
             self.logger.warning(f"Error killing existing PGlite processes: {e}")
 
+    def _kill_all_pglite_processes(self) -> None:
+        """Kill all PGlite processes globally (more aggressive cleanup for termination)."""
+        try:
+            killed_processes = []
+            for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+                if proc.info["cmdline"] and any(
+                    "pglite_manager.js" in cmd for cmd in proc.info["cmdline"]
+                ):
+                    try:
+                        pid = proc.info["pid"]
+                        self.logger.info(f"Killing PGlite process globally: {pid}")
+                        proc.kill()
+                        proc.wait(timeout=5)
+                        killed_processes.append(pid)
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        # Process already gone or can't access it
+                        continue
+            
+            if killed_processes:
+                self.logger.info(f"Killed {len(killed_processes)} PGlite processes: {killed_processes}")
+        except Exception as e:
+            self.logger.warning(f"Error killing all PGlite processes: {e}")
+
     def _install_dependencies(self, work_dir: Path) -> None:
         """Install npm dependencies if needed."""
         if not self.config.auto_install_deps:
@@ -360,6 +383,7 @@ class PGliteManager:
                 bufsize=0,  # Unbuffered for real-time monitoring
                 universal_newlines=True,
                 env=env,
+                preexec_fn=os.setsid if hasattr(os, 'setsid') else None,  # Create new process group on Unix
             )
 
             # Wait for startup with robust monitoring
@@ -462,7 +486,18 @@ class PGliteManager:
         try:
             # Send SIGTERM first for graceful shutdown
             self.logger.debug("Sending SIGTERM to PGlite process...")
-            self.process.terminate()
+            
+            # Try to terminate the entire process group if it exists
+            if hasattr(os, 'killpg') and hasattr(self.process, 'pid'):
+                try:
+                    # Try to kill the process group first (includes child processes)
+                    os.killpg(os.getpgid(self.process.pid), 15)  # SIGTERM
+                    self.logger.debug("Sent SIGTERM to process group")
+                except (OSError, ProcessLookupError):
+                    # Fall back to single process termination
+                    self.process.terminate()
+            else:
+                self.process.terminate()
 
             # Wait for graceful shutdown with timeout
             try:
@@ -473,7 +508,18 @@ class PGliteManager:
                 self.logger.warning(
                     "PGlite process didn't stop gracefully, force killing..."
                 )
-                self.process.kill()
+                
+                # Try to kill the entire process group first
+                if hasattr(os, 'killpg') and hasattr(self.process, 'pid'):
+                    try:
+                        os.killpg(os.getpgid(self.process.pid), 9)  # SIGKILL
+                        self.logger.debug("Sent SIGKILL to process group")
+                    except (OSError, ProcessLookupError):
+                        # Fall back to single process kill
+                        self.process.kill()
+                else:
+                    self.process.kill()
+                
                 try:
                     self.process.wait(timeout=2)
                     self.logger.info("PGlite server stopped forcefully")
@@ -484,6 +530,8 @@ class PGliteManager:
             self.logger.warning(f"Error stopping PGlite: {e}")
         finally:
             self.process = None
+            # Additional cleanup: kill any remaining pglite processes
+            self._kill_all_pglite_processes()
             if self.config.cleanup_on_exit:
                 self._cleanup_socket()
 
