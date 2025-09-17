@@ -1,5 +1,6 @@
 """Tests for enhanced process cleanup functionality."""
 
+import os
 import subprocess
 import tempfile
 
@@ -260,13 +261,20 @@ class TestEnhancedStopMethod:
         mock_process.wait.return_value = None
         manager.process = mock_process
 
-        with (
-            patch("os.killpg", None),  # Simulate killpg not available
-            patch.object(manager, "_kill_all_pglite_processes") as mock_cleanup,
-        ):
-            manager.stop()
+        # Temporarily remove killpg from os module to simulate it not being available
+        original_killpg = getattr(os, 'killpg', None)
+        if hasattr(os, 'killpg'):
+            delattr(os, 'killpg')
 
-            # Should use single process termination
-            mock_process.terminate.assert_called_once()
-            mock_process.wait.assert_called_once_with(timeout=5)
-            mock_cleanup.assert_called_once()
+        try:
+            with patch.object(manager, "_kill_all_pglite_processes") as mock_cleanup:
+                manager.stop()
+
+                # Should use single process termination
+                mock_process.terminate.assert_called_once()
+                mock_process.wait.assert_called_once_with(timeout=5)
+                mock_cleanup.assert_called_once()
+        finally:
+            # Restore killpg if it existed
+            if original_killpg is not None:
+                setattr(os, 'killpg', original_killpg)

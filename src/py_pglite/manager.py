@@ -351,12 +351,13 @@ class PGliteManager:
             self.logger.warning("PGlite process already running")
             return
 
+        # Setup work directory first so it's available for cleanup logic
+        self.work_dir = self._setup_work_dir()
+        
         # Setup
         self._kill_existing_processes()
         self._cleanup_socket()
 
-        # Setup work directory
-        self.work_dir = self._setup_work_dir()
         self._original_cwd = os.getcwd()
         os.chdir(self.work_dir)
 
