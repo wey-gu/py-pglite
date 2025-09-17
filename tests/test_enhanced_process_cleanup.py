@@ -44,15 +44,17 @@ class TestEnhancedProcessCleanup:
             "cmdline": ["node", "pglite_manager.js", "--port", "5433"],
         }
 
-        with patch("psutil.process_iter", return_value=[mock_proc1, mock_proc2, mock_proc3]):
+        with patch(
+            "psutil.process_iter", return_value=[mock_proc1, mock_proc2, mock_proc3]
+        ):
             manager._kill_all_pglite_processes()
 
             # Should kill processes 1 and 3 (containing pglite_manager.js) but not 2
             mock_proc1.kill.assert_called_once()
             mock_proc1.wait.assert_called_once_with(timeout=5)
-            
+
             mock_proc2.kill.assert_not_called()
-            
+
             mock_proc3.kill.assert_called_once()
             mock_proc3.wait.assert_called_once_with(timeout=5)
 
@@ -81,7 +83,7 @@ class TestEnhancedProcessCleanup:
             # Should attempt to kill both processes
             mock_proc1.kill.assert_called_once()
             mock_proc1.wait.assert_not_called()  # Exception prevents wait
-            
+
             mock_proc2.kill.assert_called_once()
             mock_proc2.wait.assert_called_once_with(timeout=5)
 
@@ -187,7 +189,7 @@ class TestEnhancedStopMethod:
     def test_stop_with_process_group_graceful(self, mock_getpgid, mock_killpg):
         """Test graceful stop with process group termination."""
         manager = PGliteManager()
-        
+
         mock_process = Mock()
         mock_process.pid = 1234
         mock_process.wait.return_value = None  # Graceful termination
@@ -209,7 +211,7 @@ class TestEnhancedStopMethod:
     def test_stop_with_process_group_force_kill(self, mock_getpgid, mock_killpg):
         """Test force kill with process group termination."""
         manager = PGliteManager()
-        
+
         mock_process = Mock()
         mock_process.pid = 1234
         mock_process.wait.side_effect = [subprocess.TimeoutExpired("cmd", 5), None]
@@ -222,7 +224,9 @@ class TestEnhancedStopMethod:
 
             # Should use process group termination for both SIGTERM and SIGKILL
             mock_getpgid.assert_has_calls([call(1234), call(1234)])
-            mock_killpg.assert_has_calls([call(1234, 15), call(1234, 9)])  # SIGTERM, then SIGKILL
+            mock_killpg.assert_has_calls(
+                [call(1234, 15), call(1234, 9)]
+            )  # SIGTERM, then SIGKILL
             mock_cleanup.assert_called_once()
 
     @patch("os.killpg")
@@ -230,7 +234,7 @@ class TestEnhancedStopMethod:
     def test_stop_fallback_to_single_process(self, mock_getpgid, mock_killpg):
         """Test fallback to single process termination when process group fails."""
         manager = PGliteManager()
-        
+
         mock_process = Mock()
         mock_process.pid = 1234
         mock_process.wait.return_value = None
@@ -250,7 +254,7 @@ class TestEnhancedStopMethod:
     def test_stop_without_killpg(self):
         """Test stop behavior when killpg is not available."""
         manager = PGliteManager()
-        
+
         mock_process = Mock()
         mock_process.pid = 1234
         mock_process.wait.return_value = None

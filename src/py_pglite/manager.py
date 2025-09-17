@@ -281,7 +281,7 @@ class PGliteManager:
             # Fix for issue #31: Compare work directory, not socket directory
             # Socket and work directories are different by design for isolation
             my_work_dir = str(self.work_dir) if self.work_dir else None
-            
+
             for proc in psutil.process_iter(["pid", "name", "cmdline", "cwd"]):
                 if proc.info["cmdline"] and any(
                     "pglite_manager.js" in cmd for cmd in proc.info["cmdline"]
@@ -318,9 +318,11 @@ class PGliteManager:
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
                         # Process already gone or can't access it
                         continue
-            
+
             if killed_processes:
-                self.logger.info(f"Killed {len(killed_processes)} PGlite processes: {killed_processes}")
+                self.logger.info(
+                    f"Killed {len(killed_processes)} PGlite processes: {killed_processes}"
+                )
         except Exception as e:
             self.logger.warning(f"Error killing all PGlite processes: {e}")
 
@@ -387,7 +389,9 @@ class PGliteManager:
                 bufsize=0,  # Unbuffered for real-time monitoring
                 universal_newlines=True,
                 env=env,
-                preexec_fn=os.setsid if hasattr(os, 'setsid') else None,  # Create new process group on Unix
+                preexec_fn=os.setsid
+                if hasattr(os, "setsid")
+                else None,  # Create new process group on Unix
             )
 
             # Wait for startup with robust monitoring
@@ -490,9 +494,9 @@ class PGliteManager:
         try:
             # Send SIGTERM first for graceful shutdown
             self.logger.debug("Sending SIGTERM to PGlite process...")
-            
+
             # Try to terminate the entire process group if it exists
-            if hasattr(os, 'killpg') and hasattr(self.process, 'pid'):
+            if hasattr(os, "killpg") and hasattr(self.process, "pid"):
                 try:
                     # Try to kill the process group first (includes child processes)
                     os.killpg(os.getpgid(self.process.pid), 15)  # SIGTERM
@@ -512,9 +516,9 @@ class PGliteManager:
                 self.logger.warning(
                     "PGlite process didn't stop gracefully, force killing..."
                 )
-                
+
                 # Try to kill the entire process group first
-                if hasattr(os, 'killpg') and hasattr(self.process, 'pid'):
+                if hasattr(os, "killpg") and hasattr(self.process, "pid"):
                     try:
                         os.killpg(os.getpgid(self.process.pid), 9)  # SIGKILL
                         self.logger.debug("Sent SIGKILL to process group")
@@ -523,7 +527,7 @@ class PGliteManager:
                         self.process.kill()
                 else:
                     self.process.kill()
-                
+
                 try:
                     self.process.wait(timeout=2)
                     self.logger.info("PGlite server stopped forcefully")

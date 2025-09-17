@@ -471,7 +471,9 @@ class TestProcessLifecycle:
         with (
             patch.object(manager, "_cleanup_socket"),
             patch.object(manager, "_kill_all_pglite_processes"),
-            patch("os.killpg", side_effect=OSError("No process group")),  # Force fallback
+            patch(
+                "os.killpg", side_effect=OSError("No process group")
+            ),  # Force fallback
             patch("os.getpgid", side_effect=OSError("No process group")),
         ):
             manager.stop()
@@ -492,7 +494,9 @@ class TestProcessLifecycle:
         with (
             patch.object(manager, "_cleanup_socket"),
             patch.object(manager, "_kill_all_pglite_processes"),
-            patch("os.killpg", side_effect=OSError("No process group")),  # Force fallback
+            patch(
+                "os.killpg", side_effect=OSError("No process group")
+            ),  # Force fallback
             patch("os.getpgid", side_effect=OSError("No process group")),
         ):
             manager.stop()
@@ -513,7 +517,9 @@ class TestProcessLifecycle:
         with (
             patch.object(manager, "_cleanup_socket"),
             patch.object(manager, "_kill_all_pglite_processes"),
-            patch("os.killpg", side_effect=OSError("No process group")),  # Force fallback
+            patch(
+                "os.killpg", side_effect=OSError("No process group")
+            ),  # Force fallback
             patch("os.getpgid", side_effect=OSError("No process group")),
         ):
             # Should not raise exception

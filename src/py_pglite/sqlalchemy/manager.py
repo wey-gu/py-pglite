@@ -184,9 +184,9 @@ class SQLAlchemyPGliteManager(PGliteManager):
         try:
             # Send SIGTERM first for graceful shutdown
             self.logger.debug("Sending SIGTERM to PGlite process...")
-            
+
             # Try to terminate the entire process group if it exists
-            if hasattr(os, 'killpg') and hasattr(self.process, 'pid'):
+            if hasattr(os, "killpg") and hasattr(self.process, "pid"):
                 try:
                     # Try to kill the process group first (includes child processes)
                     os.killpg(os.getpgid(self.process.pid), 15)  # SIGTERM
@@ -206,9 +206,9 @@ class SQLAlchemyPGliteManager(PGliteManager):
                 self.logger.warning(
                     "PGlite process didn't stop gracefully, force killing..."
                 )
-                
+
                 # Try to kill the entire process group first
-                if hasattr(os, 'killpg') and hasattr(self.process, 'pid'):
+                if hasattr(os, "killpg") and hasattr(self.process, "pid"):
                     try:
                         os.killpg(os.getpgid(self.process.pid), 9)  # SIGKILL
                         self.logger.debug("Sent SIGKILL to process group")
@@ -217,7 +217,7 @@ class SQLAlchemyPGliteManager(PGliteManager):
                         self.process.kill()
                 else:
                     self.process.kill()
-                
+
                 try:
                     self.process.wait(timeout=2)
                     self.logger.info("PGlite server stopped forcefully")
