@@ -265,9 +265,9 @@ class TestEnhancedStopMethod:
         manager.process = mock_process
 
         # Temporarily remove killpg from os module to simulate it not being available
-        original_killpg = getattr(os, 'killpg', None)
-        if hasattr(os, 'killpg'):
-            delattr(os, 'killpg')
+        original_killpg = getattr(os, "killpg", None)
+        if hasattr(os, "killpg"):
+            delattr(os, "killpg")
 
         try:
             with patch.object(manager, "_kill_all_pglite_processes") as mock_cleanup:
@@ -281,7 +281,7 @@ class TestEnhancedStopMethod:
         finally:
             # Restore killpg if it existed
             if original_killpg is not None:
-                setattr(os, 'killpg', original_killpg)
+                os.killpg = original_killpg
 
     def test_stop_calls_global_cleanup_on_termination_failure(self):
         """Test that global cleanup is called when process termination fails."""

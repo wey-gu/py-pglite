@@ -281,13 +281,13 @@ class PGliteManager:
             # Fix for issue #31: Compare work directory, not socket directory
             # Socket and work directories are different by design for isolation
             # Use work_dir if available, otherwise fall back to socket directory
-            if hasattr(self, 'work_dir') and self.work_dir:
+            if hasattr(self, "work_dir") and self.work_dir:
                 my_target_dir = str(self.work_dir)
                 comparison_type = "work directory"
             else:
                 my_target_dir = str(Path(self.config.socket_path).parent)
                 comparison_type = "socket directory"
-            
+
             for proc in psutil.process_iter(["pid", "name", "cmdline", "cwd"]):
                 if proc.info["cmdline"] and any(
                     "pglite_manager.js" in cmd for cmd in proc.info["cmdline"]
@@ -297,7 +297,9 @@ class PGliteManager:
                         proc_cwd = proc.info.get("cwd", "")
                         if proc_cwd == my_target_dir:
                             pid = proc.info["pid"]
-                            self.logger.info(f"Killing existing PGlite process: {pid} (matching {comparison_type})")
+                            self.logger.info(
+                                f"Killing existing PGlite process: {pid} (matching {comparison_type})"
+                            )
                             proc.kill()
                             proc.wait(timeout=5)
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -358,7 +360,7 @@ class PGliteManager:
 
         # Setup work directory first so it's available for cleanup logic
         self.work_dir = self._setup_work_dir()
-        
+
         # Setup
         self._kill_existing_processes()
         self._cleanup_socket()
