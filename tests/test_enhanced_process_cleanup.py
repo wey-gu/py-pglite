@@ -205,7 +205,8 @@ class TestEnhancedStopMethod:
             mock_getpgid.assert_called_once_with(1234)
             mock_killpg.assert_called_once_with(1234, 15)  # SIGTERM
             mock_process.wait.assert_called_once_with(timeout=5)
-            mock_cleanup.assert_called_once()
+            # Global cleanup should NOT be called for graceful termination
+            mock_cleanup.assert_not_called()
 
     @patch("os.killpg")
     @patch("os.getpgid")
@@ -228,7 +229,8 @@ class TestEnhancedStopMethod:
             mock_killpg.assert_has_calls(
                 [call(1234, 15), call(1234, 9)]
             )  # SIGTERM, then SIGKILL
-            mock_cleanup.assert_called_once()
+            # Global cleanup should NOT be called if the final wait succeeds
+            mock_cleanup.assert_not_called()
 
     @patch("os.killpg")
     @patch("os.getpgid")
@@ -250,7 +252,8 @@ class TestEnhancedStopMethod:
             # Should fall back to single process termination
             mock_process.terminate.assert_called_once()
             mock_process.wait.assert_called_once_with(timeout=5)
-            mock_cleanup.assert_called_once()
+            # Global cleanup should NOT be called for graceful termination
+            mock_cleanup.assert_not_called()
 
     def test_stop_without_killpg(self):
         """Test stop behavior when killpg is not available."""
@@ -273,8 +276,31 @@ class TestEnhancedStopMethod:
                 # Should use single process termination
                 mock_process.terminate.assert_called_once()
                 mock_process.wait.assert_called_once_with(timeout=5)
-                mock_cleanup.assert_called_once()
+                # Global cleanup should NOT be called for graceful termination
+                mock_cleanup.assert_not_called()
         finally:
             # Restore killpg if it existed
             if original_killpg is not None:
                 setattr(os, 'killpg', original_killpg)
+
+    def test_stop_calls_global_cleanup_on_termination_failure(self):
+        """Test that global cleanup is called when process termination fails."""
+        manager = PGliteManager()
+
+        mock_process = Mock()
+        mock_process.pid = 1234
+        # Simulate both graceful and force termination failing
+        mock_process.wait.side_effect = [
+            subprocess.TimeoutExpired("cmd", 5),  # First wait (graceful) fails
+            subprocess.TimeoutExpired("cmd", 2),  # Second wait (force) fails
+        ]
+        manager.process = mock_process
+
+        with patch.object(manager, "_kill_all_pglite_processes") as mock_cleanup:
+            manager.stop()
+
+            # Should try terminate, then kill, then call global cleanup
+            mock_process.terminate.assert_called_once()
+            mock_process.kill.assert_called_once()
+            # Global cleanup should be called when final wait fails
+            mock_cleanup.assert_called_once()

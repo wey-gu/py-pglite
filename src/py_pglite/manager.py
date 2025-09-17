@@ -280,19 +280,24 @@ class PGliteManager:
         try:
             # Fix for issue #31: Compare work directory, not socket directory
             # Socket and work directories are different by design for isolation
-            my_work_dir = str(self.work_dir) if self.work_dir else None
-
+            # Use work_dir if available, otherwise fall back to socket directory
+            if hasattr(self, 'work_dir') and self.work_dir:
+                my_target_dir = str(self.work_dir)
+                comparison_type = "work directory"
+            else:
+                my_target_dir = str(Path(self.config.socket_path).parent)
+                comparison_type = "socket directory"
+            
             for proc in psutil.process_iter(["pid", "name", "cmdline", "cwd"]):
                 if proc.info["cmdline"] and any(
                     "pglite_manager.js" in cmd for cmd in proc.info["cmdline"]
                 ):
-                    # Compare work directory with process CWD (not socket directory)
-                    # This fixes the core bug identified by @kzndotsh
+                    # Use exact directory match to avoid killing processes in similar paths
                     try:
                         proc_cwd = proc.info.get("cwd", "")
-                        if my_work_dir and my_work_dir in proc_cwd:
+                        if proc_cwd == my_target_dir:
                             pid = proc.info["pid"]
-                            self.logger.info(f"Killing existing PGlite process: {pid}")
+                            self.logger.info(f"Killing existing PGlite process: {pid} (matching {comparison_type})")
                             proc.kill()
                             proc.wait(timeout=5)
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -534,13 +539,15 @@ class PGliteManager:
                     self.logger.info("PGlite server stopped forcefully")
                 except subprocess.TimeoutExpired:
                     self.logger.error("Failed to kill PGlite process!")
+                    # Use global cleanup as last resort when normal termination fails
+                    self._kill_all_pglite_processes()
 
         except Exception as e:
             self.logger.warning(f"Error stopping PGlite: {e}")
         finally:
             self.process = None
             # Additional cleanup: kill any remaining pglite processes
-            self._kill_all_pglite_processes()
+            # Note: Global cleanup is only used in error conditions, not normal stop
             if self.config.cleanup_on_exit:
                 self._cleanup_socket()
 
