@@ -278,15 +278,19 @@ class PGliteManager:
     def _kill_existing_processes(self) -> None:
         """Kill any existing PGlite processes that might conflict with this socket."""
         try:
-            my_socket_dir = str(Path(self.config.socket_path).parent)
+            # Fix for issue #31: Compare work directory, not socket directory
+            # Socket and work directories are different by design for isolation
+            my_work_dir = str(self.work_dir) if self.work_dir else None
+            
             for proc in psutil.process_iter(["pid", "name", "cmdline", "cwd"]):
                 if proc.info["cmdline"] and any(
                     "pglite_manager.js" in cmd for cmd in proc.info["cmdline"]
                 ):
-                    # Only kill processes in the same socket directory to avoid killing other instances
+                    # Compare work directory with process CWD (not socket directory)
+                    # This fixes the core bug identified by @kzndotsh
                     try:
                         proc_cwd = proc.info.get("cwd", "")
-                        if my_socket_dir in proc_cwd or proc_cwd in my_socket_dir:
+                        if my_work_dir and my_work_dir in proc_cwd:
                             pid = proc.info["pid"]
                             self.logger.info(f"Killing existing PGlite process: {pid}")
                             proc.kill()

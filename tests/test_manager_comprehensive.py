@@ -247,13 +247,15 @@ class TestSocketAndProcessManagement:
         """Test killing existing PGlite processes."""
         config = PGliteConfig(socket_path="/tmp/pglite-socket/socket")
         manager = PGliteManager(config)
+        # Set work_dir to simulate proper setup
+        manager.work_dir = Path("/tmp/pglite-work-dir")
 
         mock_proc1 = Mock()
         mock_proc1.info = {
             "pid": 1234,
             "name": "node",
             "cmdline": ["node", "pglite_manager.js"],
-            "cwd": "/tmp/pglite-socket",  # Same directory as socket
+            "cwd": "/tmp/pglite-work-dir",  # Same directory as work_dir
         }
 
         mock_proc2 = Mock()
@@ -271,6 +273,26 @@ class TestSocketAndProcessManagement:
             mock_proc1.kill.assert_called_once()
             mock_proc1.wait.assert_called_once_with(timeout=5)
             mock_proc2.kill.assert_not_called()
+
+    def test_kill_existing_processes_no_work_dir(self):
+        """Test killing existing processes when work_dir is None."""
+        config = PGliteConfig()
+        manager = PGliteManager(config)
+        # work_dir is None initially
+
+        mock_proc1 = Mock()
+        mock_proc1.info = {
+            "pid": 1234,
+            "name": "node",
+            "cmdline": ["node", "pglite_manager.js"],
+            "cwd": "/tmp/some-dir",
+        }
+
+        with patch("psutil.process_iter", return_value=[mock_proc1]):
+            manager._kill_existing_processes()
+
+            # Should not kill any processes when work_dir is None
+            mock_proc1.kill.assert_not_called()
 
     def test_kill_existing_processes_exception_handling(self):
         """Test exception handling in process killing."""
