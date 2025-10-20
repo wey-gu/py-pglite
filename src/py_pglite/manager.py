@@ -7,7 +7,7 @@ import subprocess  # nosec B404 - subprocess needed for npm/node process managem
 import sys
 import tempfile
 import time
-
+import typing
 from pathlib import Path
 from textwrap import dedent
 from typing import Any
@@ -26,6 +26,17 @@ class PGliteManager:
     Framework-agnostic PGlite process manager. Provides database connections
     through framework-specific methods that require their respective dependencies.
     """
+
+    package_content: typing.ClassVar[dict[str, Any]] = {
+        "name": "py-pglite-env",
+        "version": __version__,
+        "description": "PGlite test environment for py-pglite",
+        "scripts": {"start": "node pglite_manager.js"},
+        "dependencies": {
+            "@electric-sql/pglite": "*",
+            "@electric-sql/pglite-socket": "*",
+        },
+    }
 
     def __init__(self, config: PGliteConfig | None = None):
         """Initialize PGlite manager.
@@ -67,18 +78,8 @@ class PGliteManager:
         # Create package.json if it doesn't exist
         package_json = work_dir / "package.json"
         if not package_json.exists():
-            package_content = {
-                "name": "py-pglite-env",
-                "version": __version__,
-                "description": "PGlite test environment for py-pglite",
-                "scripts": {"start": "node pglite_manager.js"},
-                "dependencies": {
-                    "@electric-sql/pglite": "^0.3.0",
-                    "@electric-sql/pglite-socket": "^0.0.8",
-                },
-            }
             with open(package_json, "w") as f:
-                json.dump(package_content, f, indent=2)
+                json.dump(self.package_content, f, indent=2)
 
         # Create pglite_manager.js if it doesn't exist
         manager_js = work_dir / "pglite_manager.js"
