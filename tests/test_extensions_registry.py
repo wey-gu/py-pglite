@@ -67,6 +67,14 @@ def test_fuzzystrmatch_extension_registration():
     assert fuzzystrmatch_config["name"] == "fuzzystrmatch"
 
 
+def test_uuid_ossp_extension_registration():
+    """Test uuid_ossp extension is properly registered."""
+    uuid_ossp_config = SUPPORTED_EXTENSIONS["uuid-ossp"]
+
+    assert uuid_ossp_config["module"] == "@electric-sql/pglite/contrib/uuid_ossp"
+    assert uuid_ossp_config["name"] == "uuid_ossp"
+
+
 def test_config_extension_validation():
     """Test that PGliteConfig properly validates extensions."""
     # Valid extension should work
@@ -196,7 +204,7 @@ def test_extension_registry_is_immutable():
 def test_new_extensions_configuration():
     """Test that all new extensions can be configured."""
     # Test individual extensions
-    for ext in ["pg_trgm", "btree_gin", "btree_gist", "fuzzystrmatch"]:
+    for ext in ["pg_trgm", "btree_gin", "btree_gist", "fuzzystrmatch", "uuid-ossp"]:
         config = PGliteConfig(extensions=[ext])
         assert config.extensions == [ext]
 
@@ -204,7 +212,13 @@ def test_new_extensions_configuration():
         assert manager.config.extensions == [ext]
 
     # Test all new extensions together
-    new_extensions = ["pg_trgm", "btree_gin", "btree_gist", "fuzzystrmatch"]
+    new_extensions = [
+        "pg_trgm",
+        "btree_gin",
+        "btree_gist",
+        "fuzzystrmatch",
+        "uuid-ossp",
+    ]
     config = PGliteConfig(extensions=new_extensions)
     assert config.extensions == new_extensions
 
@@ -212,7 +226,14 @@ def test_new_extensions_configuration():
     assert manager.config.extensions == new_extensions
 
     # Test all extensions including pgvector
-    all_exts = ["pgvector", "pg_trgm", "btree_gin", "btree_gist", "fuzzystrmatch"]
+    all_exts = [
+        "pgvector",
+        "pg_trgm",
+        "btree_gin",
+        "btree_gist",
+        "fuzzystrmatch",
+        "uuid-ossp",
+    ]
     config = PGliteConfig(extensions=all_exts)
     assert config.extensions == all_exts
 
@@ -231,6 +252,7 @@ def test_extension_validation_error_messages():
         assert "btree_gin" in error_msg
         assert "btree_gist" in error_msg
         assert "fuzzystrmatch" in error_msg
+        assert "uuid-ossp" in error_msg
 
 
 def test_extensions_with_empty_string():

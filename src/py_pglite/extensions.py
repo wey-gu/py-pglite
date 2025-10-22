@@ -19,4 +19,8 @@ SUPPORTED_EXTENSIONS: dict[str, dict[str, str]] = {
         "module": "@electric-sql/pglite/contrib/fuzzystrmatch",
         "name": "fuzzystrmatch",
     },
+    "uuid-ossp": {
+        "module": "@electric-sql/pglite/contrib/uuid_ossp",  # Module uses underscore
+        "name": "uuid_ossp",  # JavaScript-safe identifier (no hyphen)
+    },
 }
