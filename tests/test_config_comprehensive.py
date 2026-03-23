@@ -83,6 +83,7 @@ class TestPGliteConfigValidationExtensive:
         assert config.timeout == 30
         assert config.cleanup_on_exit is True
         assert config.log_level == "INFO"
+        assert config.data_dir is None
         assert config.work_dir is None
         assert config.node_modules_check is True
         assert config.auto_install_deps is True
@@ -145,6 +146,24 @@ class TestPGliteConfigValidationExtensive:
         # Empty list should be fine
         config = PGliteConfig(extensions=[])
         assert config.extensions == []
+
+    def test_data_dir_path_resolution(self):
+        """Test data_dir path resolution and validation."""
+        # Relative path should be resolved to absolute
+        config = PGliteConfig(data_dir=Path("./test_dir"))
+        assert config.data_dir is not None
+        assert config.data_dir.is_absolute()
+
+        # Absolute path should be preserved
+        absolute_path = Path("/tmp/test_pglite").resolve()
+        config = PGliteConfig(data_dir=absolute_path)
+        assert config.data_dir is not None
+        assert config.data_dir == absolute_path
+
+        # Path object should work
+        config = PGliteConfig(data_dir=Path("./another_test"))
+        assert config.data_dir is not None
+        assert config.data_dir.is_absolute()
 
     def test_work_dir_path_resolution(self):
         """Test work_dir path resolution and validation."""
@@ -288,6 +307,7 @@ class TestPGliteConfigEdgeCases:
             cleanup_on_exit=False,
             log_level="ERROR",
             socket_path="/custom/path/.s.PGSQL.5432",
+            data_dir=Path("/custom/data"),
             work_dir=Path("/custom/work"),
             node_modules_check=False,
             auto_install_deps=False,
@@ -299,6 +319,8 @@ class TestPGliteConfigEdgeCases:
         assert config.cleanup_on_exit is False
         assert config.log_level == "ERROR"
         assert config.socket_path == "/custom/path/.s.PGSQL.5432"
+        assert config.data_dir is not None
+        assert config.data_dir == Path("/custom/data")
         assert config.work_dir is not None
         assert config.work_dir == Path("/custom/work")
         assert config.node_modules_check is False
@@ -384,6 +406,23 @@ class TestPGliteConfigValidationIntegration:
         with pytest.raises(ValueError):
             PGliteConfig(extensions=["invalid_extension"])
 
+    def test_data_dir_path_edge_cases(self):
+        """Test data_dir with various path formats."""
+        # Home directory expansion
+        config = PGliteConfig(data_dir=Path("~/test"))
+        assert config.data_dir is not None
+        assert config.data_dir.is_absolute()
+
+        # Current directory
+        config = PGliteConfig(data_dir=Path("."))
+        assert config.data_dir is not None
+        assert config.data_dir.is_absolute()
+
+        # Parent directory
+        config = PGliteConfig(data_dir=Path("../test"))
+        assert config.data_dir is not None
+        assert config.data_dir.is_absolute()
+
     def test_work_dir_path_edge_cases(self):
         """Test work_dir with various path formats."""
         # Home directory expansion
@@ -430,6 +469,28 @@ class TestPGliteConfigImports:
         config = PGliteConfig(log_level="DEBUG")
         # This should use the logging module to convert string to int
         assert config.log_level_int == logging.DEBUG
+
+
+class TestPGliteConfigDataDirEdgeCases:
+    """Test data_dir field edge cases."""
+
+    def test_data_dir_none_handling(self):
+        """Test that data_dir=None is handled correctly."""
+        config = PGliteConfig(data_dir=None)
+        assert config.data_dir is None
+
+    def test_data_dir_string_to_path_conversion(self):
+        """Test that string data_dir is converted to Path."""
+        config = PGliteConfig(data_dir=Path("/tmp/test"))
+        assert isinstance(config.data_dir, Path)
+        assert config.data_dir.is_absolute()
+
+    def test_data_dir_relative_path_resolution(self):
+        """Test that relative data_dir paths are resolved."""
+        config = PGliteConfig(data_dir=Path("./relative_path"))
+        assert config.data_dir is not None
+        assert config.data_dir.is_absolute()
+        assert "relative_path" in str(config.data_dir)
 
 
 class TestPGliteConfigWorkDirEdgeCases:

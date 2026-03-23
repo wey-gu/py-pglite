@@ -96,16 +96,19 @@ class PGliteManager:
 
             ext_requires_str = "\n".join(ext_requires)
             ext_configs_str = ",\n".join(ext_configs)
+            data_dir_str = json.dumps(
+                str(self.config.data_dir) if self.config.data_dir else None
+            )
             extensions_obj_str = f"{{\n{ext_configs_str}\n}}" if ext_configs else "{}"
 
             # Generate JavaScript content based on socket mode
             if self.config.use_tcp:
                 js_content = self._generate_tcp_js_content(
-                    ext_requires_str, extensions_obj_str
+                    ext_requires_str, extensions_obj_str, data_dir_str
                 )
             else:
                 js_content = self._generate_unix_js_content(
-                    ext_requires_str, extensions_obj_str
+                    ext_requires_str, extensions_obj_str, data_dir_str
                 )
             with open(manager_js, "w") as f:
                 f.write(js_content)
@@ -113,7 +116,7 @@ class PGliteManager:
         return work_dir
 
     def _generate_unix_js_content(
-        self, ext_requires_str: str, extensions_obj_str: str
+        self, ext_requires_str: str, extensions_obj_str: str, data_dir_str: str
     ) -> str:
         """Generate JavaScript content for Unix socket mode (original logic)."""
         return dedent(f"""
@@ -142,6 +145,7 @@ class PGliteManager:
                 try {{
                     // Create a PGlite instance with extensions
                     const db = new PGlite({{
+                        dataDir: {data_dir_str},
                         extensions: {extensions_obj_str}
                     }});
 
@@ -196,7 +200,7 @@ class PGliteManager:
         """).strip()
 
     def _generate_tcp_js_content(
-        self, ext_requires_str: str, extensions_obj_str: str
+        self, ext_requires_str: str, extensions_obj_str: str, data_dir_str: str
     ) -> str:
         """Generate JavaScript content for TCP socket mode."""
         return dedent(f"""
@@ -210,6 +214,7 @@ class PGliteManager:
                 try {{
                     // Create a PGlite instance with extensions
                     const db = new PGlite({{
+                        dataDir: {data_dir_str},
                         extensions: {extensions_obj_str}
                     }});
 
