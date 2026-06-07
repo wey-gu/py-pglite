@@ -54,6 +54,7 @@ class PGliteConfig:
     use_tcp: bool = False
     tcp_host: str = "127.0.0.1"
     tcp_port: int = 5432
+    max_connections: int = 10
 
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""

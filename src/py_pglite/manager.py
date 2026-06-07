@@ -73,8 +73,8 @@ class PGliteManager:
                 "description": "PGlite test environment for py-pglite",
                 "scripts": {"start": "node pglite_manager.js"},
                 "dependencies": {
-                    "@electric-sql/pglite": "^0.3.0",
-                    "@electric-sql/pglite-socket": "^0.0.8",
+                    "@electric-sql/pglite": "^0.5.0",
+                    "@electric-sql/pglite-socket": "^0.2.1",
                 },
             }
             with open(package_json, "w") as f:
@@ -152,6 +152,7 @@ class PGliteManager:
                     const server = new PGLiteSocketServer({{
                         db,
                         path: SOCKET_PATH,
+                        maxConnections: {self.config.max_connections},
                     }});
                     await server.start();
                     console.log(`Server started on socket ${{SOCKET_PATH}}`);
@@ -217,7 +218,8 @@ class PGliteManager:
                     const server = new PGLiteSocketServer({{
                         db,
                         host: '{self.config.tcp_host}',
-                        port: {self.config.tcp_port}
+                        port: {self.config.tcp_port},
+                        maxConnections: {self.config.max_connections},
                     }});
                     await server.start();
                     console.log(`Server started on TCP {self.config.tcp_host}:{self.config.tcp_port}`);
