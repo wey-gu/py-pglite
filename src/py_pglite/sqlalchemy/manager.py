@@ -240,6 +240,7 @@ class SQLAlchemyPGliteManager(PGliteManager):
             self._kill_all_pglite_processes()
             if self.config.cleanup_on_exit:
                 self._cleanup_socket()
+                self._cleanup_temp_dirs()
 
 
 __all__ = ["SQLAlchemyPGliteManager"]

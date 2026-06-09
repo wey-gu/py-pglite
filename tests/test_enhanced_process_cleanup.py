@@ -304,3 +304,185 @@ class TestEnhancedStopMethod:
             mock_process.kill.assert_called_once()
             # Global cleanup should be called when final wait fails
             mock_cleanup.assert_called_once()
+
+
+class TestTempDirCleanup:
+    """Test cleanup of temporary directories during stop()."""
+
+    def test_cleanup_temp_dirs_removes_socket_and_work_dirs(self):
+        """Test that _cleanup_temp_dirs removes both socket and work directories."""
+        import shutil
+        from pathlib import Path
+
+        manager = PGliteManager()
+
+        socket_dir = Path(manager.config.socket_path).parent
+        work_dir = tempfile.mkdtemp(prefix="py-pglite-test-")
+
+        manager.work_dir = Path(work_dir)
+        manager._auto_work_dir = True
+
+        assert socket_dir.exists()
+        assert manager.work_dir.exists()
+
+        manager._cleanup_temp_dirs()
+
+        assert not socket_dir.exists()
+        assert not manager.work_dir.exists()
+
+    def test_cleanup_temp_dirs_socket_dir_not_empty(self):
+        """Test _cleanup_temp_dirs when socket directory is not empty."""
+        from pathlib import Path
+
+        manager = PGliteManager()
+
+        socket_dir = Path(manager.config.socket_path).parent
+        # Create a file inside the socket dir so rmdir fails
+        extra_file = socket_dir / "extra_file.txt"
+        extra_file.write_text("blocking removal")
+
+        manager._cleanup_temp_dirs()
+
+        # Socket directory should still exist because it wasn't empty
+        assert socket_dir.exists()
+        # Clean up our test artifact
+        extra_file.unlink()
+        socket_dir.rmdir()
+
+    def test_cleanup_temp_dirs_no_auto_work_dir(self):
+        """Test _cleanup_temp_dirs does not remove user-specified work dir."""
+        import shutil
+        from pathlib import Path
+
+        manager = PGliteManager()
+        work_dir = tempfile.mkdtemp(prefix="py-pglite-test-")
+        manager.work_dir = Path(work_dir)
+        manager._auto_work_dir = False
+
+        assert manager.work_dir.exists()
+
+        manager._cleanup_temp_dirs()
+
+        # User-specified work dir should NOT be removed
+        assert manager.work_dir.exists()
+        shutil.rmtree(work_dir)
+
+    def test_cleanup_temp_dirs_work_dir_already_gone(self):
+        """Test _cleanup_temp_dirs handles work dir already deleted."""
+        import shutil
+        from pathlib import Path
+
+        manager = PGliteManager()
+        work_dir = tempfile.mkdtemp(prefix="py-pglite-test-")
+        manager.work_dir = Path(work_dir)
+        manager._auto_work_dir = True
+
+        shutil.rmtree(work_dir)
+
+        # Should not raise
+        manager._cleanup_temp_dirs()
+
+    def test_cleanup_temp_dirs_socket_dir_already_gone(self):
+        """Test _cleanup_temp_dirs handles socket dir already deleted."""
+        from pathlib import Path
+
+        manager = PGliteManager()
+
+        socket_dir = Path(manager.config.socket_path).parent
+        socket_dir.rmdir()
+
+        # Should not raise
+        manager._cleanup_temp_dirs()
+
+    def test_stop_calls_cleanup_temp_dirs_when_cleanup_on_exit(self):
+        """Test stop() calls _cleanup_temp_dirs when cleanup_on_exit is True."""
+        config = PGliteConfig(cleanup_on_exit=True)
+        manager = PGliteManager(config)
+        manager.process = Mock()
+        manager.process.pid = 1234
+        manager.process.wait.return_value = None
+
+        with (
+            patch.object(manager, "_cleanup_socket") as mock_socket,
+            patch.object(manager, "_cleanup_temp_dirs") as mock_temp_dirs,
+        ):
+            manager.stop()
+
+            mock_socket.assert_called_once()
+            mock_temp_dirs.assert_called_once()
+
+    def test_stop_skips_cleanup_temp_dirs_when_cleanup_on_exit_false(self):
+        """Test stop() does NOT call _cleanup_temp_dirs when cleanup_on_exit is False."""
+        config = PGliteConfig(cleanup_on_exit=False)
+        manager = PGliteManager(config)
+        manager.process = Mock()
+        manager.process.pid = 1234
+        manager.process.wait.return_value = None
+
+        with (
+            patch.object(manager, "_cleanup_socket") as mock_socket,
+            patch.object(manager, "_cleanup_temp_dirs") as mock_temp_dirs,
+        ):
+            manager.stop()
+
+            mock_socket.assert_not_called()
+            mock_temp_dirs.assert_not_called()
+
+    def test_full_stop_cycle_cleans_up_real_temp_dirs(self):
+        """End-to-end test: start/stop leaves no temp directories behind."""
+        from pathlib import Path
+
+        manager = PGliteManager()
+
+        manager.start()
+        assert manager.is_running()
+
+        socket_dir = Path(manager.config.socket_path).parent
+        work_dir = manager.work_dir
+
+        assert socket_dir.exists()
+        assert work_dir is not None
+        assert work_dir.exists()
+
+        manager.stop()
+        assert not manager.is_running()
+
+        # Both temp directories should be gone
+        assert not socket_dir.exists(), f"Socket dir still exists: {socket_dir}"
+        assert not work_dir.exists(), f"Work dir still exists: {work_dir}"
+
+    def test_stop_terminates_process_and_cleans_up(self):
+        """End-to-end test: stop() kills the OS process and removes temp dirs."""
+        from pathlib import Path
+
+        import psutil
+
+        manager = PGliteManager()
+        manager.start()
+        assert manager.is_running()
+        assert manager.process is not None
+
+        pid = manager.process.pid
+        socket_dir = Path(manager.config.socket_path).parent
+        work_dir = manager.work_dir
+        assert work_dir is not None
+
+        manager.stop()
+
+        # Manager should report stopped
+        assert not manager.is_running()
+        assert manager.process is None
+
+        # Process should no longer exist at the OS level
+        assert not psutil.pid_exists(pid), f"Process {pid} still running"
+
+        # No PGlite processes should remain
+        for proc in psutil.process_iter(["cmdline"]):
+            if proc.info["cmdline"]:
+                assert not any(
+                    "pglite_manager.js" in cmd for cmd in proc.info["cmdline"]
+                ), f"PGlite process still running: {proc.info['cmdline']}"
+
+        # Temp directories should be gone
+        assert not socket_dir.exists(), f"Socket dir still exists: {socket_dir}"
+        assert not work_dir.exists(), f"Work dir still exists: {work_dir}"

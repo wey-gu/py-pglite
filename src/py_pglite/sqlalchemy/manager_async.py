@@ -224,6 +224,7 @@ class SQLAlchemyAsyncPGliteManager(PGliteManager):
                     self._shared_engine = None
             if self.config.cleanup_on_exit:
                 self._cleanup_socket()
+                self._cleanup_temp_dirs()
 
 
 __all__ = ["SQLAlchemyAsyncPGliteManager"]

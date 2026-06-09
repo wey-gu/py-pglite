@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import shutil
 import subprocess  # nosec B404 - subprocess needed for npm/node process management
 import sys
 import tempfile
@@ -38,6 +39,7 @@ class PGliteManager:
         self.work_dir: Path | None = None
         self._original_cwd: str | None = None
         self._shared_engine: Any | None = None
+        self._auto_work_dir: bool = False
 
         # Set up logging
         self.logger = logging.getLogger(__name__)
@@ -63,6 +65,7 @@ class PGliteManager:
             work_dir.mkdir(parents=True, exist_ok=True)
         else:
             work_dir = Path(tempfile.mkdtemp(prefix="py-pglite-"))
+            self._auto_work_dir = True
 
         # Create package.json if it doesn't exist
         package_json = work_dir / "package.json"
@@ -275,6 +278,29 @@ class PGliteManager:
             except Exception as e:
                 self.logger.warning(f"Failed to clean up socket: {e}")
 
+    def _cleanup_temp_dirs(self) -> None:
+        """Remove temporary directories created by PGlite.
+
+        Cleans up both the socket directory (parent of the Unix socket
+        file) and the auto-created work directory if applicable.
+        """
+        # Clean up socket directory (parent of the socket file)
+        socket_dir = Path(self.config.socket_path).parent
+        if socket_dir.exists():
+            try:
+                socket_dir.rmdir()  # only succeeds if empty
+                self.logger.info(f"Cleaned up socket directory: {socket_dir}")
+            except OSError:
+                pass  # not empty, still in use, or permission denied
+
+        # Clean up auto-created work directory
+        if self._auto_work_dir and self.work_dir and self.work_dir.exists():
+            try:
+                shutil.rmtree(self.work_dir)
+                self.logger.info(f"Cleaned up work directory: {self.work_dir}")
+            except Exception as e:
+                self.logger.warning(f"Failed to clean up work directory: {e}")
+
     def _kill_existing_processes(self) -> None:
         """Kill any existing PGlite processes that might conflict with this socket."""
         try:
@@ -364,6 +390,11 @@ class PGliteManager:
         # Setup
         self._kill_existing_processes()
         self._cleanup_socket()
+
+        # Ensure socket directory exists (may have been removed by prior cleanup)
+        if not self.config.use_tcp:
+            socket_dir = Path(self.config.socket_path).parent
+            socket_dir.mkdir(mode=0o700, exist_ok=True)
 
         self._original_cwd = os.getcwd()
         os.chdir(self.work_dir)
@@ -548,10 +579,9 @@ class PGliteManager:
             self.logger.warning(f"Error stopping PGlite: {e}")
         finally:
             self.process = None
-            # Additional cleanup: kill any remaining pglite processes
-            # Note: Global cleanup is only used in error conditions, not normal stop
             if self.config.cleanup_on_exit:
                 self._cleanup_socket()
+                self._cleanup_temp_dirs()
 
     def is_running(self) -> bool:
         """Check if PGlite process is running."""
