@@ -79,7 +79,7 @@ class SQLAlchemyAsyncPGliteManager(PGliteManager):
             "pool_pre_ping": False,  # Disable pre-ping for Unix sockets
             "pool_recycle": 3600,  # Longer recycle time for testing
             "connect_args": {
-                "connect_timeout": 60,  # Much longer timeout for table creation
+                "connect_timeout": 10,  # Bounds connection setup only (not query time); short so a backend that accepts TCP but never completes the startup handshake fails fast instead of stalling wait_for_ready for minutes
                 "application_name": "py-pglite",
                 "sslmode": "disable",  # Disable SSL for Unix sockets
                 "prepare_threshold": None,  # Disable prepared states for test stability
