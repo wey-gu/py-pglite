@@ -239,7 +239,8 @@ config = PGliteConfig(
     timeout=60,                    # Extended timeout for CI/CD
     log_level="INFO",              # Balanced logging
     cleanup_on_exit=True,          # Automatic cleanup
-    work_dir=Path("./test-data")   # Custom directory
+    work_dir=Path("./test-data"),  # Custom directory
+    node_modules_dir=Path("/tmp/py-pglite-npm")  # One npm install shared by all workers
 )
 
 with SQLAlchemyPGliteManager(config) as manager:

@@ -86,7 +86,7 @@ def test_extensions_registry():
 
     # Verify pgvector extension details
     pgvector = SUPPORTED_EXTENSIONS["pgvector"]
-    assert pgvector["module"] == "@electric-sql/pglite/vector"
+    assert pgvector["module"] == "@electric-sql/pglite-pgvector"
     assert pgvector["name"] == "vector"
 
 

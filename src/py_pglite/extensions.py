@@ -5,7 +5,10 @@ necessary JavaScript import details for each.
 """
 
 SUPPORTED_EXTENSIONS: dict[str, dict[str, str]] = {
-    "pgvector": {"module": "@electric-sql/pglite/vector", "name": "vector"},
+    "pgvector": {
+        "module": "@electric-sql/pglite-pgvector",
+        "name": "vector",
+    },
     "pg_trgm": {"module": "@electric-sql/pglite/contrib/pg_trgm", "name": "pg_trgm"},
     "btree_gin": {
         "module": "@electric-sql/pglite/contrib/btree_gin",

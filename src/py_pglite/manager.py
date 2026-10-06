@@ -3,11 +3,17 @@
 import json
 import logging
 import os
+import shutil
+import socket
+import struct
 import subprocess  # nosec B404 - subprocess needed for npm/node process management
 import sys
 import tempfile
 import time
 
+from collections.abc import Iterator
+from contextlib import closing
+from contextlib import contextmanager
 from pathlib import Path
 from textwrap import dedent
 from typing import Any
@@ -18,6 +24,71 @@ from py_pglite import __version__
 from py_pglite.config import PGliteConfig
 from py_pglite.extensions import SUPPORTED_EXTENSIONS
 from py_pglite.utils import find_pglite_modules
+
+
+# How long to wait for another process to finish installing npm dependencies
+# into a shared node_modules_dir before giving up.
+_INSTALL_LOCK_TIMEOUT = 300.0
+
+
+def _read_json(path: Path) -> Any | None:
+    """Read a JSON file, returning None when it is missing or invalid."""
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _recv_exact(sock: socket.socket, count: int) -> bytes | None:
+    """Read exactly ``count`` bytes, or None when the peer closes."""
+    data = b""
+    while len(data) < count:
+        chunk = sock.recv(count - len(data))
+        if not chunk:
+            return None
+        data += chunk
+    return data
+
+
+def _postgres_startup_probe(sock: socket.socket, password: str = "postgres") -> bool:
+    """Return True when ``sock`` completes a PostgreSQL startup handshake.
+
+    A bare connect-and-close is not enough: PGlite's socket server needs
+    the client to finish the startup exchange before it serves further
+    connections.  This performs a minimal startup (authentication plus
+    ReadyForQuery) and closes the session with a Terminate message, so the
+    probe behaves like a well-behaved client.
+    """
+    payload = b"user\x00postgres\x00database\x00postgres\x00\x00"
+    try:
+        sock.sendall(struct.pack("!ii", len(payload) + 8, 196608) + payload)
+        while True:
+            header = _recv_exact(sock, 5)
+            if header is None:
+                return False
+            message_type = header[0:1]
+            length = struct.unpack("!i", header[1:5])[0]
+            body = _recv_exact(sock, length - 4) if length > 4 else b""
+            if body is None:
+                return False
+            if message_type == b"R":
+                auth_code = struct.unpack("!i", body[:4])[0]
+                if auth_code == 3:  # cleartext password
+                    secret = password.encode() + b"\x00"
+                    sock.sendall(b"p" + struct.pack("!i", len(secret) + 4) + secret)
+                elif auth_code != 0:
+                    return False
+            elif message_type == b"E":
+                return False
+            elif message_type == b"Z":
+                try:
+                    sock.sendall(b"X\x00\x00\x00\x04")
+                except OSError:
+                    pass
+                return True
+    except OSError:
+        return False
 
 
 class PGliteManager:
@@ -56,6 +127,29 @@ class PGliteManager:
         """Context manager exit."""
         self.stop()
 
+    def _package_json_content(self) -> dict[str, Any]:
+        """Return the package.json contents used to install dependencies.
+
+        Kept as a single source of truth so a shared ``node_modules_dir``
+        can tell when its install is out of date.  The npm package pins
+        track the latest compatible PGlite releases.
+        """
+        dependencies = {
+            "@electric-sql/pglite": "^0.5.8",
+            "@electric-sql/pglite-socket": "^0.2.11",
+        }
+        # The pgvector extension lives in its own npm package since
+        # pglite 0.5.x split it out of the main bundle.
+        if self.config.extensions and "pgvector" in self.config.extensions:
+            dependencies["@electric-sql/pglite-pgvector"] = "^0.0.9"
+        return {
+            "name": "py-pglite-env",
+            "version": __version__,
+            "description": "PGlite test environment for py-pglite",
+            "scripts": {"start": "node pglite_manager.js"},
+            "dependencies": dependencies,
+        }
+
     def _setup_work_dir(self) -> Path:
         """Setup working directory for PGlite files."""
         if self.config.work_dir:
@@ -67,18 +161,8 @@ class PGliteManager:
         # Create package.json if it doesn't exist
         package_json = work_dir / "package.json"
         if not package_json.exists():
-            package_content = {
-                "name": "py-pglite-env",
-                "version": __version__,
-                "description": "PGlite test environment for py-pglite",
-                "scripts": {"start": "node pglite_manager.js"},
-                "dependencies": {
-                    "@electric-sql/pglite": "^0.3.0",
-                    "@electric-sql/pglite-socket": "^0.0.8",
-                },
-            }
             with open(package_json, "w") as f:
-                json.dump(package_content, f, indent=2)
+                json.dump(self._package_json_content(), f, indent=2)
 
         # Create pglite_manager.js if it doesn't exist
         manager_js = work_dir / "pglite_manager.js"
@@ -144,6 +228,10 @@ class PGliteManager:
                     const db = new PGlite({{
                         extensions: {extensions_obj_str}
                     }});
+
+                    // Wait for the database to be ready before accepting
+                    // connections; otherwise early clients are dropped.
+                    await db.waitReady;
 
                     // Clean up any existing socket
                     await cleanup();
@@ -212,6 +300,10 @@ class PGliteManager:
                     const db = new PGlite({{
                         extensions: {extensions_obj_str}
                     }});
+
+                    // Wait for the database to be ready before accepting
+                    // connections; otherwise early clients are dropped.
+                    await db.waitReady;
 
                     // Create and start a TCP server
                     const server = new PGLiteSocketServer({{
@@ -333,24 +425,133 @@ class PGliteManager:
         except Exception as e:
             self.logger.warning(f"Error killing all PGlite processes: {e}")
 
+    @contextmanager
+    def _install_lock(self, directory: Path) -> Iterator[None]:
+        """Hold an install lock for a shared node_modules directory.
+
+        Another process may be running npm install, so concurrent test
+        workers wait instead of racing (and each doing their own install).
+        ``flock`` and ``msvcrt.locking`` are released by the operating
+        system when the process exits, so a crashed installer cannot leave
+        a stale lock behind.
+        """
+        lock_path = directory / ".py-pglite-install.lock"
+        deadline = time.time() + _INSTALL_LOCK_TIMEOUT
+        with open(lock_path, "a+") as lock_file:
+            while True:
+                try:
+                    if sys.platform == "win32":  # pragma: no cover - Windows only
+                        import msvcrt
+
+                        lock_file.seek(0)
+                        msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+                    else:
+                        import fcntl
+
+                        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except OSError:
+                    if time.time() > deadline:
+                        raise TimeoutError(
+                            f"Timed out waiting for the npm install lock at {lock_path}"
+                        ) from None
+                    time.sleep(0.1)
+            try:
+                yield
+            finally:
+                if sys.platform == "win32":  # pragma: no cover - Windows only
+                    import msvcrt
+
+                    lock_file.seek(0)
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+
+                    fcntl.flock(lock_file, fcntl.LOCK_UN)
+
+    def _npm_install(self, directory: Path) -> None:
+        """Run ``npm install`` in the given directory."""
+        self.logger.info(f"Installing npm dependencies in {directory}...")
+        # nosec B603,B607 - npm install with fixed args, safe for testing library
+        result = subprocess.run(
+            ["npm", "install"],
+            cwd=directory,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=60,  # Add timeout for npm install
+        )
+        self.logger.info(f"npm install completed: {result.stdout}")
+
+    def _ensure_shared_dependencies(self, shared_dir: Path) -> Path:
+        """Install dependencies once in ``shared_dir`` for reuse.
+
+        Returns the ``node_modules`` path inside ``shared_dir``.  The
+        install is skipped when an up-to-date ``package.json`` and
+        ``node_modules`` are already present; changing the configured
+        extensions or a py-pglite upgrade invalidates and reinstalls it.
+        """
+        shared_modules = shared_dir / "node_modules"
+        desired_package = self._package_json_content()
+        with self._install_lock(shared_dir):
+            if _read_json(shared_dir / "package.json") != desired_package:
+                if shared_modules.exists():
+                    self.logger.info(
+                        f"npm dependencies in {shared_dir} are out of date; "
+                        f"reinstalling"
+                    )
+                    shutil.rmtree(shared_modules)
+                with open(shared_dir / "package.json", "w") as f:
+                    json.dump(desired_package, f, indent=2)
+            if not shared_modules.exists():
+                self._npm_install(shared_dir)
+        return shared_modules
+
+    def _link_shared_node_modules(self, work_dir: Path, shared_modules: Path) -> None:
+        """Point ``work_dir/node_modules`` at a shared install."""
+        work_dir.mkdir(parents=True, exist_ok=True)
+        link = work_dir / "node_modules"
+        if link.is_symlink():
+            if link.resolve() == shared_modules.resolve():
+                return
+            link.unlink()
+        elif link.exists():
+            if link.is_dir():
+                shutil.rmtree(link)
+            else:
+                link.unlink()
+        try:
+            link.symlink_to(shared_modules, target_is_directory=True)
+        except OSError:
+            # Windows without developer mode cannot create symlinks.
+            self.logger.warning(
+                f"Could not symlink {link} to {shared_modules}; copying instead"
+            )
+            shutil.copytree(shared_modules, link)
+
     def _install_dependencies(self, work_dir: Path) -> None:
-        """Install npm dependencies if needed."""
+        """Install npm dependencies if needed.
+
+        With ``node_modules_dir`` configured, dependencies are installed
+        once in that directory (shared across work directories) and linked
+        into ``work_dir``; otherwise they are installed per work directory.
+        """
         if not self.config.auto_install_deps:
             return
 
-        node_modules = work_dir / "node_modules"
-        if self.config.node_modules_check and not node_modules.exists():
-            self.logger.info("Installing npm dependencies...")
-            # nosec B603,B607 - npm install with fixed args, safe for testing library
-            result = subprocess.run(
-                ["npm", "install"],
-                cwd=work_dir,
-                capture_output=True,
-                text=True,
-                check=True,
-                timeout=60,  # Add timeout for npm install
-            )
-            self.logger.info(f"npm install completed: {result.stdout}")
+        if self.config.node_modules_dir is None:
+            node_modules = work_dir / "node_modules"
+            if self.config.node_modules_check and not node_modules.exists():
+                self._npm_install(work_dir)
+            return
+
+        shared_dir = Path(self.config.node_modules_dir)
+        shared_dir.mkdir(parents=True, exist_ok=True)
+        shared_modules = shared_dir / "node_modules"
+        if self.config.node_modules_check:
+            shared_modules = self._ensure_shared_dependencies(shared_dir)
+        if shared_modules.exists():
+            self._link_shared_node_modules(work_dir, shared_modules)
 
     def start(self) -> None:
         """Start the PGlite server."""
@@ -432,43 +633,45 @@ class PGliteManager:
                         ready_logged = True
 
                     try:
-                        import socket
-
-                        test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        test_socket.settimeout(1)
-                        test_socket.connect(
-                            (self.config.tcp_host, self.config.tcp_port)
-                        )
-                        test_socket.close()
-                        self.logger.info(
-                            f"PGlite TCP server started successfully on {self.config.tcp_host}:{self.config.tcp_port}"
-                        )
-                        break
-                    except (ImportError, OSError):
+                        with closing(
+                            socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        ) as test_socket:
+                            test_socket.settimeout(1)
+                            test_socket.connect(
+                                (self.config.tcp_host, self.config.tcp_port)
+                            )
+                            ready = _postgres_startup_probe(test_socket)
+                        if ready:
+                            self.logger.info(
+                                f"PGlite TCP server started successfully on {self.config.tcp_host}:{self.config.tcp_port}"
+                            )
+                            break
+                    except OSError:
                         # TCP port not ready yet, continue waiting
                         pass
                 else:
                     # Unix socket readiness check
                     socket_path = Path(self.config.socket_path)
-                    if socket_path.exists() and not ready_logged:
-                        self.logger.info(
-                            "PGlite socket created, server should be ready..."
-                        )
-                        ready_logged = True
-
-                        # Test basic connectivity to ensure it's really ready
-                        try:
-                            import socket
-
-                            test_socket = socket.socket(
-                                socket.AF_UNIX, socket.SOCK_STREAM
+                    if socket_path.exists():
+                        if not ready_logged:
+                            self.logger.info(
+                                "PGlite socket created, waiting for it to accept connections..."
                             )
-                            test_socket.settimeout(1)
-                            test_socket.connect(str(socket_path))
-                            test_socket.close()
-                            self.logger.info("PGlite server started successfully")
-                            break
-                        except (ImportError, OSError):
+                            ready_logged = True
+
+                        # A full startup handshake proves the server can
+                        # serve queries; a bare connect is not enough.
+                        try:
+                            with closing(
+                                socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                            ) as test_socket:
+                                test_socket.settimeout(1)
+                                test_socket.connect(str(socket_path))
+                                ready = _postgres_startup_probe(test_socket)
+                            if ready:
+                                self.logger.info("PGlite server started successfully")
+                                break
+                        except OSError:
                             # Socket exists but not ready yet, continue waiting
                             pass
 

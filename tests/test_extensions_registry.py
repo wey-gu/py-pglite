@@ -29,7 +29,7 @@ def test_pgvector_extension_registration():
     """Test pgvector extension is properly registered."""
     pgvector_config = SUPPORTED_EXTENSIONS["pgvector"]
 
-    assert pgvector_config["module"] == "@electric-sql/pglite/vector"
+    assert pgvector_config["module"] == "@electric-sql/pglite-pgvector"
     assert pgvector_config["name"] == "vector"
 
 

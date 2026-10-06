@@ -134,6 +134,7 @@ class TestEnhancedProcessCleanup:
             patch("subprocess.Popen", return_value=mock_process) as mock_popen,
             patch("pathlib.Path.exists", return_value=True),
             patch("socket.socket") as mock_socket_class,
+            patch("py_pglite.manager._postgres_startup_probe", return_value=True),
             patch("time.sleep"),
             patch("os.setsid", mock_setsid),
         ):
@@ -168,6 +169,7 @@ class TestEnhancedProcessCleanup:
             patch("subprocess.Popen", return_value=mock_process) as mock_popen,
             patch("pathlib.Path.exists", return_value=True),
             patch("socket.socket") as mock_socket_class,
+            patch("py_pglite.manager._postgres_startup_probe", return_value=True),
             patch("time.sleep"),
             patch("os.setsid", None),  # Simulate setsid not available
         ):

@@ -35,6 +35,11 @@ class PGliteConfig:
         work_dir: Working directory for PGlite files (default: None, uses temp)
         node_modules_check: Whether to verify node_modules exists (default: True)
         auto_install_deps: Whether to auto-install npm dependencies (default: True)
+        node_modules_dir: Directory to install npm dependencies into once and
+            share across work directories (for example across pytest-xdist
+            workers).  When set, npm installs run in this directory, guarded
+            by a file lock, and each work directory gets a ``node_modules``
+            link to it.  Default: None (install into each work directory).
         extensions: List of PGlite extensions to enable (e.g., ["pgvector"])
         node_options: Custom NODE_OPTIONS for the Node.js process
         use_tcp: Use TCP socket instead of Unix domain socket (default: False)
@@ -49,6 +54,7 @@ class PGliteConfig:
     work_dir: Path | None = None
     node_modules_check: bool = True
     auto_install_deps: bool = True
+    node_modules_dir: Path | None = None
     extensions: list[str] | None = None
     node_options: str | None = None
     use_tcp: bool = False
@@ -73,6 +79,9 @@ class PGliteConfig:
 
         if self.work_dir is not None:
             self.work_dir = Path(self.work_dir).resolve()
+
+        if self.node_modules_dir is not None:
+            self.node_modules_dir = Path(self.node_modules_dir).resolve()
 
         # Validate TCP configuration
         if self.use_tcp:

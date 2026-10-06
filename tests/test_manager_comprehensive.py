@@ -399,6 +399,7 @@ class TestProcessLifecycle:
             patch("subprocess.Popen", return_value=mock_process),
             patch("pathlib.Path.exists", return_value=True),
             patch("socket.socket") as mock_socket_class,
+            patch("py_pglite.manager._postgres_startup_probe", return_value=True),
             patch("time.sleep"),
         ):
             mock_socket = Mock()
@@ -736,6 +737,7 @@ class TestEnvironmentVariables:
             patch("subprocess.Popen", return_value=mock_process) as mock_popen,
             patch("pathlib.Path.exists", return_value=True),
             patch("socket.socket"),
+            patch("py_pglite.manager._postgres_startup_probe", return_value=True),
             patch("time.sleep"),
         ):
             manager.start()
