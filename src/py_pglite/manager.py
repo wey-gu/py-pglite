@@ -38,6 +38,7 @@ class PGliteManager:
         self.work_dir: Path | None = None
         self._original_cwd: str | None = None
         self._shared_engine: Any | None = None
+        self._auto_work_dir: bool = False
 
         # Set up logging
         self.logger = logging.getLogger(__name__)
@@ -63,6 +64,7 @@ class PGliteManager:
             work_dir.mkdir(parents=True, exist_ok=True)
         else:
             work_dir = Path(tempfile.mkdtemp(prefix="py-pglite-"))
+            self._auto_work_dir = True
 
         # Create package.json if it doesn't exist
         package_json = work_dir / "package.json"
@@ -277,6 +279,11 @@ class PGliteManager:
 
     def _kill_existing_processes(self) -> None:
         """Kill any existing PGlite processes that might conflict with this socket."""
+        # An auto-created temporary work directory is brand new, so no
+        # process can be using it; skip the process scan entirely.
+        if self._auto_work_dir:
+            return
+
         try:
             # Fix for issue #31: Compare work directory, not socket directory
             # Socket and work directories are different by design for isolation
@@ -288,23 +295,30 @@ class PGliteManager:
                 my_target_dir = str(Path(self.config.socket_path).parent)
                 comparison_type = "socket directory"
 
-            for proc in psutil.process_iter(["pid", "name", "cmdline", "cwd"]):
-                if proc.info["cmdline"] and any(
-                    "pglite_manager.js" in cmd for cmd in proc.info["cmdline"]
-                ):
-                    # Use exact directory match to avoid killing processes in similar paths
-                    try:
-                        proc_cwd = proc.info.get("cwd", "")
-                        if proc_cwd == my_target_dir:
-                            pid = proc.info["pid"]
-                            self.logger.info(
-                                f"Killing existing PGlite process: {pid} (matching {comparison_type})"
-                            )
-                            proc.kill()
-                            proc.wait(timeout=5)
-                    except (psutil.NoSuchProcess, psutil.AccessDenied):
-                        # Process already gone or can't access it
+            # Only processes named like node can be running the manager
+            # script, so fetch the more expensive cmdline/cwd lazily for
+            # those instead of for every process on the system.
+            for proc in psutil.process_iter(["pid", "name"]):
+                name = (proc.info.get("name") or "").lower()
+                if "node" not in name:
+                    continue
+                try:
+                    cmdline = proc.cmdline()
+                    if not any("pglite_manager.js" in cmd for cmd in cmdline):
                         continue
+                    # Use exact directory match to avoid killing processes
+                    # in similar paths.
+                    if proc.cwd() != my_target_dir:
+                        continue
+                    pid = proc.info["pid"]
+                    self.logger.info(
+                        f"Killing existing PGlite process: {pid} (matching {comparison_type})"
+                    )
+                    proc.kill()
+                    proc.wait(timeout=5)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    # Process already gone or can't access it
+                    continue
         except Exception as e:
             self.logger.warning(f"Error killing existing PGlite processes: {e}")
 
